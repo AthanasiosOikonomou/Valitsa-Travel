@@ -12,7 +12,27 @@ export interface InquiryPayload {
   tripUrl?: string;
 }
 
-const mailApiUrl = import.meta.env.VITE_MAIL_API_URL || "/api/send-inquiry";
+const resolveMailApiUrl = () => {
+  const configured = import.meta.env.VITE_MAIL_API_URL?.trim();
+  if (!configured) return "/api/send-inquiry";
+
+  if (typeof window !== "undefined") {
+    const isLocalHost = /^(localhost|127\.0\.0\.1)$/i.test(
+      window.location.hostname,
+    );
+    const configuredIsLocal =
+      /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//i.test(configured);
+
+    // Safety fallback for production builds accidentally pointing to localhost.
+    if (!isLocalHost && configuredIsLocal) {
+      return "/api/send-inquiry";
+    }
+  }
+
+  return configured;
+};
+
+const mailApiUrl = resolveMailApiUrl();
 
 const assertEmailConfig = () => {
   if (!mailApiUrl) {
