@@ -1,6 +1,6 @@
 import { MapPin, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
-import type { Trip } from "@/data/mockData";
+import { getLocalizedTripContent, type Trip } from "@/data/mockData";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface TripCardProps {
@@ -10,7 +10,8 @@ interface TripCardProps {
 }
 
 const TripCard = ({ trip, index, onClick }: TripCardProps) => {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const localized = getLocalizedTripContent(trip, lang);
 
   return (
     <motion.div
@@ -29,7 +30,7 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
       <div className="valitsa-card relative aspect-[4/5] mb-5">
         <img
           src={trip.image}
-          alt={trip.title}
+          alt={localized.title}
           className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
           loading="lazy"
           decoding="async"
@@ -41,7 +42,7 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
             {trip.price}
           </span>
           <span className="glass rounded-full px-4 py-1.5 text-xs font-semibold text-white">
-            {trip.duration}
+            {localized.duration}
           </span>
         </div>
 
@@ -53,10 +54,10 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
       </div>
 
       <h4 className="text-lg font-bold mb-1 group-hover:text-primary transition-colors duration-250">
-        {trip.title}
+        {localized.title}
       </h4>
       <p className="text-foreground-muted text-sm flex items-center gap-1.5">
-        <MapPin size={13} /> {trip.location}
+        <MapPin size={13} /> {localized.location}
       </p>
     </motion.div>
   );

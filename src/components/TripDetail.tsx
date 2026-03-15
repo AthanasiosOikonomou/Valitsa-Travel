@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, Clock, Check } from "lucide-react";
-import type { Trip } from "@/data/mockData";
+import { getLocalizedTripContent, type Trip } from "@/data/mockData";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { sendInquiryEmail } from "@/lib/email";
 
@@ -14,7 +14,8 @@ const tabKeys = ["description", "program", "included"] as const;
 
 const TripDetail = ({ trip, onClose }: TripDetailProps) => {
   const [activeTab, setActiveTab] = useState<string>("description");
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const localized = getLocalizedTripContent(trip, lang);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -105,8 +106,8 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
         email: formData.email,
         mobile: formData.mobile,
         message: formData.message,
-        tripTitle: trip.title,
-        tripLocation: trip.location,
+        tripTitle: localized.title,
+        tripLocation: localized.location,
         tripPrice: trip.price,
         tripUrl:
           typeof window !== "undefined"
@@ -166,7 +167,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
             src={trip.image}
-            alt={trip.title}
+            alt={localized.title}
             loading="lazy"
             decoding="async"
             className="w-full aspect-[16/10] object-cover rounded-[2rem] mb-10"
@@ -179,19 +180,19 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
           >
             <div className="flex items-center gap-4 text-foreground-muted text-sm mb-4">
               <span className="flex items-center gap-1.5">
-                <MapPin size={14} /> {trip.location}
+                <MapPin size={14} /> {localized.location}
               </span>
               <span className="flex items-center gap-1.5">
-                <Clock size={14} /> {trip.duration}
+                <Clock size={14} /> {localized.duration}
               </span>
             </div>
 
             <h2 className="text-4xl md:text-5xl text-display mb-6">
-              {trip.title}
+              {localized.title}
             </h2>
 
             <div className="flex gap-2 flex-wrap mb-10">
-              {trip.tags.map((tag) => (
+              {localized.tags.map((tag) => (
                 <span
                   key={tag}
                   className="px-4 py-2 bg-muted rounded-full text-sm font-medium"
@@ -238,12 +239,12 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
               >
                 {activeTab === "description" && (
                   <p className="text-body-prose text-lg leading-relaxed">
-                    {trip.description}
+                    {localized.description}
                   </p>
                 )}
                 {activeTab === "program" && (
                   <ul className="space-y-4">
-                    {trip.program.map((day, i) => (
+                    {localized.program.map((day, i) => (
                       <li key={i} className="flex gap-4 items-start">
                         <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
                           {i + 1}
@@ -255,7 +256,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                 )}
                 {activeTab === "included" && (
                   <ul className="space-y-3">
-                    {trip.included.map((item, i) => (
+                    {localized.included.map((item, i) => (
                       <li
                         key={i}
                         className="flex gap-3 items-center text-body-prose"
@@ -289,7 +290,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                   <p className="text-3xl font-bold">{trip.price}</p>
                 </div>
                 <span className="label-ui text-primary bg-primary/10 px-3 py-1.5 rounded-full">
-                  {trip.duration}
+                  {localized.duration}
                 </span>
               </div>
 

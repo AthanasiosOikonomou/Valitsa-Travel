@@ -3,7 +3,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Search, SlidersHorizontal, X, ChevronDown } from "lucide-react";
-import { trips, type Trip } from "@/data/mockData";
+import { getLocalizedTripContent, trips, type Trip } from "@/data/mockData";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Slider } from "@/components/ui/slider";
 import Navbar from "@/components/Navbar";
@@ -122,7 +122,7 @@ const TripsContent = () => {
   const [searchParams] = useSearchParams();
   const { darkMode, toggleDark } = useTheme();
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const activeFilter = searchParams.get("filter");
 
   const activePreset = useMemo(() => {
@@ -147,8 +147,12 @@ const TripsContent = () => {
   }, []);
 
   const departureCities = useMemo(
-    () => [...new Set(trips.map((trip) => trip.departureCity))],
-    [],
+    () => [
+      ...new Set(
+        trips.map((trip) => getLocalizedTripContent(trip, lang).departureCity),
+      ),
+    ],
+    [lang],
   );
 
   const countries = useMemo(
@@ -251,9 +255,13 @@ const TripsContent = () => {
 
   const baseFilteredTrips = useMemo(() => {
     return trips.filter((trip) => {
+      const localized = getLocalizedTripContent(trip, lang);
+
       if (
         searchQuery &&
-        !trip.title.toLowerCase().includes(searchQuery.toLowerCase())
+        !`${localized.title} ${localized.location}`
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase())
       )
         return false;
       if (
@@ -267,7 +275,7 @@ const TripsContent = () => {
       }
       if (
         selectedCities.length > 0 &&
-        !selectedCities.includes(trip.departureCity)
+        !selectedCities.includes(localized.departureCity)
       )
         return false;
       if (
@@ -293,6 +301,7 @@ const TripsContent = () => {
     showAvailable,
     showFeatured,
     tripType,
+    lang,
   ]);
 
   const priceBounds = useMemo(() => {
@@ -388,6 +397,10 @@ const TripsContent = () => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [mobileFiltersOpen]);
+
+  useEffect(() => {
+    setSelectedCities([]);
+  }, [lang]);
 
   useEffect(() => {
     const tripParam = searchParams.get("trip");
@@ -970,7 +983,8 @@ interface TripResultCardProps {
 }
 
 const TripResultCard = ({ trip, index, onClick }: TripResultCardProps) => {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const localized = getLocalizedTripContent(trip, lang);
 
   return (
     <motion.div
@@ -985,7 +999,7 @@ const TripResultCard = ({ trip, index, onClick }: TripResultCardProps) => {
       <div className="sm:w-64 md:w-80 shrink-0 relative overflow-hidden">
         <img
           src={trip.image}
-          alt={trip.title}
+          alt={localized.title}
           className="w-full h-48 sm:h-full object-cover group-hover:scale-105 transition-transform duration-500"
           loading="lazy"
         />
@@ -998,19 +1012,21 @@ const TripResultCard = ({ trip, index, onClick }: TripResultCardProps) => {
 
       <div className="flex-1 p-5 md:p-6 flex flex-col justify-between">
         <div>
-          <p className="text-xs text-foreground-muted mb-1">{trip.dateRange}</p>
+          <p className="text-xs text-foreground-muted mb-1">
+            {localized.dateRange}
+          </p>
           <h3 className="text-lg font-bold mb-1 group-hover:text-primary transition-colors">
-            {trip.title}
+            {localized.title}
           </h3>
           <p className="text-foreground-muted text-sm mb-3 line-clamp-2">
-            {trip.description}
+            {localized.description}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 mt-2">
           <div className="flex items-center gap-4 text-sm">
             <span className="font-bold text-primary">{trip.price}</span>
-            <span className="text-foreground-muted">{trip.duration}</span>
+            <span className="text-foreground-muted">{localized.duration}</span>
             {trip.guaranteedDeparture && (
               <span className="text-xs bg-muted text-foreground-muted px-2.5 py-1 rounded-full">
                 {t("archive.guaranteed")}

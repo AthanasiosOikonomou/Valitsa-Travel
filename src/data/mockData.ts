@@ -1,3 +1,17 @@
+export type TripLang = "en" | "gr";
+
+export interface TripLocalizedContent {
+  title: string;
+  location: string;
+  duration: string;
+  tags: string[];
+  description: string;
+  program: string[];
+  included: string[];
+  dateRange: string;
+  departureCity: string;
+}
+
 export interface Trip {
   id: number;
   title: string;
@@ -21,9 +35,10 @@ export interface Trip {
   isBonus?: boolean;
   hasAvailableSeats?: boolean;
   guaranteedDeparture?: boolean;
+  i18n?: Record<TripLang, TripLocalizedContent>;
 }
 
-export const trips: Trip[] = [
+const rawTrips: Omit<Trip, "i18n">[] = [
   {
     id: 1,
     title: "Amalfi Coast Private Estate",
@@ -555,7 +570,7 @@ export const trips: Trip[] = [
 ];
 
 // International Trips to complete the set of 10
-export const internationalTrips: Trip[] = [
+const rawInternationalTrips: Omit<Trip, "i18n">[] = [
   // ... including your existing IDs 1-6 ...
   {
     id: 17,
@@ -684,3 +699,483 @@ export const internationalTrips: Trip[] = [
     hasAvailableSeats: true,
   },
 ];
+
+const greekToEnglishCityMap: Record<string, string> = {
+  Αθήνα: "Athens",
+  Θεσσαλονίκη: "Thessaloniki",
+  Λάρνακα: "Larnaca",
+};
+
+const greekToEnglishDateMap: Record<string, string> = {
+  Μάρτιος: "March",
+  Σεπτέμβριος: "September",
+  Φεβρουάριος: "February",
+  Μάιος: "May",
+  Οκτώβριος: "October",
+  Δεκέμβριος: "December",
+  Απρίλιος: "April",
+  Νοέμβριος: "November",
+  Ιούνιος: "June",
+  Ιούλιος: "July",
+  Αύγουστος: "August",
+  Ιανουάριος: "January",
+  "Year Round": "Year Round",
+};
+
+const englishToGreekDateMap: Record<string, string> = {
+  March: "Μάρτιος",
+  September: "Σεπτέμβριος",
+  February: "Φεβρουάριος",
+  May: "Μάιος",
+  October: "Οκτώβριος",
+  December: "Δεκέμβριος",
+  April: "Απρίλιος",
+  November: "Νοέμβριος",
+  June: "Ιούνιος",
+  July: "Ιούλιος",
+  August: "Αύγουστος",
+  January: "Ιανουάριος",
+  "Year Round": "Όλο τον Χρόνο",
+};
+
+const greekTripOverrides: Record<number, Partial<TripLocalizedContent>> = {
+  1: {
+    title: "Ιδιωτική Έπαυλη στην Ακτή Αμάλφι",
+    location: "Ποζιτάνο, Ιταλία",
+    tags: ["Ιδιωτικός Σεφ", "Πρόσβαση με Yacht"],
+    description:
+      "Ζήστε την απόλυτη μεσογειακή πολυτέλεια στην πιο εμβληματική ακτογραμμή της Ιταλίας. Η ιδιωτική σας έπαυλη πάνω στον γκρεμό βλέπει στο Τυρρηνικό Πέλαγος, με προσωπικό σεφ που ετοιμάζει τοπικές γεύσεις από εκλεκτές πρώτες ύλες.",
+    program: [
+      "Ημέρα 1 — Μεταφορά με ιδιωτικό jet, δείπνο υποδοχής στην έπαυλη",
+      "Ημέρα 2 — Εξερεύνηση Αμάλφι, μάθημα λιμοντσέλο",
+      "Ημέρα 3 — Ολοήμερη κρουαζιέρα με yacht στο Κάπρι",
+      "Ημέρα 4 — Μάθημα μαγειρικής με βραβευμένο σεφ Michelin",
+      "Ημέρα 5 — Κήποι του Ραβέλλο και συναυλία στη Villa Rufolo",
+      "Ημέρα 6 — Ελεύθερη μέρα, spa και ευεξία",
+      "Ημέρα 7 — Αποχαιρετιστήριο brunch, αναχώρηση",
+    ],
+    included: [
+      "Διαμονή σε ιδιωτική έπαυλη",
+      "Προσωπικός σεφ και μπάτλερ",
+      "Ναύλωση yacht (2 ημέρες)",
+      "Μεταφορές από και προς το αεροδρόμιο",
+      "Γεύμα σε εστιατόριο Michelin",
+      "24/7 concierge service",
+    ],
+  },
+  2: {
+    title: "Zen Καταφύγιο στο Κιότο",
+    location: "Κιότο, Ιαπωνία",
+    tags: ["Πολιτισμός", "Ευεξία"],
+    description:
+      "Βυθιστείτε στη διαχρονική ομορφιά του Κιότο, εκεί όπου η αρχαία παράδοση συναντά τη λεπτή πολυτέλεια. Διαμονή σε αναπαλαιωμένη machiya κατοικία με ιδιωτικό zen κήπο.",
+    program: [
+      "Ημέρα 1 — Άφιξη, ιδιωτικό check-in στη machiya",
+      "Ημέρα 2 — Fushimi Inari την αυγή, δείπνο kaiseki",
+      "Ημέρα 3 — Τελετή τσαγιού με Grand Tea Master",
+      "Ημέρα 4 — Άλσος μπαμπού Arashiyama, εμπειρία kimono",
+      "Ημέρα 5 — Εκδρομή στη Νάρα, γευσιγνωσία sake",
+      "Ημέρα 6 — Εργαστήριο κεραμικής με living national treasure",
+      "Ημέρα 7 — Διανυκτέρευση σε zen μοναστήρι",
+      "Ημέρα 8 — Kinkaku-ji & Ryoan-ji, βραδιά σε onsen",
+      "Ημέρα 9 — Ελεύθερη εξερεύνηση, Nishiki Market",
+      "Ημέρα 10 — Αποχαιρετιστήρια τελετή, αναχώρηση",
+    ],
+    included: [
+      "Διαμονή σε machiya",
+      "Ιδιωτικός ξεναγός",
+      "Όλες οι πολιτιστικές εμπειρίες",
+      "Δείπνα kaiseki (5 βράδια)",
+      "Διαμονή σε μοναστήρι",
+      "Πάσα Shinkansen",
+    ],
+  },
+  3: {
+    title: "Aurora Dome στο Ρέικιαβικ",
+    location: "Ισλανδία",
+    tags: ["Περιπέτεια", "Πολυτέλεια"],
+    description:
+      "Κοιμηθείτε κάτω από το Βόρειο Σέλας σε θερμαινόμενο γυάλινο dome, τοποθετημένο στο ηφαιστειακό τοπίο της Ισλανδίας.",
+    program: [
+      "Ημέρα 1 — Άφιξη στο Ρέικιαβικ, χαλάρωση στο Blue Lagoon",
+      "Ημέρα 2 — Golden Circle tour, check-in στο aurora dome",
+      "Ημέρα 3 — Πεζοπορία σε παγετώνα και εξερεύνηση ice cave",
+      "Ημέρα 4 — Κατάδυση στο Silfra, γεωθερμική μαγειρική εμπειρία",
+      "Ημέρα 5 — Ανατολή σε μαύρη αμμουδιά, αναχώρηση",
+    ],
+    included: [
+      "Διαμονή σε aurora dome",
+      "Πολυτελές 4x4 όχημα",
+      "Ιδιωτικός adventure guide",
+      "Είσοδος στο Blue Lagoon",
+      "Όλα τα γεύματα",
+      "Πρόγραμμα εγγύησης Βόρειου Σέλαος",
+    ],
+  },
+  4: {
+    title: "Heli-Ski στις Ελβετικές Άλπεις",
+    location: "Ζερμάτ, Ελβετία",
+    tags: ["Ski-in", "Ιδιωτικό Jet"],
+    description:
+      "Η απόλυτη αλπική εμπειρία για τον απαιτητικό ταξιδιώτη. Άφιξη με ιδιωτικό ελικόπτερο στο σαλέ σας στο Ζερμάτ.",
+    program: [
+      "Ημέρα 1 — Ιδιωτικό jet στη Γενεύη, ελικόπτερο για Ζερμάτ",
+      "Ημέρα 2 — Εισαγωγή στο heli-ski, πρώτη κατάβαση",
+      "Ημέρα 3 — Ολοήμερο heli-ski, 4 drops",
+      "Ημέρα 4 — Backcountry touring, γεύμα στο βουνό",
+      "Ημέρα 5 — Gornergrat railway, απόγευμα spa",
+      "Ημέρα 6 — Τελικό πρωινό ski, αναχώρηση με ελικόπτερο",
+    ],
+    included: [
+      "Ιδιωτικό chalet (ski-in/ski-out)",
+      "Μεταφορές με ελικόπτερο",
+      "4 συνεδρίες heli-ski",
+      "Ορεινός οδηγός",
+      "Όλα τα γεύματα και κρασί",
+      "Πρόσβαση σε spa",
+    ],
+  },
+  5: {
+    title: "Sky Safari στο Σερενγκέτι",
+    location: "Τανζανία",
+    tags: ["Άγρια Ζωή", "Glamping"],
+    description:
+      "Παρακολουθήστε τη Μεγάλη Μετανάστευση από τα πιο αποκλειστικά σημεία θέας στο Σερενγκέτι.",
+    program: [
+      "Ημέρα 1 — Άφιξη στην Αρούσα, Arusha Coffee Lodge",
+      "Ημέρα 2 — Bush flight στο κεντρικό Σερενγκέτι",
+      "Ημέρα 3-4 — Game drives, εντοπισμός μεγάλων αιλουροειδών",
+      "Ημέρα 5 — Πτήση στο βόρειο Σερενγκέτι, παρατήρηση μετανάστευσης",
+      "Ημέρα 6 — Safari με αερόστατο την αυγή",
+      "Ημέρα 7 — Εκδρομή στον κρατήρα Νγκορονγκόρο",
+      "Ημέρα 8 — Τελικό πρωινό game drive, αναχώρηση",
+    ],
+    included: [
+      "Luxury tented camps",
+      "Όλες οι bush flights",
+      "Ιδιωτικό safari vehicle και guide",
+      "Safari με αερόστατο",
+      "Πλήρης διατροφή και premium ποτά",
+      "Τέλη πάρκων και conservation levy",
+    ],
+  },
+  6: {
+    title: "Παταγονία: Το Τέλος του Κόσμου",
+    location: "Χιλή",
+    tags: ["Εξερεύνηση", "Απομακρυσμένο"],
+    description:
+      "Ταξιδέψτε στην άκρη του κόσμου μέσα από τα εξωπραγματικά τοπία της Παταγονίας.",
+    program: [
+      "Ημέρα 1 — Άφιξη στο Σαντιάγο, διανυκτέρευση",
+      "Ημέρα 2 — Πτήση στην Punta Arenas, οδική μεταφορά στο lodge",
+      "Ημέρα 3-4 — Πεζοπορίες στο Torres del Paine",
+      "Ημέρα 5 — Διάσχιση του παγετώνα Perito Moreno",
+      "Ημέρα 6-7 — Εμπειρία estancia, ιππασία",
+      "Ημέρα 8 — Boat expedition στις Marble Caves",
+      "Ημέρα 9-10 — Διαδρομή στην Carretera Austral",
+      "Ημέρα 11 — Pumalín Park, θερμές πηγές",
+      "Ημέρα 12 — Τελική διαδρομή, αναχώρηση από Puerto Montt",
+    ],
+    included: [
+      "Διαμονή σε boutique lodge και estancia",
+      "Πολυτελές 4x4 με οδηγό",
+      "Ιδιωτικός trekking guide",
+      "Όλα τα γεύματα",
+      "Εξοπλισμός παγετώνα",
+      "Εσωτερικές πτήσεις",
+    ],
+  },
+  7: {
+    title: "Απόδραση στο Σούνιο με Ηλιοβασίλεμα",
+    location: "Αττική, Ελλάδα",
+    tags: ["Ιστορία", "Ηλιοβασίλεμα"],
+    description:
+      "Μια ιδιωτική παραθαλάσσια διαδρομή μέχρι τον Ναό του Ποσειδώνα για το πιο εμβληματικό ηλιοβασίλεμα της Αττικής.",
+    program: [
+      "14:00 Αναχώρηση από Αθήνα",
+      "15:30 Παραλιακή διαδρομή και καφές",
+      "18:00 Επίσκεψη στον ναό",
+      "20:00 Δείπνο με θαλασσινά",
+    ],
+    included: ["Ιδιωτική μεταφορά", "Εισιτήρια εισόδου", "Ξεναγός"],
+  },
+  8: {
+    title: "Σαββατοκύριακο στο Ναύπλιο",
+    location: "Πελοπόννησος, Ελλάδα",
+    tags: ["Ρομαντικό", "Αρχιτεκτονική"],
+    description:
+      "Εξερευνήστε την πρώτη πρωτεύουσα της Ελλάδας, ανεβείτε στο Παλαμήδι και απολαύστε τη θέα προς το Μπούρτζι.",
+    program: [
+      "Ημέρα 1 — Άφιξη και ανάβαση στο Παλαμήδι",
+      "Ημέρα 2 — Επίσκεψη στην Επίδαυρο και επιστροφή",
+    ],
+    included: ["Boutique hotel", "Πρωινό", "Ξεναγός"],
+  },
+  9: {
+    title: "Πολυτελής Καλντέρα Σαντορίνης",
+    location: "Οία, Ελλάδα",
+    tags: ["Πολυτέλεια", "Μήνας του Μέλιτος"],
+    description:
+      "Μείνετε σε cave suite με ιδιωτική πισίνα και θέα στην ηφαιστειακή καλντέρα.",
+    program: [
+      "Ημέρα 1 — Άφιξη",
+      "Ημέρα 2 — Ιδιωτική κρουαζιέρα με καταμαράν",
+      "Ημέρα 3 — Γευσιγνωσία κρασιού",
+      "Ημέρα 4 — Αναχώρηση",
+    ],
+    included: ["Luxury suite", "Κρουαζιέρα με καταμαράν", "Μεταφορές"],
+  },
+  10: {
+    title: "Μοναστήρια των Μετεώρων",
+    location: "Καλαμπάκα, Ελλάδα",
+    tags: ["Πνευματικότητα", "UNESCO"],
+    description:
+      "Επισκεφθείτε τα αιωρούμενα μοναστήρια των Μετεώρων και περπατήστε στα αρχαία μονοπάτια των ερημιτών.",
+    program: [
+      "Ημέρα 1 — Αθήνα προς Καλαμπάκα",
+      "Ημέρα 2 — Περιήγηση στα μοναστήρια",
+      "Ημέρα 3 — Πεζοπορία και επιστροφή",
+    ],
+    included: ["Διαμονή σε ξενοδοχείο", "Οδηγός πεζοπορίας", "Μεταφορά"],
+  },
+  11: {
+    title: "Κρήτη: Ο Μεγάλος Νότος",
+    location: "Χανιά & Ρέθυμνο, Ελλάδα",
+    tags: ["Παραλία", "Γαστρονομία"],
+    description:
+      "Μια βαθιά γνωριμία με την κρητική κουλτούρα, από το Μπάλος μέχρι το φαράγγι της Σαμαριάς.",
+    program: [
+      "Ημέρες 1-3 — Παλιά Πόλη Χανίων",
+      "Ημέρες 4-6 — Παραλίες νότιας ακτής",
+      "Ημέρες 7-10 — Ρέθυμνο και Ηράκλειο",
+    ],
+    included: [
+      "Ενοικίαση αυτοκινήτου",
+      "Boutique διαμονές",
+      "Παραδοσιακά δείπνα",
+    ],
+  },
+  12: {
+    title: "Πέτρινα Χωριά Ζαγορίου",
+    location: "Ήπειρος, Ελλάδα",
+    tags: ["Φύση", "Πεζοπορία"],
+    description:
+      "Ανακαλύψτε το φαράγγι του Βίκου και τις δρακόλιμνες της Πίνδου.",
+    program: [
+      "Ημέρα 1 — Ιωάννινα",
+      "Ημέρα 2-3 — Πεζοπορία στο Βίκο",
+      "Ημέρα 4 — Εξερεύνηση στο Πάπιγκο",
+      "Ημέρα 5 — Επιστροφή",
+    ],
+    included: ["Ξενώνας", "Ορεινός οδηγός", "Πρωινό"],
+  },
+  13: {
+    title: "Πνευματική Διαδρομή στο Άγιο Όρος",
+    location: "Χαλκιδική, Ελλάδα",
+    tags: ["Θρησκευτικό", "Περιορισμένη Πρόσβαση"],
+    description:
+      "Ένα προσκύνημα στο Άγιο Όρος με παραδοσιακή φιλοξενία σε μονές και πνευματική καθοδήγηση.",
+    program: [
+      "Ημέρα 1 — Ουρανούπολη",
+      "Ημέρα 2-3 — Διαμονή σε μονές",
+      "Ημέρα 4 — Επιστροφή",
+    ],
+    included: [
+      "Άδειες εισόδου (Διαμονητήριο)",
+      "Γεύματα μονής",
+      "Ακτοπλοϊκά εισιτήρια",
+    ],
+  },
+  14: {
+    title: "Ρόδος: Ιππότες και Παραλίες",
+    location: "Ρόδος, Ελλάδα",
+    tags: ["Μεσαιωνικό", "Ηλιόλουστο"],
+    description:
+      "Περπατήστε στην Οδό των Ιπποτών και απολαύστε τα γαλαζοπράσινα νερά της Λίνδου.",
+    program: [
+      "Ημέρα 1-2 — Παλιά Πόλη",
+      "Ημέρα 3-4 — Ακρόπολη Λίνδου",
+      "Ημέρα 5 — Κοιλάδα με τις Πεταλούδες",
+      "Ημέρα 6 — Αναχώρηση",
+    ],
+    included: ["Ξενοδοχείο 4 αστέρων", "Πτήσεις", "Ξεναγός"],
+  },
+  15: {
+    title: "Καλλιτεχνική Απόδραση στην Ύδρα",
+    location: "Ύδρα, Ελλάδα",
+    tags: ["Χωρίς Αυτοκίνητα", "Τέχνη"],
+    description:
+      "Μια μέρα στο νησί όπου δεν κυκλοφορούν αυτοκίνητα και τα γαϊδουράκια πρωταγωνιστούν στα σοκάκια.",
+    program: [
+      "08:00 Αναχώρηση με πλοίο από Πειραιά",
+      "11:00 Μπάνιο",
+      "14:00 Γεύμα στο λιμάνι",
+      "19:00 Επιστροφή",
+    ],
+    included: ["Ακτοπλοϊκά εισιτήρια", "Γεύμα", "Περιπατητική ξενάγηση"],
+  },
+  16: {
+    title: "Πήλιο: Βουνό και Θάλασσα",
+    location: "Βόλος, Ελλάδα",
+    tags: ["Παραδοσιακό", "Φύση"],
+    description:
+      "Ανακαλύψτε τη μυθική γη των Κενταύρων με πέτρινα χωριά και κρυστάλλινες παραλίες.",
+    program: [
+      "Ημέρα 1 — Πορταριά",
+      "Ημέρα 2 — Μακρινίτσα",
+      "Ημέρα 3 — Παραλία Μυλοπόταμος",
+      "Ημέρα 4 — Νταμούχαρη",
+      "Ημέρα 5 — Επιστροφή",
+    ],
+    included: ["Παραδοσιακός ξενώνας", "Πρωινό", "Καθοδηγούμενος περίπατος"],
+  },
+  17: {
+    title: "Παρίσι & Σαμπάνια",
+    location: "Παρίσι, Γαλλία",
+    tags: ["Μόδα", "Κρασί"],
+    description:
+      "Η Πόλη του Φωτός με ιδιωτική περιήγηση στα κελάρια της Moet & Chandon.",
+    program: [
+      "Ημέρα 1 — Άφιξη",
+      "Ημέρα 2 — Ιδιωτική ξενάγηση στο Λούβρο",
+      "Ημέρα 3 — Ημερήσια εκδρομή στη Σαμπάνια",
+      "Ημέρα 4 — Μονμάρτη",
+      "Ημέρα 5 — Αναχώρηση",
+    ],
+    included: ["Ξενοδοχείο 5 αστέρων", "Tour στη Σαμπάνια", "Πτήσεις"],
+  },
+  18: {
+    title: "Οδύσσεια στο Δάσος του Αμαζονίου",
+    location: "Περού",
+    tags: ["Άγρια Φύση", "Επιβίωση"],
+    description:
+      "Βαθιά εμπειρία στη ζούγκλα που συνδυάζεται με το μεγαλείο του Μάτσου Πίτσου.",
+    program: [
+      "Ημέρες 1-5 — Κρουαζιέρα στον Αμαζόνιο",
+      "Ημέρες 6-10 — Κούσκο και Sacred Valley",
+      "Ημέρες 11-13 — Trek στο Μάτσου Πίτσου",
+      "Ημέρες 14-15 — Λίμα",
+    ],
+    included: [
+      "Πολυτελές riverboat",
+      "Τρένο για Μάτσου Πίτσου",
+      "Ξεναγοί",
+      "Όλα τα γεύματα",
+    ],
+  },
+  19: {
+    title: "Κάιρο & Πολυτέλεια στον Νείλο",
+    location: "Αίγυπτος",
+    tags: ["Αρχαίος Κόσμος", "Κρουαζιέρα Ποταμού"],
+    description:
+      "Ιδιωτική πρόσβαση στις Μεγάλες Πυραμίδες και πολυτελής dahabiya κρουαζιέρα στον Νείλο.",
+    program: [
+      "Ημέρα 1 — Κάιρο",
+      "Ημέρα 2 — Πυραμίδες και Σφίγγα",
+      "Ημέρα 3-6 — Κρουαζιέρα στον Νείλο",
+      "Ημέρα 7 — Λούξορ, Κοιλάδα των Βασιλέων",
+      "Ημέρα 8 — Αναχώρηση",
+    ],
+    included: [
+      "Ιδιωτικός αιγυπτιολόγος",
+      "Κρουαζιέρα 5 αστέρων",
+      "Εσωτερικές πτήσεις",
+    ],
+  },
+  20: {
+    title: "Τα Φώτα της Νέας Υόρκης",
+    location: "Νέα Υόρκη, ΗΠΑ",
+    tags: ["Πόλη", "Shopping"],
+    description:
+      "Από παραστάσεις στο Broadway μέχρι ιδιωτική βόλτα με ελικόπτερο πάνω από το Μανχάταν.",
+    program: [
+      "Ημέρα 1 — Times Square",
+      "Ημέρα 2 — Central Park",
+      "Ημέρα 3 — Museum Day",
+      "Ημέρα 4 — Εξερεύνηση στο Brooklyn",
+      "Ημέρα 5 — Βόλτα με ελικόπτερο",
+      "Ημέρα 6 — Αγορές",
+      "Ημέρα 7 — Αναχώρηση",
+    ],
+    included: [
+      "Ξενοδοχείο στο Μανχάταν",
+      "Εισιτήρια Broadway",
+      "Βόλτα με ελικόπτερο",
+    ],
+  },
+};
+
+const replaceWords = (input: string, map: Record<string, string>) => {
+  let output = input;
+  for (const [from, to] of Object.entries(map)) {
+    output = output.split(from).join(to);
+  }
+  return output;
+};
+
+const toGreekDuration = (duration: string) => {
+  const manyDays = duration.replace(" Days", " Ημέρες");
+  return manyDays.replace(" Day", " Ημέρα");
+};
+
+const toEnglishDuration = (duration: string) => {
+  const oneDay = duration.replace(" Ημέρα", " Day");
+  return oneDay.replace(" Ημέρες", " Days");
+};
+
+const buildTripI18n = (
+  trip: Omit<Trip, "i18n">,
+): Record<TripLang, TripLocalizedContent> => {
+  const enDateRange = replaceWords(trip.dateRange, greekToEnglishDateMap);
+  const grDateRange = replaceWords(trip.dateRange, englishToGreekDateMap);
+  const grOverrides = greekTripOverrides[trip.id] ?? {};
+
+  const enDepartureCity =
+    greekToEnglishCityMap[trip.departureCity] ?? trip.departureCity;
+
+  return {
+    en: {
+      title: trip.title,
+      location: trip.location,
+      duration: toEnglishDuration(trip.duration),
+      tags: [...trip.tags],
+      description: trip.description,
+      program: [...trip.program],
+      included: [...trip.included],
+      dateRange: enDateRange,
+      departureCity: enDepartureCity,
+    },
+    gr: {
+      title: grOverrides.title ?? trip.title,
+      location: grOverrides.location ?? trip.location,
+      duration: toGreekDuration(trip.duration),
+      tags: grOverrides.tags ?? [...trip.tags],
+      description: grOverrides.description ?? trip.description,
+      program: grOverrides.program ?? [...trip.program],
+      included: grOverrides.included ?? [...trip.included],
+      dateRange: grOverrides.dateRange ?? grDateRange,
+      departureCity: grOverrides.departureCity ?? trip.departureCity,
+    },
+  };
+};
+
+const withI18n = (trip: Omit<Trip, "i18n">): Trip => ({
+  ...trip,
+  i18n: buildTripI18n(trip),
+});
+
+export const trips: Trip[] = rawTrips.map(withI18n);
+export const internationalTrips: Trip[] = rawInternationalTrips.map(withI18n);
+
+export const getLocalizedTripContent = (trip: Trip, lang: TripLang) =>
+  trip.i18n?.[lang] ?? {
+    title: trip.title,
+    location: trip.location,
+    duration: trip.duration,
+    tags: trip.tags,
+    description: trip.description,
+    program: trip.program,
+    included: trip.included,
+    dateRange: trip.dateRange,
+    departureCity: trip.departureCity,
+  };
