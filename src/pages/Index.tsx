@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import type { Trip } from "@/data/mockData";
-import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import FeaturedTrips from "@/components/FeaturedTrips";
@@ -18,7 +18,9 @@ const IndexContent = () => {
 
   useEffect(() => {
     document.body.style.overflow = selectedTrip ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [selectedTrip]);
 
   return (
@@ -29,7 +31,10 @@ const IndexContent = () => {
 
       <AnimatePresence>
         {selectedTrip && (
-          <TripDetail trip={selectedTrip} onClose={() => setSelectedTrip(null)} />
+          <TripDetail
+            trip={selectedTrip}
+            onClose={() => setSelectedTrip(null)}
+          />
         )}
       </AnimatePresence>
 
@@ -37,8 +42,15 @@ const IndexContent = () => {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <span className="text-xl font-bold tracking-[-0.06em]">VALITSA</span>
           <div className="flex items-center gap-6">
-            <a href="#" className="text-foreground-muted text-sm hover:text-foreground transition-colors">{t("nav.terms")}</a>
-            <p className="text-foreground-muted text-sm">{t("footer.rights")}</p>
+            <a
+              href="#"
+              className="text-foreground-muted text-sm hover:text-foreground transition-colors"
+            >
+              {t("nav.terms")}
+            </a>
+            <p className="text-foreground-muted text-sm">
+              {t("footer.rights")}
+            </p>
           </div>
         </div>
       </footer>
@@ -46,10 +58,6 @@ const IndexContent = () => {
   );
 };
 
-const Index = () => (
-  <LanguageProvider>
-    <IndexContent />
-  </LanguageProvider>
-);
+const Index = () => <IndexContent />;
 
 export default Index;

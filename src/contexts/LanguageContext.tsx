@@ -22,6 +22,10 @@ const translations: Record<Lang, Record<string, string>> = {
     // Contact Modal
     "contact.title": "Contact Us",
     "contact.callUs": "Call Us",
+    "contact.whatsapp": "WhatsApp",
+    "contact.whatsappDesc": "Chat with us instantly",
+    "contact.viber": "Viber",
+    "contact.viberDesc": "Message us on Viber",
     "contact.sendMessage": "Send a Message",
     "contact.sendMessageDesc": "Fill out the form and we'll get back to you",
     "contact.back": "Back",
@@ -32,7 +36,8 @@ const translations: Record<Lang, Record<string, string>> = {
     // Hero
     "hero.label": "Luxury Travel, Redefined",
     "hero.title": "Discover Your Next Destination",
-    "hero.subtitle": "Handcrafted journeys to the world's most extraordinary places. Every detail curated, every moment unforgettable.",
+    "hero.subtitle":
+      "Handcrafted journeys to the world's most extraordinary places. Every detail curated, every moment unforgettable.",
     "hero.cta": "View All Our Trips",
 
     // Featured
@@ -124,8 +129,13 @@ const translations: Record<Lang, Record<string, string>> = {
     // Contact Modal
     "contact.title": "Επικοινωνία",
     "contact.callUs": "Καλέστε μας",
+    "contact.whatsapp": "WhatsApp",
+    "contact.whatsappDesc": "Συνομιλήστε μαζί μας άμεσα",
+    "contact.viber": "Viber",
+    "contact.viberDesc": "Στείλτε μας μήνυμα στο Viber",
     "contact.sendMessage": "Στείλτε μήνυμα",
-    "contact.sendMessageDesc": "Συμπληρώστε τη φόρμα και θα επικοινωνήσουμε μαζί σας",
+    "contact.sendMessageDesc":
+      "Συμπληρώστε τη φόρμα και θα επικοινωνήσουμε μαζί σας",
     "contact.back": "Πίσω",
     "contact.send": "Αποστολή",
     "contact.sent": "Το μήνυμα στάλθηκε!",
@@ -134,7 +144,8 @@ const translations: Record<Lang, Record<string, string>> = {
     // Hero
     "hero.label": "Πολυτελή Ταξίδια, Ξανά",
     "hero.title": "Ανακαλύψτε τον Επόμενο Προορισμό σας",
-    "hero.subtitle": "Χειροποίητα ταξίδια στα πιο εξαιρετικά μέρη του κόσμου. Κάθε λεπτομέρεια επιμελημένη, κάθε στιγμή αξέχαστη.",
+    "hero.subtitle":
+      "Χειροποίητα ταξίδια στα πιο εξαιρετικά μέρη του κόσμου. Κάθε λεπτομέρεια επιμελημένη, κάθε στιγμή αξέχαστη.",
     "hero.cta": "Δείτε όλα τα ταξίδια μας",
 
     // Featured
@@ -215,10 +226,12 @@ const translations: Record<Lang, Record<string, string>> = {
   },
 };
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+const LanguageContext = createContext<LanguageContextType | undefined>(
+  undefined,
+);
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-  const [lang, setLang] = useState<Lang>("en");
+  const [lang, setLang] = useState<Lang>("gr");
 
   const t = (key: string) => translations[lang][key] ?? key;
 

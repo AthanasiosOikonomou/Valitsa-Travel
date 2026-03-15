@@ -3,16 +3,26 @@ import { useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Search, SlidersHorizontal, X, ChevronDown } from "lucide-react";
 import { trips, type Trip } from "@/data/mockData";
-import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Slider } from "@/components/ui/slider";
 import Navbar from "@/components/Navbar";
 import TripDetail from "@/components/TripDetail";
 
 const departureCities = ["Αθήνα", "Θεσσαλονίκη", "Λάρνακα"];
-const tripCategories = ["cultural", "adventure", "religious", "wellness", "wildlife", "expedition"];
+const tripCategories = [
+  "cultural",
+  "adventure",
+  "religious",
+  "wellness",
+  "wildlife",
+  "expedition",
+];
 
 // Map nav filter params to actual data filters
-const filterPresets: Record<string, { durationRange?: [number, number]; category?: string }> = {
+const filterPresets: Record<
+  string,
+  { durationRange?: [number, number]; category?: string }
+> = {
   daily: { durationRange: [1, 1] },
   twoday: { durationRange: [2, 2] },
   internal: { category: "cultural" }, // maps to internal trips
@@ -34,7 +44,9 @@ const TripsContent = () => {
   const [showBonus, setShowBonus] = useState(false);
   const [showGuaranteed, setShowGuaranteed] = useState(false);
   const [showAvailable, setShowAvailable] = useState(false);
-  const [tripType, setTripType] = useState<"all" | "group" | "individual">("all");
+  const [tripType, setTripType] = useState<"all" | "group" | "individual">(
+    "all",
+  );
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   // Apply URL filter presets
@@ -63,7 +75,9 @@ const TripsContent = () => {
 
   useEffect(() => {
     document.body.style.overflow = selectedTrip ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [selectedTrip]);
 
   const toggleSection = (key: string) =>
@@ -71,27 +85,53 @@ const TripsContent = () => {
 
   const toggleCity = (city: string) =>
     setSelectedCities((prev) =>
-      prev.includes(city) ? prev.filter((c) => c !== city) : [...prev, city]
+      prev.includes(city) ? prev.filter((c) => c !== city) : [...prev, city],
     );
 
   const toggleCategory = (cat: string) =>
     setSelectedCategories((prev) =>
-      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat],
     );
 
   const filtered = useMemo(() => {
     return trips.filter((trip) => {
-      if (searchQuery && !trip.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-      if (trip.priceNum < priceRange[0] || trip.priceNum > priceRange[1]) return false;
-      if (trip.durationDays < durationRange[0] || trip.durationDays > durationRange[1]) return false;
-      if (selectedCities.length > 0 && !selectedCities.includes(trip.departureCity)) return false;
-      if (selectedCategories.length > 0 && !selectedCategories.includes(trip.category)) return false;
+      if (
+        searchQuery &&
+        !trip.title.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+        return false;
+      if (trip.priceNum < priceRange[0] || trip.priceNum > priceRange[1])
+        return false;
+      if (
+        trip.durationDays < durationRange[0] ||
+        trip.durationDays > durationRange[1]
+      )
+        return false;
+      if (
+        selectedCities.length > 0 &&
+        !selectedCities.includes(trip.departureCity)
+      )
+        return false;
+      if (
+        selectedCategories.length > 0 &&
+        !selectedCategories.includes(trip.category)
+      )
+        return false;
       if (showBonus && !trip.isBonus) return false;
       if (showGuaranteed && !trip.guaranteedDeparture) return false;
       if (showAvailable && !trip.hasAvailableSeats) return false;
       return true;
     });
-  }, [searchQuery, priceRange, durationRange, selectedCities, selectedCategories, showBonus, showGuaranteed, showAvailable]);
+  }, [
+    searchQuery,
+    priceRange,
+    durationRange,
+    selectedCities,
+    selectedCategories,
+    showBonus,
+    showGuaranteed,
+    showAvailable,
+  ]);
 
   const resetFilters = () => {
     setSearchQuery("");
@@ -105,14 +145,25 @@ const TripsContent = () => {
     setTripType("all");
   };
 
-  const FilterSection = ({ id, title, children }: { id: string; title: string; children: React.ReactNode }) => (
+  const FilterSection = ({
+    id,
+    title,
+    children,
+  }: {
+    id: string;
+    title: string;
+    children: React.ReactNode;
+  }) => (
     <div className="border-b border-border pb-5 mb-5">
       <button
         onClick={() => toggleSection(id)}
         className="flex items-center justify-between w-full text-sm font-bold mb-3"
       >
         {title}
-        <ChevronDown size={16} className={`transition-transform duration-200 ${openSections[id] ? "rotate-180" : ""}`} />
+        <ChevronDown
+          size={16}
+          className={`transition-transform duration-200 ${openSections[id] ? "rotate-180" : ""}`}
+        />
       </button>
       <AnimatePresence>
         {openSections[id] && (
@@ -134,7 +185,10 @@ const TripsContent = () => {
     <div className="space-y-0">
       <div className="pb-5 mb-5 border-b border-border">
         <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted" />
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted"
+          />
           <input
             type="text"
             value={searchQuery}
@@ -149,27 +203,45 @@ const TripsContent = () => {
         <p className="text-xs text-foreground-muted mb-3">
           ${priceRange[0].toLocaleString()} – ${priceRange[1].toLocaleString()}
         </p>
-        <Slider min={0} max={20000} step={500} value={priceRange} onValueChange={setPriceRange} />
+        <Slider
+          min={0}
+          max={20000}
+          step={500}
+          value={priceRange}
+          onValueChange={setPriceRange}
+        />
       </FilterSection>
 
       <FilterSection id="special" title={t("archive.specialFilters")}>
         <label className="flex items-center gap-3 py-2 cursor-pointer group">
-          <input type="checkbox" checked={showBonus} onChange={() => setShowBonus(!showBonus)}
-            className="w-4 h-4 rounded border-border text-primary focus:ring-primary" />
+          <input
+            type="checkbox"
+            checked={showBonus}
+            onChange={() => setShowBonus(!showBonus)}
+            className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+          />
           <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
             {t("archive.bonusTrips")}
           </span>
         </label>
         <label className="flex items-center gap-3 py-2 cursor-pointer group">
-          <input type="checkbox" checked={showGuaranteed} onChange={() => setShowGuaranteed(!showGuaranteed)}
-            className="w-4 h-4 rounded border-border text-primary focus:ring-primary" />
+          <input
+            type="checkbox"
+            checked={showGuaranteed}
+            onChange={() => setShowGuaranteed(!showGuaranteed)}
+            className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+          />
           <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
             {t("archive.guaranteedDepartures")}
           </span>
         </label>
         <label className="flex items-center gap-3 py-2 cursor-pointer group">
-          <input type="checkbox" checked={showAvailable} onChange={() => setShowAvailable(!showAvailable)}
-            className="w-4 h-4 rounded border-border text-primary focus:ring-primary" />
+          <input
+            type="checkbox"
+            checked={showAvailable}
+            onChange={() => setShowAvailable(!showAvailable)}
+            className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+          />
           <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
             {t("archive.availableSeats")}
           </span>
@@ -180,24 +252,46 @@ const TripsContent = () => {
         <p className="text-xs text-foreground-muted mb-3">
           {durationRange[0]} – {durationRange[1]} {t("archive.days")}
         </p>
-        <Slider min={1} max={40} step={1} value={durationRange} onValueChange={setDurationRange} />
+        <Slider
+          min={1}
+          max={40}
+          step={1}
+          value={durationRange}
+          onValueChange={setDurationRange}
+        />
       </FilterSection>
 
       <FilterSection id="city" title={t("archive.departureCity")}>
         {departureCities.map((city) => (
-          <label key={city} className="flex items-center gap-3 py-2 cursor-pointer group">
-            <input type="checkbox" checked={selectedCities.includes(city)} onChange={() => toggleCity(city)}
-              className="w-4 h-4 rounded border-border text-primary focus:ring-primary" />
-            <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">{city}</span>
+          <label
+            key={city}
+            className="flex items-center gap-3 py-2 cursor-pointer group"
+          >
+            <input
+              type="checkbox"
+              checked={selectedCities.includes(city)}
+              onChange={() => toggleCity(city)}
+              className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+            />
+            <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
+              {city}
+            </span>
           </label>
         ))}
       </FilterSection>
 
       <FilterSection id="category" title={t("archive.category")}>
         {tripCategories.map((cat) => (
-          <label key={cat} className="flex items-center gap-3 py-2 cursor-pointer group">
-            <input type="checkbox" checked={selectedCategories.includes(cat)} onChange={() => toggleCategory(cat)}
-              className="w-4 h-4 rounded border-border text-primary focus:ring-primary" />
+          <label
+            key={cat}
+            className="flex items-center gap-3 py-2 cursor-pointer group"
+          >
+            <input
+              type="checkbox"
+              checked={selectedCategories.includes(cat)}
+              onChange={() => toggleCategory(cat)}
+              className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+            />
             <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
               {t(`search.${cat}`)}
             </span>
@@ -207,9 +301,17 @@ const TripsContent = () => {
 
       <FilterSection id="type" title={t("archive.tripType")}>
         {(["all", "group", "individual"] as const).map((type) => (
-          <label key={type} className="flex items-center gap-3 py-2 cursor-pointer group">
-            <input type="radio" name="tripType" checked={tripType === type} onChange={() => setTripType(type)}
-              className="w-4 h-4 border-border text-primary focus:ring-primary" />
+          <label
+            key={type}
+            className="flex items-center gap-3 py-2 cursor-pointer group"
+          >
+            <input
+              type="radio"
+              name="tripType"
+              checked={tripType === type}
+              onChange={() => setTripType(type)}
+              className="w-4 h-4 border-border text-primary focus:ring-primary"
+            />
             <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
               {t(`archive.${type}`)}
             </span>
@@ -232,7 +334,9 @@ const TripsContent = () => {
 
       {/* Page header */}
       <div className="pt-24 pb-10 px-6 md:px-10 max-w-7xl mx-auto">
-        <h1 className="text-3xl md:text-4xl text-display mb-2">{t("archive.title")}</h1>
+        <h1 className="text-3xl md:text-4xl text-display mb-2">
+          {t("archive.title")}
+        </h1>
         <p className="text-foreground-muted text-sm">
           {filtered.length} {t("archive.resultsFound")}
         </p>
@@ -250,7 +354,10 @@ const TripsContent = () => {
       <div className="max-w-7xl mx-auto px-6 md:px-10 pb-24 flex gap-10">
         {/* Sidebar - Desktop (sticky) */}
         <aside className="hidden lg:block w-72 shrink-0">
-          <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto bg-card border border-border rounded-2xl p-6" style={{ boxShadow: "var(--shadow-md)" }}>
+          <div
+            className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto bg-card border border-border rounded-2xl p-6"
+            style={{ boxShadow: "var(--shadow-md)" }}
+          >
             {filtersContent}
           </div>
         </aside>
@@ -275,7 +382,10 @@ const TripsContent = () => {
               >
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-bold">{t("search.filters")}</h3>
-                  <button onClick={() => setMobileFiltersOpen(false)} className="p-2 rounded-full hover:bg-muted">
+                  <button
+                    onClick={() => setMobileFiltersOpen(false)}
+                    className="p-2 rounded-full hover:bg-muted"
+                  >
                     <X size={18} />
                   </button>
                 </div>
@@ -289,15 +399,25 @@ const TripsContent = () => {
         <div className="flex-1 min-w-0">
           {filtered.length === 0 ? (
             <div className="text-center py-20">
-              <p className="text-foreground-muted text-lg">{t("archive.noResults")}</p>
-              <button onClick={resetFilters} className="mt-4 text-primary font-semibold text-sm hover:underline">
+              <p className="text-foreground-muted text-lg">
+                {t("archive.noResults")}
+              </p>
+              <button
+                onClick={resetFilters}
+                className="mt-4 text-primary font-semibold text-sm hover:underline"
+              >
                 {t("search.reset")}
               </button>
             </div>
           ) : (
             <div className="space-y-6">
               {filtered.map((trip, idx) => (
-                <TripResultCard key={trip.id} trip={trip} index={idx} onClick={setSelectedTrip} />
+                <TripResultCard
+                  key={trip.id}
+                  trip={trip}
+                  index={idx}
+                  onClick={setSelectedTrip}
+                />
               ))}
             </div>
           )}
@@ -306,7 +426,10 @@ const TripsContent = () => {
 
       <AnimatePresence>
         {selectedTrip && (
-          <TripDetail trip={selectedTrip} onClose={() => setSelectedTrip(null)} />
+          <TripDetail
+            trip={selectedTrip}
+            onClose={() => setSelectedTrip(null)}
+          />
         )}
       </AnimatePresence>
 
@@ -314,8 +437,15 @@ const TripsContent = () => {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <span className="text-xl font-bold tracking-[-0.06em]">VALITSA</span>
           <div className="flex items-center gap-6">
-            <a href="#" className="text-foreground-muted text-sm hover:text-foreground transition-colors">{t("nav.terms")}</a>
-            <p className="text-foreground-muted text-sm">{t("footer.rights")}</p>
+            <a
+              href="#"
+              className="text-foreground-muted text-sm hover:text-foreground transition-colors"
+            >
+              {t("nav.terms")}
+            </a>
+            <p className="text-foreground-muted text-sm">
+              {t("footer.rights")}
+            </p>
           </div>
         </div>
       </footer>
@@ -360,8 +490,12 @@ const TripResultCard = ({ trip, index, onClick }: TripResultCardProps) => {
       <div className="flex-1 p-5 md:p-6 flex flex-col justify-between">
         <div>
           <p className="text-xs text-foreground-muted mb-1">{trip.dateRange}</p>
-          <h3 className="text-lg font-bold mb-1 group-hover:text-primary transition-colors">{trip.title}</h3>
-          <p className="text-foreground-muted text-sm mb-3 line-clamp-2">{trip.description}</p>
+          <h3 className="text-lg font-bold mb-1 group-hover:text-primary transition-colors">
+            {trip.title}
+          </h3>
+          <p className="text-foreground-muted text-sm mb-3 line-clamp-2">
+            {trip.description}
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 mt-2">
@@ -383,10 +517,6 @@ const TripResultCard = ({ trip, index, onClick }: TripResultCardProps) => {
   );
 };
 
-const TripsPage = () => (
-  <LanguageProvider>
-    <TripsContent />
-  </LanguageProvider>
-);
+const TripsPage = () => <TripsContent />;
 
 export default TripsPage;
