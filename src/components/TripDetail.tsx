@@ -140,17 +140,6 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
-  useEffect(() => {
-    if (!submitted) return;
-
-    const timer = window.setTimeout(() => {
-      onClose();
-      setSubmitted(false);
-    }, 5000);
-
-    return () => window.clearTimeout(timer);
-  }, [submitted, onClose]);
-
   const updateField = (field: string, value: string) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
 
