@@ -171,7 +171,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
 
         {/* Right column — sticky form */}
         <div className="lg:col-span-5">
-          <div className="sticky top-24">
+          <div className="sticky top-20">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}

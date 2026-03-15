@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Search, SlidersHorizontal, X, ChevronDown } from "lucide-react";
@@ -45,7 +45,7 @@ const FilterSection = ({
         className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
       />
     </button>
-    <AnimatePresence>
+    <AnimatePresence initial={false}>
       {isOpen && (
         <motion.div
           initial={{ height: 0, opacity: 0 }}
@@ -67,6 +67,11 @@ const TripsContent = () => {
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const { t } = useLanguage();
 
+  const activePreset = useMemo(() => {
+    const filter = searchParams.get("filter");
+    return filter ? filterPresets[filter] : undefined;
+  }, [searchParams]);
+
   const globalPriceBounds = useMemo(() => {
     const values = trips.map((trip) => trip.priceNum);
     return {
@@ -87,6 +92,27 @@ const TripsContent = () => {
     () => [...new Set(trips.map((trip) => trip.departureCity))],
     [],
   );
+
+  const initialPresetTrips = useMemo(() => {
+    if (!activePreset?.category) return trips;
+    return trips.filter((trip) => trip.category === activePreset.category);
+  }, [activePreset?.category]);
+
+  const initialPriceBounds = useMemo(() => {
+    const values = initialPresetTrips.map((trip) => trip.priceNum);
+    return {
+      min: Math.min(...values),
+      max: Math.max(...values),
+    };
+  }, [initialPresetTrips]);
+
+  const initialDurationBounds = useMemo(() => {
+    const values = initialPresetTrips.map((trip) => trip.durationDays);
+    return {
+      min: Math.min(...values),
+      max: Math.max(...values),
+    };
+  }, [initialPresetTrips]);
 
   const tripCategories = useMemo(
     () => [...new Set(trips.map((trip) => trip.category))],
@@ -119,15 +145,20 @@ const TripsContent = () => {
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [priceRange, setPriceRange] = useState<[number, number]>([
-    globalPriceBounds.min,
-    globalPriceBounds.max,
+    initialPriceBounds.min,
+    initialPriceBounds.max,
   ]);
-  const [durationRange, setDurationRange] = useState<[number, number]>([
-    globalDurationBounds.min,
-    globalDurationBounds.max,
-  ]);
+  const [durationRange, setDurationRange] = useState<[number, number]>(
+    () =>
+      activePreset?.durationRange ?? [
+        initialDurationBounds.min,
+        initialDurationBounds.max,
+      ],
+  );
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(() =>
+    activePreset?.category ? [activePreset.category] : [],
+  );
   const [showBonus, setShowBonus] = useState(false);
   const [showGuaranteed, setShowGuaranteed] = useState(false);
   const [showAvailable, setShowAvailable] = useState(false);
@@ -188,15 +219,27 @@ const TripsContent = () => {
   const prevPriceBoundsRef = useRef(priceBounds);
   const prevDurationBoundsRef = useRef(durationBounds);
 
-  // Apply URL filter presets
-  useEffect(() => {
-    const filter = searchParams.get("filter");
-    if (filter && filterPresets[filter]) {
-      const preset = filterPresets[filter];
-      if (preset.durationRange) setDurationRange(preset.durationRange);
-      if (preset.category) setSelectedCategories([preset.category]);
+  // Keep URL filter presets in sync if query param changes while mounted
+  useLayoutEffect(() => {
+    if (!activePreset) return;
+
+    if (activePreset.durationRange) {
+      setDurationRange((current) => {
+        const [nextMin, nextMax] = activePreset.durationRange!;
+        if (current[0] === nextMin && current[1] === nextMax) return current;
+        return [nextMin, nextMax];
+      });
     }
-  }, [searchParams]);
+
+    if (activePreset.category) {
+      setSelectedCategories((current) => {
+        if (current.length === 1 && current[0] === activePreset.category) {
+          return current;
+        }
+        return [activePreset.category];
+      });
+    }
+  }, [activePreset]);
 
   // Collapsible sections
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -232,7 +275,7 @@ const TripsContent = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [mobileFiltersOpen]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const prev = prevPriceBoundsRef.current;
     if (prev.min === priceBounds.min && prev.max === priceBounds.max) {
       return;
@@ -254,7 +297,7 @@ const TripsContent = () => {
     prevPriceBoundsRef.current = priceBounds;
   }, [priceBounds]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const prev = prevDurationBoundsRef.current;
     if (prev.min === durationBounds.min && prev.max === durationBounds.max) {
       return;
@@ -646,8 +689,8 @@ const TripResultCard = ({ trip, index, onClick }: TripResultCardProps) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={false}
+      whileInView={{ opacity: 1 }}
       viewport={{ once: true }}
       transition={{ duration: 0.4, delay: index * 0.05 }}
       onClick={() => onClick(trip)}
