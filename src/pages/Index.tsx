@@ -1,0 +1,55 @@
+import { useState, useEffect } from "react";
+import { AnimatePresence } from "framer-motion";
+import type { Trip } from "@/data/mockData";
+import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
+import Navbar from "@/components/Navbar";
+import HeroSection from "@/components/HeroSection";
+import FeaturedTrips from "@/components/FeaturedTrips";
+import TripDetail from "@/components/TripDetail";
+
+const IndexContent = () => {
+  const [darkMode, setDarkMode] = useState(false);
+  const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
+  const { t } = useLanguage();
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", darkMode);
+  }, [darkMode]);
+
+  useEffect(() => {
+    document.body.style.overflow = selectedTrip ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [selectedTrip]);
+
+  return (
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-500">
+      <Navbar darkMode={darkMode} onToggleDark={() => setDarkMode(!darkMode)} />
+      <HeroSection />
+      <FeaturedTrips onSelectTrip={setSelectedTrip} />
+
+      <AnimatePresence>
+        {selectedTrip && (
+          <TripDetail trip={selectedTrip} onClose={() => setSelectedTrip(null)} />
+        )}
+      </AnimatePresence>
+
+      <footer className="border-t border-border py-16 px-6 md:px-10">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+          <span className="text-xl font-bold tracking-[-0.06em]">VALITSA</span>
+          <div className="flex items-center gap-6">
+            <a href="#" className="text-foreground-muted text-sm hover:text-foreground transition-colors">{t("nav.terms")}</a>
+            <p className="text-foreground-muted text-sm">{t("footer.rights")}</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+const Index = () => (
+  <LanguageProvider>
+    <IndexContent />
+  </LanguageProvider>
+);
+
+export default Index;
