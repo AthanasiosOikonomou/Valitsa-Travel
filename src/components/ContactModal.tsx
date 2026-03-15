@@ -181,7 +181,7 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4 backdrop-blur-md bg-black/50"
+          className="fixed inset-0 z-[120] flex items-start justify-center px-4 pb-4 pt-24 sm:pt-28 md:pt-28 backdrop-blur-md bg-black/50 overflow-y-auto"
           onClick={handleClose}
         >
           <motion.div
@@ -189,7 +189,7 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-            className="bg-card border border-border rounded-3xl w-full max-w-lg overflow-hidden"
+            className="bg-card border border-border rounded-3xl w-full max-w-lg overflow-hidden my-auto"
             style={{ boxShadow: "var(--shadow-lg)" }}
             onClick={(e) => e.stopPropagation()}
           >
