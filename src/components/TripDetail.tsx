@@ -12,6 +12,9 @@ interface TripDetailProps {
 
 const tabKeys = ["description", "program", "included"] as const;
 
+const formatProgramStep = (value: string) =>
+  value.replace(/^((Day|Days|Ημέρα|Ημέρες)\s*\d+(?:[–-]\d+)?\s*[—:-]\s*)/i, "");
+
 const TripDetail = ({ trip, onClose }: TripDetailProps) => {
   const [activeTab, setActiveTab] = useState<string>("description");
   const { t, lang } = useLanguage();
@@ -243,13 +246,26 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                   </p>
                 )}
                 {activeTab === "program" && (
-                  <ul className="space-y-4">
+                  <ul className="space-y-0">
                     {localized.program.map((day, i) => (
-                      <li key={i} className="flex gap-4 items-start">
-                        <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
+                      <li
+                        key={i}
+                        className="relative flex gap-5 items-start pb-8 last:pb-0"
+                      >
+                        {i < localized.program.length - 1 && (
+                          <span
+                            aria-hidden="true"
+                            className="absolute left-[1.15rem] top-11 bottom-0 border-l-2 border-dashed border-fuchsia-300/80"
+                          />
+                        )}
+                        <span className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-fuchsia-600 text-white text-sm font-bold shadow-[0_10px_30px_-12px_rgba(192,38,211,0.85)]">
                           {i + 1}
                         </span>
-                        <span className="text-body-prose pt-1">{day}</span>
+                        <div className="flex-1 rounded-2xl border border-fuchsia-100 bg-gradient-to-br from-fuchsia-50 to-white px-5 py-4 shadow-sm dark:border-fuchsia-900/40 dark:from-fuchsia-950/30 dark:to-card">
+                          <p className="text-foreground font-medium leading-relaxed">
+                            {formatProgramStep(day)}
+                          </p>
+                        </div>
                       </li>
                     ))}
                   </ul>
