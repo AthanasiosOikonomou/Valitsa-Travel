@@ -47,7 +47,7 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
         </div>
 
         <div className="absolute inset-x-6 bottom-5 rounded-[1.35rem] bg-gradient-to-t from-black/70 via-black/52 to-black/30 px-4 py-4 opacity-100 transition-all duration-300 flex flex-col justify-end backdrop-blur-[2px] shadow-[0_18px_34px_-24px_rgba(0,0,0,0.75)]">
-          <p className="label-ui text-white/72 mb-1.5 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+          <p className="label-ui text-white mb-1.5 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
             {localized.location}
           </p>
           <h4 className="text-[1.28rem] text-display text-white mb-2.5 leading-tight drop-shadow-[0_3px_10px_rgba(0,0,0,0.88)]">
