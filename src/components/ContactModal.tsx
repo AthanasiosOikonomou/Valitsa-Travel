@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Phone, MessageSquare, Send, CheckCircle } from "lucide-react";
 import { FaViber, FaWhatsapp } from "react-icons/fa";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { sendInquiryEmail } from "@/lib/email";
 
 interface ContactModalProps {
   open: boolean;
@@ -13,6 +14,8 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
   const { t } = useLanguage();
   const [view, setView] = useState<"options" | "form">("options");
   const [sent, setSent] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState("");
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -20,18 +23,113 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
     email: "",
     message: "",
   });
+  const [fieldErrors, setFieldErrors] = useState({
+    firstName: "",
+    lastName: "",
+    mobile: "",
+    email: "",
+    message: "",
+  });
+
+  const firstNameRef = useRef<HTMLInputElement>(null);
+  const lastNameRef = useRef<HTMLInputElement>(null);
+  const mobileRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const messageRef = useRef<HTMLTextAreaElement>(null);
+
+  const validateEmail = (val: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim());
+  const validatePhone = (val: string) =>
+    /^[+\d][\d\s\-().]{5,19}$/.test(val.trim());
+
+  const validateForm = () => {
+    const errs = {
+      firstName: "",
+      lastName: "",
+      mobile: "",
+      email: "",
+      message: "",
+    };
+    if (!form.firstName.trim()) errs.firstName = t("validation.required");
+    if (!form.lastName.trim()) errs.lastName = t("validation.required");
+    if (!form.mobile.trim()) errs.mobile = t("validation.required");
+    else if (!validatePhone(form.mobile))
+      errs.mobile = t("validation.phoneInvalid");
+    if (!form.email.trim()) errs.email = t("validation.required");
+    else if (!validateEmail(form.email))
+      errs.email = t("validation.emailInvalid");
+    if (!form.message.trim()) errs.message = t("validation.required");
+    return errs;
+  };
 
   const handleClose = useCallback(() => {
     onClose();
     setTimeout(() => {
       setView("options");
       setSent(false);
+      setIsSending(false);
+      setError("");
+      setFieldErrors({
+        firstName: "",
+        lastName: "",
+        mobile: "",
+        email: "",
+        message: "",
+      });
     }, 300);
   }, [onClose]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSent(true);
+    const errs = validateForm();
+    setFieldErrors(errs);
+    if (errs.firstName) {
+      firstNameRef.current?.focus();
+      return;
+    }
+    if (errs.lastName) {
+      lastNameRef.current?.focus();
+      return;
+    }
+    if (errs.mobile) {
+      mobileRef.current?.focus();
+      return;
+    }
+    if (errs.email) {
+      emailRef.current?.focus();
+      return;
+    }
+    if (errs.message) {
+      messageRef.current?.focus();
+      return;
+    }
+
+    setError("");
+    setIsSending(true);
+
+    try {
+      await sendInquiryEmail({
+        source: "contact-modal",
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        mobile: form.mobile,
+        message: form.message,
+      });
+
+      setSent(true);
+      setForm({
+        firstName: "",
+        lastName: "",
+        mobile: "",
+        email: "",
+        message: "",
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("contact.sendFailed"));
+    } finally {
+      setIsSending(false);
+    }
   };
 
   useEffect(() => {
@@ -46,6 +144,16 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open, handleClose]);
+
+  useEffect(() => {
+    if (!open || !sent) return;
+
+    const timer = window.setTimeout(() => {
+      handleClose();
+    }, 5000);
+
+    return () => window.clearTimeout(timer);
+  }, [open, sent, handleClose]);
 
   return (
     <AnimatePresence>
@@ -153,72 +261,154 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
               )}
 
               {view === "form" && !sent && (
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} noValidate className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
-                    <input
-                      required
-                      placeholder={t("detail.firstName") + " *"}
-                      value={form.firstName}
-                      onChange={(e) =>
-                        setForm({ ...form, firstName: e.target.value })
-                      }
-                      className="px-4 py-3 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                    />
-                    <input
-                      required
-                      placeholder={t("detail.lastName") + " *"}
-                      value={form.lastName}
-                      onChange={(e) =>
-                        setForm({ ...form, lastName: e.target.value })
-                      }
-                      className="px-4 py-3 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                    />
+                    <div>
+                      <input
+                        ref={firstNameRef}
+                        placeholder={t("detail.firstName") + " *"}
+                        value={form.firstName}
+                        onChange={(e) => {
+                          setForm({ ...form, firstName: e.target.value });
+                          if (fieldErrors.firstName)
+                            setFieldErrors((p) => ({ ...p, firstName: "" }));
+                        }}
+                        className={`w-full px-4 py-3 rounded-xl border bg-background text-sm focus:outline-none focus:ring-2 transition-colors ${
+                          fieldErrors.firstName
+                            ? "border-red-500 focus:ring-red-500/30"
+                            : "border-border focus:ring-primary/30"
+                        }`}
+                      />
+                      {fieldErrors.firstName && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {fieldErrors.firstName}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <input
+                        ref={lastNameRef}
+                        placeholder={t("detail.lastName") + " *"}
+                        value={form.lastName}
+                        onChange={(e) => {
+                          setForm({ ...form, lastName: e.target.value });
+                          if (fieldErrors.lastName)
+                            setFieldErrors((p) => ({ ...p, lastName: "" }));
+                        }}
+                        className={`w-full px-4 py-3 rounded-xl border bg-background text-sm focus:outline-none focus:ring-2 transition-colors ${
+                          fieldErrors.lastName
+                            ? "border-red-500 focus:ring-red-500/30"
+                            : "border-border focus:ring-primary/30"
+                        }`}
+                      />
+                      {fieldErrors.lastName && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {fieldErrors.lastName}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <input
-                    required
-                    placeholder={t("detail.mobile") + " *"}
-                    value={form.mobile}
-                    onChange={(e) =>
-                      setForm({ ...form, mobile: e.target.value })
-                    }
-                    className="w-full px-4 py-3 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  />
-                  <input
-                    required
-                    type="email"
-                    placeholder={t("detail.email") + " *"}
-                    value={form.email}
-                    onChange={(e) =>
-                      setForm({ ...form, email: e.target.value })
-                    }
-                    className="w-full px-4 py-3 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  />
-                  <textarea
-                    required
-                    placeholder={t("detail.message")}
-                    value={form.message}
-                    onChange={(e) =>
-                      setForm({ ...form, message: e.target.value })
-                    }
-                    rows={4}
-                    className="w-full px-4 py-3 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
-                  />
+                  <div>
+                    <input
+                      ref={mobileRef}
+                      inputMode="tel"
+                      placeholder={t("detail.mobile") + " *"}
+                      value={form.mobile}
+                      onChange={(e) => {
+                        setForm({ ...form, mobile: e.target.value });
+                        if (fieldErrors.mobile)
+                          setFieldErrors((p) => ({ ...p, mobile: "" }));
+                      }}
+                      className={`w-full px-4 py-3 rounded-xl border bg-background text-sm focus:outline-none focus:ring-2 transition-colors ${
+                        fieldErrors.mobile
+                          ? "border-red-500 focus:ring-red-500/30"
+                          : "border-border focus:ring-primary/30"
+                      }`}
+                    />
+                    {fieldErrors.mobile && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {fieldErrors.mobile}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <input
+                      ref={emailRef}
+                      inputMode="email"
+                      autoComplete="email"
+                      placeholder={t("detail.email") + " *"}
+                      value={form.email}
+                      onChange={(e) => {
+                        setForm({ ...form, email: e.target.value });
+                        if (fieldErrors.email)
+                          setFieldErrors((p) => ({ ...p, email: "" }));
+                      }}
+                      className={`w-full px-4 py-3 rounded-xl border bg-background text-sm focus:outline-none focus:ring-2 transition-colors ${
+                        fieldErrors.email
+                          ? "border-red-500 focus:ring-red-500/30"
+                          : "border-border focus:ring-primary/30"
+                      }`}
+                    />
+                    {fieldErrors.email && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {fieldErrors.email}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <textarea
+                      ref={messageRef}
+                      placeholder={t("detail.message")}
+                      value={form.message}
+                      onChange={(e) => {
+                        setForm({ ...form, message: e.target.value });
+                        if (fieldErrors.message)
+                          setFieldErrors((p) => ({ ...p, message: "" }));
+                      }}
+                      rows={4}
+                      className={`w-full px-4 py-3 rounded-xl border bg-background text-sm focus:outline-none focus:ring-2 transition-colors resize-none ${
+                        fieldErrors.message
+                          ? "border-red-500 focus:ring-red-500/30"
+                          : "border-border focus:ring-primary/30"
+                      }`}
+                    />
+                    {fieldErrors.message && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {fieldErrors.message}
+                      </p>
+                    )}
+                  </div>
                   <div className="flex gap-3">
                     <button
                       type="button"
-                      onClick={() => setView("options")}
+                      onClick={() => {
+                        setView("options");
+                        setFieldErrors({
+                          firstName: "",
+                          lastName: "",
+                          mobile: "",
+                          email: "",
+                          message: "",
+                        });
+                      }}
                       className="px-5 py-3 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-colors"
                     >
                       {t("contact.back")}
                     </button>
                     <button
                       type="submit"
+                      disabled={isSending}
                       className="flex-1 flex items-center justify-center gap-2 bg-foreground text-background px-5 py-3 rounded-xl text-sm font-bold hover:opacity-90 transition-opacity"
                     >
                       <Send size={16} />
-                      {t("contact.send")}
+                      {isSending ? t("contact.sending") : t("contact.send")}
                     </button>
                   </div>
+                  {error && (
+                    <p className="text-sm text-red-500" role="alert">
+                      {error}
+                    </p>
+                  )}
                 </form>
               )}
 

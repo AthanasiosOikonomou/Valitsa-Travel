@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, Clock, Check } from "lucide-react";
 import type { Trip } from "@/data/mockData";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { sendInquiryEmail } from "@/lib/email";
 
 interface TripDetailProps {
   trip: Trip;
@@ -22,11 +23,87 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
     message: "",
   });
   const [submitted, setSubmitted] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    mobile: "",
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const firstNameRef = useRef<HTMLInputElement>(null);
+  const lastNameRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const mobileRef = useRef<HTMLInputElement>(null);
+
+  const validateEmail = (val: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim());
+  const validatePhone = (val: string) =>
+    /^[+\d][\d\s\-().]{5,19}$/.test(val.trim());
+
+  const validateForm = () => {
+    const errs = { firstName: "", lastName: "", email: "", mobile: "" };
+    if (!formData.firstName.trim()) errs.firstName = t("validation.required");
+    if (!formData.lastName.trim()) errs.lastName = t("validation.required");
+    if (!formData.email.trim()) errs.email = t("validation.required");
+    else if (!validateEmail(formData.email))
+      errs.email = t("validation.emailInvalid");
+    if (formData.mobile.trim() && !validatePhone(formData.mobile))
+      errs.mobile = t("validation.phoneInvalid");
+    return errs;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 3000);
+    const errs = validateForm();
+    setFieldErrors(errs);
+    if (errs.firstName) {
+      firstNameRef.current?.focus();
+      return;
+    }
+    if (errs.lastName) {
+      lastNameRef.current?.focus();
+      return;
+    }
+    if (errs.email) {
+      emailRef.current?.focus();
+      return;
+    }
+    if (errs.mobile) {
+      mobileRef.current?.focus();
+      return;
+    }
+
+    setError("");
+    setIsSending(true);
+
+    try {
+      await sendInquiryEmail({
+        source: "trip-detail",
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        mobile: formData.mobile,
+        message: formData.message,
+        tripTitle: trip.title,
+        tripLocation: trip.location,
+        tripPrice: trip.price,
+      });
+
+      setSubmitted(true);
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        mobile: "",
+        message: "",
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("detail.sendFailed"));
+    } finally {
+      setIsSending(false);
+    }
   };
 
   useEffect(() => {
@@ -39,6 +116,17 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
+
+  useEffect(() => {
+    if (!submitted) return;
+
+    const timer = window.setTimeout(() => {
+      onClose();
+      setSubmitted(false);
+    }, 5000);
+
+    return () => window.clearTimeout(timer);
+  }, [submitted, onClose]);
 
   const updateField = (field: string, value: string) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -214,42 +302,104 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                   </p>
                 </motion.div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} noValidate className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
-                    <input
-                      required
-                      maxLength={100}
-                      value={formData.firstName}
-                      onChange={(e) => updateField("firstName", e.target.value)}
-                      className="bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/30 transition-shadow"
-                      placeholder={t("detail.firstName")}
-                    />
-                    <input
-                      required
-                      maxLength={100}
-                      value={formData.lastName}
-                      onChange={(e) => updateField("lastName", e.target.value)}
-                      className="bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/30 transition-shadow"
-                      placeholder={t("detail.lastName")}
-                    />
+                    <div>
+                      <input
+                        ref={firstNameRef}
+                        maxLength={100}
+                        value={formData.firstName}
+                        onChange={(e) => {
+                          updateField("firstName", e.target.value);
+                          if (fieldErrors.firstName)
+                            setFieldErrors((p) => ({ ...p, firstName: "" }));
+                        }}
+                        className={`w-full bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground focus:ring-2 transition-shadow ${
+                          fieldErrors.firstName
+                            ? "ring-2 ring-red-500/50 bg-red-500/5"
+                            : "focus:ring-primary/30"
+                        }`}
+                        placeholder={t("detail.firstName") + " *"}
+                      />
+                      {fieldErrors.firstName && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {fieldErrors.firstName}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <input
+                        ref={lastNameRef}
+                        maxLength={100}
+                        value={formData.lastName}
+                        onChange={(e) => {
+                          updateField("lastName", e.target.value);
+                          if (fieldErrors.lastName)
+                            setFieldErrors((p) => ({ ...p, lastName: "" }));
+                        }}
+                        className={`w-full bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground focus:ring-2 transition-shadow ${
+                          fieldErrors.lastName
+                            ? "ring-2 ring-red-500/50 bg-red-500/5"
+                            : "focus:ring-primary/30"
+                        }`}
+                        placeholder={t("detail.lastName") + " *"}
+                      />
+                      {fieldErrors.lastName && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {fieldErrors.lastName}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <input
-                    required
-                    type="email"
-                    maxLength={255}
-                    value={formData.email}
-                    onChange={(e) => updateField("email", e.target.value)}
-                    className="w-full bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/30 transition-shadow"
-                    placeholder={t("detail.email")}
-                  />
-                  <input
-                    type="tel"
-                    maxLength={20}
-                    value={formData.mobile}
-                    onChange={(e) => updateField("mobile", e.target.value)}
-                    className="w-full bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/30 transition-shadow"
-                    placeholder={t("detail.mobile")}
-                  />
+                  <div>
+                    <input
+                      ref={emailRef}
+                      inputMode="email"
+                      autoComplete="email"
+                      maxLength={255}
+                      value={formData.email}
+                      onChange={(e) => {
+                        updateField("email", e.target.value);
+                        if (fieldErrors.email)
+                          setFieldErrors((p) => ({ ...p, email: "" }));
+                      }}
+                      className={`w-full bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground focus:ring-2 transition-shadow ${
+                        fieldErrors.email
+                          ? "ring-2 ring-red-500/50 bg-red-500/5"
+                          : "focus:ring-primary/30"
+                      }`}
+                      placeholder={t("detail.email") + " *"}
+                    />
+                    {fieldErrors.email && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {fieldErrors.email}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <input
+                      ref={mobileRef}
+                      inputMode="tel"
+                      maxLength={20}
+                      value={formData.mobile}
+                      onChange={(e) => {
+                        updateField("mobile", e.target.value);
+                        if (fieldErrors.mobile)
+                          setFieldErrors((p) => ({ ...p, mobile: "" }));
+                      }}
+                      className={`w-full bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground focus:ring-2 transition-shadow ${
+                        fieldErrors.mobile
+                          ? "ring-2 ring-red-500/50 bg-red-500/5"
+                          : "focus:ring-primary/30"
+                      }`}
+                      placeholder={t("detail.mobile")}
+                    />
+                    {fieldErrors.mobile && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {fieldErrors.mobile}
+                      </p>
+                    )}
+                  </div>
                   <textarea
                     maxLength={1000}
                     value={formData.message}
@@ -259,10 +409,16 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                   />
                   <button
                     type="submit"
+                    disabled={isSending}
                     className="w-full bg-primary text-primary-foreground py-4 rounded-2xl font-bold text-sm hover:bg-primary/90 transition-colors duration-250 min-h-[56px]"
                   >
-                    {t("detail.sendInquiry")}
+                    {isSending ? t("detail.sending") : t("detail.sendInquiry")}
                   </button>
+                  {error && (
+                    <p className="text-sm text-red-500" role="alert">
+                      {error}
+                    </p>
+                  )}
                 </form>
               )}
             </motion.div>
