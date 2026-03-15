@@ -286,9 +286,7 @@ app.post(inquiryRoutes, async (req, res) => {
     }
 
     const field = firstIssue.path.join(".") || "payload";
-    res
-      .status(400)
-      .json({ error: `Invalid ${field}: ${firstIssue.message}` });
+    res.status(400).json({ error: `Invalid ${field}: ${firstIssue.message}` });
     return;
   }
 
