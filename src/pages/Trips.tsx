@@ -8,6 +8,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Slider } from "@/components/ui/slider";
 import Navbar from "@/components/Navbar";
 import TripDetail from "@/components/TripDetail";
+import Seo from "@/components/Seo";
 
 // Map nav filter params to actual data filters
 const filterPresets: Record<
@@ -129,6 +130,32 @@ const TripsContent = () => {
     const filter = searchParams.get("filter");
     return filter ? filterPresets[filter] : undefined;
   }, [searchParams]);
+
+  const seoTitle =
+    lang === "gr"
+      ? "Όλα τα Ταξίδια | Valitsa Travel"
+      : "All Trips | Valitsa Travel";
+  const seoDescription =
+    lang === "gr"
+      ? "Δείτε όλες τις διαθέσιμες εκδρομές και οργανωμένα ταξίδια της Valitsa Travel με αναζήτηση και φίλτρα."
+      : "Browse all available tours and curated trips from Valitsa Travel with smart filters and search.";
+  const seoKeywords =
+    lang === "gr"
+      ? "εκδρομές, οργανωμένα ταξίδια, φίλτρα ταξιδιών, Valitsa Travel"
+      : "trips, tours, travel filters, curated travel, Valitsa Travel";
+
+  const itemListSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: lang === "gr" ? "Λίστα Ταξιδιών" : "Trips List",
+    numberOfItems: trips.length,
+    itemListElement: trips.slice(0, 10).map((trip, idx) => ({
+      "@type": "ListItem",
+      position: idx + 1,
+      name: getLocalizedTripContent(trip, lang).title,
+      url: `https://valitsatravel.gr/trips?trip=${trip.id}`,
+    })),
+  };
 
   const globalPriceBounds = useMemo(() => {
     const values = trips.map((trip) => trip.priceNum);
@@ -844,6 +871,15 @@ const TripsContent = () => {
 
   return (
     <div className="premium-page min-h-screen bg-background text-foreground transition-colors duration-500 relative z-0">
+      <Seo
+        title={seoTitle}
+        description={seoDescription}
+        path="/trips"
+        image="/branding/navbar/logo-light.svg"
+        keywords={seoKeywords}
+        lang={lang}
+        structuredData={itemListSchema}
+      />
       <Navbar darkMode={darkMode} onToggleDark={toggleDark} />
 
       {/* Page header */}
