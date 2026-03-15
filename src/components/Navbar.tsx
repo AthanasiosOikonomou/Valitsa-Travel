@@ -1,7 +1,7 @@
 import { Moon, Sun, Globe } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ContactModal from "@/components/ContactModal";
 
@@ -21,10 +21,27 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
   const { lang, setLang, t } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
+  const { pathname, search } = useLocation();
   const navigate = useNavigate();
 
+  const scrollToPageTop = () => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  };
+
   const handleCategoryClick = (filter: string) => {
-    navigate(`/trips?filter=${filter}`);
+    const targetSearch = `?filter=${filter}`;
+
+    if (pathname === "/trips" && search === targetSearch) {
+      window.dispatchEvent(new Event("valitsa:scroll-trips-top"));
+      scrollToPageTop();
+      setMenuOpen(false);
+      return;
+    }
+
+    navigate(`/trips${targetSearch}`);
+
     setMenuOpen(false);
   };
 

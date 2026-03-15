@@ -12,7 +12,7 @@ const HeroSection = () => {
         src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=2000"
         alt={t("hero.alt")}
         loading="eager"
-        fetchPriority="high"
+        fetchpriority="high"
         decoding="async"
         className="absolute inset-0 w-full h-full object-cover brightness-[0.55] animate-scale-hero"
       />

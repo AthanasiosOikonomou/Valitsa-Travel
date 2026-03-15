@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect } from "react";
+import { Suspense, lazy, useEffect, useLayoutEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -13,23 +13,26 @@ const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 const queryClient = new QueryClient();
 
+const instantScrollToTop = () => {
+  // Temporarily disable smooth-scroll so the jump is instant
+  const prev = document.documentElement.style.scrollBehavior;
+  document.documentElement.style.scrollBehavior = "auto";
+  window.scrollTo(0, 0);
+  document.documentElement.style.scrollBehavior = prev;
+};
+
 const ScrollToTop = () => {
-  const { pathname, search } = useLocation();
+  const { key } = useLocation();
 
   useEffect(() => {
     if (!("scrollRestoration" in window.history)) return;
-
-    const previous = window.history.scrollRestoration;
     window.history.scrollRestoration = "manual";
-
-    return () => {
-      window.history.scrollRestoration = previous;
-    };
   }, []);
 
-  useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  }, [pathname, search]);
+  // useLayoutEffect fires before paint — guaranteed to run before the browser shows the new page
+  useLayoutEffect(() => {
+    instantScrollToTop();
+  }, [key]);
 
   return null;
 };

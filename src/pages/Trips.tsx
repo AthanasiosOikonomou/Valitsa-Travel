@@ -126,6 +126,28 @@ const TripsContent = () => {
   const { t, lang } = useLanguage();
   const activeFilter = searchParams.get("filter");
 
+  const scrollTripsToTop = () => {
+    const prev = document.documentElement.style.scrollBehavior;
+    document.documentElement.style.scrollBehavior = "auto";
+    window.scrollTo(0, 0);
+    document.documentElement.style.scrollBehavior = prev;
+  };
+
+  useLayoutEffect(() => {
+    scrollTripsToTop();
+  }, [activeFilter]);
+
+  useEffect(() => {
+    const handleNavbarTopRequest = () => scrollTripsToTop();
+    window.addEventListener("valitsa:scroll-trips-top", handleNavbarTopRequest);
+    return () => {
+      window.removeEventListener(
+        "valitsa:scroll-trips-top",
+        handleNavbarTopRequest,
+      );
+    };
+  }, []);
+
   const activePreset = useMemo(() => {
     const filter = searchParams.get("filter");
     return filter ? filterPresets[filter] : undefined;
