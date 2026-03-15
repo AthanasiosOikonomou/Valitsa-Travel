@@ -9,6 +9,7 @@ import { Slider } from "@/components/ui/slider";
 import Navbar from "@/components/Navbar";
 import TripDetail from "@/components/TripDetail";
 import Seo from "@/components/Seo";
+import TermsModal from "@/components/TermsModal";
 
 // Map nav filter params to actual data filters
 const filterPresets: Record<
@@ -123,6 +124,7 @@ const TripsContent = () => {
   const [searchParams] = useSearchParams();
   const { darkMode, toggleDark } = useTheme();
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
+  const [termsOpen, setTermsOpen] = useState(false);
   const { t, lang } = useLanguage();
   const activeFilter = searchParams.get("filter");
 
@@ -428,11 +430,11 @@ const TripsContent = () => {
   });
 
   useEffect(() => {
-    document.body.style.overflow = selectedTrip ? "hidden" : "";
+    document.body.style.overflow = selectedTrip || termsOpen ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [selectedTrip]);
+  }, [selectedTrip, termsOpen]);
 
   useEffect(() => {
     if (!mobileFiltersOpen) return;
@@ -1002,6 +1004,8 @@ const TripsContent = () => {
         )}
       </AnimatePresence>
 
+      <TermsModal open={termsOpen} onClose={() => setTermsOpen(false)} />
+
       <footer className="border-t border-border/70 py-16 px-6 md:px-10">
         <div className="premium-panel max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 rounded-[1.8rem] px-6 py-8 md:px-8">
           <img
@@ -1016,6 +1020,10 @@ const TripsContent = () => {
           <div className="flex items-center gap-6">
             <a
               href="#"
+              onClick={(event) => {
+                event.preventDefault();
+                setTermsOpen(true);
+              }}
               className="text-foreground-muted text-sm hover:text-foreground transition-colors"
             >
               {t("nav.terms")}

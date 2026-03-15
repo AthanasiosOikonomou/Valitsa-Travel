@@ -8,10 +8,12 @@ import HeroSection from "@/components/HeroSection";
 import FeaturedTrips from "@/components/FeaturedTrips";
 import TripDetail from "@/components/TripDetail";
 import Seo from "@/components/Seo";
+import TermsModal from "@/components/TermsModal";
 
 const IndexContent = () => {
   const { darkMode, toggleDark } = useTheme();
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
+  const [termsOpen, setTermsOpen] = useState(false);
   const { t, lang } = useLanguage();
 
   const seoTitle =
@@ -46,11 +48,11 @@ const IndexContent = () => {
   };
 
   useEffect(() => {
-    document.body.style.overflow = selectedTrip ? "hidden" : "";
+    document.body.style.overflow = selectedTrip || termsOpen ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [selectedTrip]);
+  }, [selectedTrip, termsOpen]);
 
   return (
     <div className="premium-page min-h-screen bg-background text-foreground transition-colors duration-500">
@@ -76,6 +78,8 @@ const IndexContent = () => {
         )}
       </AnimatePresence>
 
+      <TermsModal open={termsOpen} onClose={() => setTermsOpen(false)} />
+
       <footer className="border-t border-border/70 py-16 px-6 md:px-10">
         <div className="premium-panel max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 rounded-[1.8rem] px-6 py-8 md:px-8">
           <img
@@ -92,6 +96,10 @@ const IndexContent = () => {
           <div className="flex items-center gap-6">
             <a
               href="#"
+              onClick={(event) => {
+                event.preventDefault();
+                setTermsOpen(true);
+              }}
               className="text-foreground-muted text-sm hover:text-foreground transition-colors"
             >
               {t("nav.terms")}
