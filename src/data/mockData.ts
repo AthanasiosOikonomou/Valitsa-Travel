@@ -260,5 +260,3 @@ export const trips: Trip[] = [
     hasAvailableSeats: true,
   },
 ];
-
-export const tripTypes = ["All", "Exotic", "Road Trip", "Flight"] as const;

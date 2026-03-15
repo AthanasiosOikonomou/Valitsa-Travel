@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Phone, MessageSquare, Send, CheckCircle } from "lucide-react";
 import { FaViber, FaWhatsapp } from "react-icons/fa";
@@ -21,13 +21,13 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
     message: "",
   });
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     onClose();
     setTimeout(() => {
       setView("options");
       setSent(false);
     }, 300);
-  };
+  }, [onClose]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +45,7 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open]);
+  }, [open, handleClose]);
 
   return (
     <AnimatePresence>

@@ -30,7 +30,9 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     document.documentElement.classList.toggle("dark", darkMode);
     try {
       localStorage.setItem("darkMode", String(darkMode));
-    } catch {}
+    } catch {
+      return;
+    }
   }, [darkMode]);
 
   const toggleDark = () => setDarkMode((prev) => !prev);
