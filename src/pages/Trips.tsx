@@ -19,6 +19,41 @@ const filterPresets: Record<
   external: { category: "adventure" }, // maps to external trips
 };
 
+const getPresetTrips = (preset?: {
+  durationRange?: [number, number];
+  category?: string;
+}) => {
+  if (!preset) return trips;
+
+  return trips.filter((trip) => {
+    if (preset.category && trip.category !== preset.category) return false;
+
+    if (
+      preset.durationRange &&
+      (trip.durationDays < preset.durationRange[0] ||
+        trip.durationDays > preset.durationRange[1])
+    ) {
+      return false;
+    }
+
+    return true;
+  });
+};
+
+const getBounds = (
+  presetTrips: Trip[],
+  fallback: { min: number; max: number },
+  key: "priceNum" | "durationDays",
+) => {
+  if (presetTrips.length === 0) return fallback;
+
+  const values = presetTrips.map((trip) => trip[key]);
+  return {
+    min: Math.min(...values),
+    max: Math.max(...values),
+  };
+};
+
 interface FilterSectionProps {
   id: string;
   title: string;
@@ -93,26 +128,20 @@ const TripsContent = () => {
     [],
   );
 
-  const initialPresetTrips = useMemo(() => {
-    if (!activePreset?.category) return trips;
-    return trips.filter((trip) => trip.category === activePreset.category);
-  }, [activePreset?.category]);
+  const presetTrips = useMemo(
+    () => getPresetTrips(activePreset),
+    [activePreset],
+  );
 
-  const initialPriceBounds = useMemo(() => {
-    const values = initialPresetTrips.map((trip) => trip.priceNum);
-    return {
-      min: Math.min(...values),
-      max: Math.max(...values),
-    };
-  }, [initialPresetTrips]);
+  const initialPriceBounds = useMemo(
+    () => getBounds(presetTrips, globalPriceBounds, "priceNum"),
+    [presetTrips, globalPriceBounds],
+  );
 
-  const initialDurationBounds = useMemo(() => {
-    const values = initialPresetTrips.map((trip) => trip.durationDays);
-    return {
-      min: Math.min(...values),
-      max: Math.max(...values),
-    };
-  }, [initialPresetTrips]);
+  const initialDurationBounds = useMemo(
+    () => getBounds(presetTrips, globalDurationBounds, "durationDays"),
+    [presetTrips, globalDurationBounds],
+  );
 
   const tripCategories = useMemo(
     () => [...new Set(trips.map((trip) => trip.category))],
@@ -216,30 +245,38 @@ const TripsContent = () => {
     };
   }, [baseFilteredTrips, globalDurationBounds]);
 
+  const availableDurationBounds = useMemo(() => {
+    if (!activePreset?.durationRange) return durationBounds;
+
+    const [presetMin, presetMax] = activePreset.durationRange;
+    return {
+      min: Math.min(durationBounds.min, presetMin),
+      max: Math.max(durationBounds.max, presetMax),
+    };
+  }, [activePreset, durationBounds]);
+
   const prevPriceBoundsRef = useRef(priceBounds);
-  const prevDurationBoundsRef = useRef(durationBounds);
+  const prevDurationBoundsRef = useRef(availableDurationBounds);
 
   // Keep URL filter presets in sync if query param changes while mounted
   useLayoutEffect(() => {
-    if (!activePreset) return;
-
-    if (activePreset.durationRange) {
-      setDurationRange((current) => {
-        const [nextMin, nextMax] = activePreset.durationRange!;
-        if (current[0] === nextMin && current[1] === nextMax) return current;
-        return [nextMin, nextMax];
-      });
-    }
-
-    if (activePreset.category) {
-      setSelectedCategories((current) => {
-        if (current.length === 1 && current[0] === activePreset.category) {
-          return current;
-        }
-        return [activePreset.category];
-      });
-    }
-  }, [activePreset]);
+    setSearchQuery("");
+    setPriceRange([initialPriceBounds.min, initialPriceBounds.max]);
+    setDurationRange(
+      activePreset?.durationRange ?? [
+        initialDurationBounds.min,
+        initialDurationBounds.max,
+      ],
+    );
+    setSelectedCities([]);
+    setSelectedCategories(
+      activePreset?.category ? [activePreset.category] : [],
+    );
+    setShowBonus(false);
+    setShowGuaranteed(false);
+    setShowAvailable(false);
+    setTripType("all");
+  }, [activePreset, initialDurationBounds, initialPriceBounds]);
 
   // Collapsible sections
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -299,28 +336,31 @@ const TripsContent = () => {
 
   useLayoutEffect(() => {
     const prev = prevDurationBoundsRef.current;
-    if (prev.min === durationBounds.min && prev.max === durationBounds.max) {
+    if (
+      prev.min === availableDurationBounds.min &&
+      prev.max === availableDurationBounds.max
+    ) {
       return;
     }
 
     setDurationRange((current) => {
       const wasFull = current[0] === prev.min && current[1] === prev.max;
       if (wasFull) {
-        return [durationBounds.min, durationBounds.max];
+        return [availableDurationBounds.min, availableDurationBounds.max];
       }
 
       const nextMin = Math.max(
-        durationBounds.min,
-        Math.min(current[0], durationBounds.max),
+        availableDurationBounds.min,
+        Math.min(current[0], availableDurationBounds.max),
       );
       const nextMax = Math.max(
         nextMin,
-        Math.min(current[1], durationBounds.max),
+        Math.min(current[1], availableDurationBounds.max),
       );
       return [nextMin, nextMax];
     });
-    prevDurationBoundsRef.current = durationBounds;
-  }, [durationBounds]);
+    prevDurationBoundsRef.current = availableDurationBounds;
+  }, [availableDurationBounds]);
 
   const toggleSection = (key: string) =>
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -457,8 +497,8 @@ const TripsContent = () => {
           {durationRange[0]} – {durationRange[1]} {t("archive.days")}
         </p>
         <Slider
-          min={durationBounds.min}
-          max={durationBounds.max}
+          min={availableDurationBounds.min}
+          max={availableDurationBounds.max}
           step={1}
           value={durationRange}
           onValueChange={(value) =>
