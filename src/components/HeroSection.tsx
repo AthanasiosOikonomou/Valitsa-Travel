@@ -11,6 +11,9 @@ const HeroSection = () => {
       <img
         src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=2000"
         alt="Aerial view of a serene tropical coastline"
+        loading="eager"
+        fetchPriority="high"
+        decoding="async"
         className="absolute inset-0 w-full h-full object-cover brightness-[0.55] animate-scale-hero"
       />
 
@@ -45,7 +48,11 @@ const HeroSection = () => {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
+          transition={{
+            duration: 0.6,
+            delay: 0.35,
+            ease: [0.25, 0.1, 0.25, 1],
+          }}
         >
           <Link
             to="/trips"

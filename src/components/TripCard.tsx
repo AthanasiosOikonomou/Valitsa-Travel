@@ -17,7 +17,11 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
       initial={{ opacity: 0, y: 12 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.5, delay: index * 0.08, ease: [0.25, 0.1, 0.25, 1] }}
+      transition={{
+        duration: 0.5,
+        delay: index * 0.08,
+        ease: [0.25, 0.1, 0.25, 1],
+      }}
       whileHover={{ y: -6 }}
       className="group cursor-pointer"
       onClick={() => onClick(trip)}
@@ -28,6 +32,8 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
           alt={trip.title}
           className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
           loading="lazy"
+          decoding="async"
+          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
         />
 
         <div className="absolute top-5 left-5 flex gap-2">

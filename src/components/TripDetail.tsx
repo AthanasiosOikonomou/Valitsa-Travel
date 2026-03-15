@@ -67,6 +67,8 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
             transition={{ duration: 0.5 }}
             src={trip.image}
             alt={trip.title}
+            loading="lazy"
+            decoding="async"
             className="w-full aspect-[16/10] object-cover rounded-[2rem] mb-10"
           />
 

@@ -45,6 +45,8 @@ const IndexContent = () => {
             }
             alt={t("nav.brand")}
             className="h-8 w-auto"
+            loading="lazy"
+            decoding="async"
           />
           <div className="flex items-center gap-6">
             <a
