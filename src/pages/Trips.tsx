@@ -19,6 +19,48 @@ const filterPresets: Record<
   external: { category: "adventure" }, // maps to external trips
 };
 
+interface FilterSectionProps {
+  id: string;
+  title: string;
+  isOpen: boolean;
+  onToggle: (id: string) => void;
+  children: React.ReactNode;
+}
+
+const FilterSection = ({
+  id,
+  title,
+  isOpen,
+  onToggle,
+  children,
+}: FilterSectionProps) => (
+  <div className="border-b border-border pb-5 mb-5">
+    <button
+      onClick={() => onToggle(id)}
+      className="flex items-center justify-between w-full text-sm font-bold mb-3"
+    >
+      {title}
+      <ChevronDown
+        size={16}
+        className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+      />
+    </button>
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="overflow-hidden"
+        >
+          {children}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
+);
+
 const TripsContent = () => {
   const [searchParams] = useSearchParams();
   const [darkMode, setDarkMode] = useState(false);
@@ -267,42 +309,6 @@ const TripsContent = () => {
     setTripType("all");
   };
 
-  const FilterSection = ({
-    id,
-    title,
-    children,
-  }: {
-    id: string;
-    title: string;
-    children: React.ReactNode;
-  }) => (
-    <div className="border-b border-border pb-5 mb-5">
-      <button
-        onClick={() => toggleSection(id)}
-        className="flex items-center justify-between w-full text-sm font-bold mb-3"
-      >
-        {title}
-        <ChevronDown
-          size={16}
-          className={`transition-transform duration-200 ${openSections[id] ? "rotate-180" : ""}`}
-        />
-      </button>
-      <AnimatePresence>
-        {openSections[id] && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            {children}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-
   const filtersContent = (
     <div className="space-y-0">
       <div className="pb-5 mb-5 border-b border-border">
@@ -321,7 +327,12 @@ const TripsContent = () => {
         </div>
       </div>
 
-      <FilterSection id="price" title={t("archive.priceRange")}>
+      <FilterSection
+        id="price"
+        title={t("archive.priceRange")}
+        isOpen={openSections.price}
+        onToggle={toggleSection}
+      >
         <p className="text-xs text-foreground-muted mb-3">
           ${priceRange[0].toLocaleString()} – ${priceRange[1].toLocaleString()}
         </p>
@@ -337,7 +348,12 @@ const TripsContent = () => {
       </FilterSection>
 
       {(hasBonusTrips || hasGuaranteedTrips || hasAvailableTrips) && (
-        <FilterSection id="special" title={t("archive.specialFilters")}>
+        <FilterSection
+          id="special"
+          title={t("archive.specialFilters")}
+          isOpen={openSections.special}
+          onToggle={toggleSection}
+        >
           {hasBonusTrips && (
             <label className="flex items-center gap-3 py-2 cursor-pointer group">
               <input
@@ -380,7 +396,12 @@ const TripsContent = () => {
         </FilterSection>
       )}
 
-      <FilterSection id="duration" title={t("archive.duration")}>
+      <FilterSection
+        id="duration"
+        title={t("archive.duration")}
+        isOpen={openSections.duration}
+        onToggle={toggleSection}
+      >
         <p className="text-xs text-foreground-muted mb-3">
           {durationRange[0]} – {durationRange[1]} {t("archive.days")}
         </p>
@@ -395,7 +416,12 @@ const TripsContent = () => {
         />
       </FilterSection>
 
-      <FilterSection id="city" title={t("archive.departureCity")}>
+      <FilterSection
+        id="city"
+        title={t("archive.departureCity")}
+        isOpen={openSections.city}
+        onToggle={toggleSection}
+      >
         {departureCities.map((city) => (
           <label
             key={city}
@@ -414,7 +440,12 @@ const TripsContent = () => {
         ))}
       </FilterSection>
 
-      <FilterSection id="category" title={t("archive.category")}>
+      <FilterSection
+        id="category"
+        title={t("archive.category")}
+        isOpen={openSections.category}
+        onToggle={toggleSection}
+      >
         {tripCategories.map((cat) => (
           <label
             key={cat}
@@ -436,7 +467,12 @@ const TripsContent = () => {
         ))}
       </FilterSection>
 
-      <FilterSection id="type" title={t("archive.tripType")}>
+      <FilterSection
+        id="type"
+        title={t("archive.tripType")}
+        isOpen={openSections.type}
+        onToggle={toggleSection}
+      >
         {(["all", ...tripTypes] as const).map((type) => (
           <label
             key={type}
