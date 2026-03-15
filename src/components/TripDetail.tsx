@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, Clock, Check } from "lucide-react";
 import type { Trip } from "@/data/mockData";
@@ -28,6 +28,17 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
     setSubmitted(true);
     setTimeout(() => setSubmitted(false), 3000);
   };
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
 
   const updateField = (field: string, value: string) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -73,11 +84,16 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
               </span>
             </div>
 
-            <h2 className="text-4xl md:text-5xl text-display mb-6">{trip.title}</h2>
+            <h2 className="text-4xl md:text-5xl text-display mb-6">
+              {trip.title}
+            </h2>
 
             <div className="flex gap-2 flex-wrap mb-10">
               {trip.tags.map((tag) => (
-                <span key={tag} className="px-4 py-2 bg-muted rounded-full text-sm font-medium">
+                <span
+                  key={tag}
+                  className="px-4 py-2 bg-muted rounded-full text-sm font-medium"
+                >
                   {tag}
                 </span>
               ))}
@@ -90,7 +106,9 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={`relative px-5 py-3 text-sm font-semibold transition-colors duration-250 ${
-                    activeTab === tab ? "text-foreground" : "text-foreground-muted hover:text-foreground"
+                    activeTab === tab
+                      ? "text-foreground"
+                      : "text-foreground-muted hover:text-foreground"
                   }`}
                 >
                   {t(`detail.${tab}`)}
@@ -98,7 +116,10 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                     <motion.div
                       layoutId="tab-indicator"
                       className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"
-                      transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+                      transition={{
+                        duration: 0.25,
+                        ease: [0.25, 0.1, 0.25, 1],
+                      }}
                     />
                   )}
                 </button>
@@ -114,7 +135,9 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                 transition={{ duration: 0.25 }}
               >
                 {activeTab === "description" && (
-                  <p className="text-body-prose text-lg leading-relaxed">{trip.description}</p>
+                  <p className="text-body-prose text-lg leading-relaxed">
+                    {trip.description}
+                  </p>
                 )}
                 {activeTab === "program" && (
                   <ul className="space-y-4">
@@ -131,7 +154,10 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                 {activeTab === "included" && (
                   <ul className="space-y-3">
                     {trip.included.map((item, i) => (
-                      <li key={i} className="flex gap-3 items-center text-body-prose">
+                      <li
+                        key={i}
+                        className="flex gap-3 items-center text-body-prose"
+                      >
                         <Check size={16} className="text-primary shrink-0" />
                         {item}
                       </li>
@@ -155,7 +181,9 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
             >
               <div className="flex justify-between items-start mb-8">
                 <div>
-                  <p className="label-ui text-foreground-muted mb-1">{t("detail.startingFrom")}</p>
+                  <p className="label-ui text-foreground-muted mb-1">
+                    {t("detail.startingFrom")}
+                  </p>
                   <p className="text-3xl font-bold">{trip.price}</p>
                 </div>
                 <span className="label-ui text-primary bg-primary/10 px-3 py-1.5 rounded-full">
@@ -163,7 +191,9 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                 </span>
               </div>
 
-              <h3 className="text-xl font-bold mb-6">{t("detail.expressInterest")}</h3>
+              <h3 className="text-xl font-bold mb-6">
+                {t("detail.expressInterest")}
+              </h3>
 
               {submitted ? (
                 <motion.div
@@ -174,8 +204,12 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                   <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                     <Check size={28} className="text-primary" />
                   </div>
-                  <p className="font-semibold text-lg mb-1">{t("detail.inquirySent")}</p>
-                  <p className="text-foreground-muted text-sm">{t("detail.inquiryMsg")}</p>
+                  <p className="font-semibold text-lg mb-1">
+                    {t("detail.inquirySent")}
+                  </p>
+                  <p className="text-foreground-muted text-sm">
+                    {t("detail.inquiryMsg")}
+                  </p>
                 </motion.div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">

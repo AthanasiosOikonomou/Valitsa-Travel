@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Phone, MessageSquare, Send, CheckCircle } from "lucide-react";
 import { FaViber, FaWhatsapp } from "react-icons/fa";
@@ -33,6 +33,19 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
     e.preventDefault();
     setSent(true);
   };
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        handleClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open]);
 
   return (
     <AnimatePresence>

@@ -80,6 +80,19 @@ const TripsContent = () => {
     };
   }, [selectedTrip]);
 
+  useEffect(() => {
+    if (!mobileFiltersOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileFiltersOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [mobileFiltersOpen]);
+
   const toggleSection = (key: string) =>
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
 

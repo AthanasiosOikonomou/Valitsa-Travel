@@ -32,9 +32,11 @@ export const trips: Trip[] = [
     duration: "7 Days",
     durationDays: 7,
     type: "Exotic",
-    image: "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&q=80&w=1200",
+    image:
+      "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&q=80&w=1200",
     tags: ["Private Chef", "Yacht Access"],
-    description: "Experience the pinnacle of Mediterranean luxury along Italy's most iconic coastline. Your private cliffside estate overlooks the Tyrrhenian Sea, with a dedicated chef preparing regional cuisine from locally sourced ingredients.",
+    description:
+      "Experience the pinnacle of Mediterranean luxury along Italy's most iconic coastline. Your private cliffside estate overlooks the Tyrrhenian Sea, with a dedicated chef preparing regional cuisine from locally sourced ingredients.",
     program: [
       "Day 1 — Private jet transfer, estate welcome dinner",
       "Day 2 — Amalfi town exploration, limoncello masterclass",
@@ -44,7 +46,14 @@ export const trips: Trip[] = [
       "Day 6 — Free day, spa & wellness",
       "Day 7 — Farewell brunch, departure",
     ],
-    included: ["Private estate accommodation", "Dedicated chef & butler", "Yacht charter (2 days)", "Airport transfers", "Michelin dining experience", "24/7 concierge"],
+    included: [
+      "Private estate accommodation",
+      "Dedicated chef & butler",
+      "Yacht charter (2 days)",
+      "Airport transfers",
+      "Michelin dining experience",
+      "24/7 concierge",
+    ],
     isFeatured: true,
     dateRange: "Μάρτιος - Σεπτέμβριος 2026",
     departureCity: "Αθήνα",
@@ -63,9 +72,11 @@ export const trips: Trip[] = [
     duration: "10 Days",
     durationDays: 10,
     type: "Exotic",
-    image: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&q=80&w=1200",
+    image:
+      "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&q=80&w=1200",
     tags: ["Cultural", "Wellness"],
-    description: "Immerse yourself in the timeless beauty of Kyoto, where ancient tradition meets refined luxury. Stay in a restored machiya townhouse with a private zen garden.",
+    description:
+      "Immerse yourself in the timeless beauty of Kyoto, where ancient tradition meets refined luxury. Stay in a restored machiya townhouse with a private zen garden.",
     program: [
       "Day 1 — Arrival, private machiya check-in",
       "Day 2 — Fushimi Inari at dawn, kaiseki dinner",
@@ -78,7 +89,14 @@ export const trips: Trip[] = [
       "Day 9 — Free exploration, Nishiki Market",
       "Day 10 — Farewell ceremony, departure",
     ],
-    included: ["Machiya accommodation", "Private guide", "All cultural experiences", "Kaiseki dining (5 nights)", "Monastery stay", "Shinkansen passes"],
+    included: [
+      "Machiya accommodation",
+      "Private guide",
+      "All cultural experiences",
+      "Kaiseki dining (5 nights)",
+      "Monastery stay",
+      "Shinkansen passes",
+    ],
     isFeatured: true,
     dateRange: "Φεβρουάριος - Μάιος 2026",
     departureCity: "Αθήνα",
@@ -96,9 +114,11 @@ export const trips: Trip[] = [
     duration: "5 Days",
     durationDays: 5,
     type: "Road Trip",
-    image: "https://images.unsplash.com/photo-1520113526767-444cb5fbaf5a?auto=format&fit=crop&q=80&w=1200",
+    image:
+      "https://images.prismic.io/perlan/67b9ae3a-0794-464b-b84c-fae8e7f46b3c_Reykjavi%CC%81k+Esjan+Nor%C3%B0urljo%CC%81s+fra%CC%81+A%CC%81lftanesi.++13439-157-5442.png?auto=format&fit=crop&q=80&w=1200",
     tags: ["Adventure", "Luxury"],
-    description: "Sleep beneath the Northern Lights in a heated glass dome perched on Iceland's volcanic landscape.",
+    description:
+      "Sleep beneath the Northern Lights in a heated glass dome perched on Iceland's volcanic landscape.",
     program: [
       "Day 1 — Reykjavik arrival, Blue Lagoon retreat",
       "Day 2 — Golden Circle tour, aurora dome check-in",
@@ -106,7 +126,14 @@ export const trips: Trip[] = [
       "Day 4 — Snorkeling Silfra fissure, geothermal cooking",
       "Day 5 — Black sand beach sunrise, departure",
     ],
-    included: ["Aurora dome accommodation", "Luxury 4x4 vehicle", "Private adventure guide", "Blue Lagoon access", "All meals", "Northern Lights guarantee program"],
+    included: [
+      "Aurora dome accommodation",
+      "Luxury 4x4 vehicle",
+      "Private adventure guide",
+      "Blue Lagoon access",
+      "All meals",
+      "Northern Lights guarantee program",
+    ],
     isFeatured: true,
     dateRange: "Οκτώβριος - Μάρτιος 2026",
     departureCity: "Θεσσαλονίκη",
@@ -124,9 +151,11 @@ export const trips: Trip[] = [
     duration: "6 Days",
     durationDays: 6,
     type: "Flight",
-    image: "https://images.unsplash.com/photo-1502784444187-359ac186c5bb?auto=format&fit=crop&q=80&w=1200",
+    image:
+      "https://images.unsplash.com/photo-1502784444187-359ac186c5bb?auto=format&fit=crop&q=80&w=1200",
     tags: ["Ski-in", "Private Jet"],
-    description: "The ultimate alpine experience for the discerning adventurer. Arrive by private helicopter to your chalet in Zermatt.",
+    description:
+      "The ultimate alpine experience for the discerning adventurer. Arrive by private helicopter to your chalet in Zermatt.",
     program: [
       "Day 1 — Private jet to Geneva, helicopter to Zermatt",
       "Day 2 — Heli-ski orientation, first descent",
@@ -135,7 +164,14 @@ export const trips: Trip[] = [
       "Day 5 — Gornergrat railway, spa afternoon",
       "Day 6 — Final morning ski, helicopter departure",
     ],
-    included: ["Private chalet (ski-in/ski-out)", "Helicopter transfers", "4 heli-ski sessions", "Mountain guide", "All meals & wine", "Spa access"],
+    included: [
+      "Private chalet (ski-in/ski-out)",
+      "Helicopter transfers",
+      "4 heli-ski sessions",
+      "Mountain guide",
+      "All meals & wine",
+      "Spa access",
+    ],
     isFeatured: false,
     dateRange: "Δεκέμβριος 2026 - Μάρτιος 2027",
     departureCity: "Αθήνα",
@@ -152,9 +188,11 @@ export const trips: Trip[] = [
     duration: "8 Days",
     durationDays: 8,
     type: "Exotic",
-    image: "https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&q=80&w=1200",
+    image:
+      "https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&q=80&w=1200",
     tags: ["Wildlife", "Glamping"],
-    description: "Witness the Great Migration from the most exclusive vantage points in the Serengeti.",
+    description:
+      "Witness the Great Migration from the most exclusive vantage points in the Serengeti.",
     program: [
       "Day 1 — Arusha arrival, Arusha Coffee Lodge",
       "Day 2 — Bush flight to central Serengeti",
@@ -164,7 +202,14 @@ export const trips: Trip[] = [
       "Day 7 — Ngorongoro Crater excursion",
       "Day 8 — Final morning drive, departure flight",
     ],
-    included: ["Luxury tented camps", "All bush flights", "Private safari vehicle & guide", "Balloon safari", "Full board & premium drinks", "Park fees & conservation levy"],
+    included: [
+      "Luxury tented camps",
+      "All bush flights",
+      "Private safari vehicle & guide",
+      "Balloon safari",
+      "Full board & premium drinks",
+      "Park fees & conservation levy",
+    ],
     isFeatured: false,
     dateRange: "Ιούνιος - Οκτώβριος 2026",
     departureCity: "Λάρνακα",
@@ -181,9 +226,11 @@ export const trips: Trip[] = [
     duration: "12 Days",
     durationDays: 12,
     type: "Road Trip",
-    image: "https://images.unsplash.com/photo-1517022812141-23620dba5c23?auto=format&fit=crop&q=80&w=1200",
+    image:
+      "https://images.unsplash.com/photo-1517022812141-23620dba5c23?auto=format&fit=crop&q=80&w=1200",
     tags: ["Expedition", "Remote"],
-    description: "Journey to the edge of the world through Patagonia's otherworldly landscapes.",
+    description:
+      "Journey to the edge of the world through Patagonia's otherworldly landscapes.",
     program: [
       "Day 1 — Santiago arrival, overnight",
       "Day 2 — Flight to Punta Arenas, drive to lodge",
@@ -195,7 +242,14 @@ export const trips: Trip[] = [
       "Day 11 — Pumalín Park, hot springs",
       "Day 12 — Final drive, departure from Puerto Montt",
     ],
-    included: ["Boutique lodge & estancia stays", "Luxury 4x4 with driver", "Private trekking guide", "All meals", "Glacier equipment", "Internal flights"],
+    included: [
+      "Boutique lodge & estancia stays",
+      "Luxury 4x4 with driver",
+      "Private trekking guide",
+      "All meals",
+      "Glacier equipment",
+      "Internal flights",
+    ],
     isFeatured: true,
     dateRange: "Νοέμβριος 2026 - Φεβρουάριος 2027",
     departureCity: "Θεσσαλονίκη",

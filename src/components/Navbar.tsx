@@ -1,6 +1,6 @@
 import { Moon, Sun, Globe } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ContactModal from "@/components/ContactModal";
@@ -28,6 +28,20 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
     setMenuOpen(false);
   };
 
+  useEffect(() => {
+    if (!menuOpen && !contactOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+        setContactOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [menuOpen, contactOpen]);
+
   return (
     <>
       {/* Main nav */}
@@ -37,7 +51,9 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
         transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
         className="fixed top-0 w-full z-50 px-6 md:px-10 py-4 flex justify-between items-center backdrop-blur-xl bg-background/80 border-b border-border/50"
       >
-        <Link to="/" className="text-2xl font-bold tracking-[-0.06em]">{t("nav.brand")}</Link>
+        <Link to="/" className="text-2xl font-bold tracking-[-0.06em]">
+          {t("nav.brand")}
+        </Link>
 
         {/* Desktop categories */}
         <div className="hidden lg:flex items-center gap-1">
@@ -59,7 +75,9 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
             aria-label="Toggle language"
           >
             <Globe size={16} />
-            <span className="text-xs uppercase">{lang === "en" ? "GR" : "EN"}</span>
+            <span className="text-xs uppercase">
+              {lang === "en" ? "GR" : "EN"}
+            </span>
           </button>
 
           <button
@@ -76,8 +94,12 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
             aria-label="Menu"
           >
             <div className="flex flex-col gap-1.5">
-              <span className={`block w-5 h-0.5 bg-foreground transition-transform duration-200 ${menuOpen ? "translate-y-[4px] rotate-45" : ""}`} />
-              <span className={`block w-5 h-0.5 bg-foreground transition-transform duration-200 ${menuOpen ? "-translate-y-[4px] -rotate-45" : ""}`} />
+              <span
+                className={`block w-5 h-0.5 bg-foreground transition-transform duration-200 ${menuOpen ? "translate-y-[4px] rotate-45" : ""}`}
+              />
+              <span
+                className={`block w-5 h-0.5 bg-foreground transition-transform duration-200 ${menuOpen ? "-translate-y-[4px] -rotate-45" : ""}`}
+              />
             </div>
           </button>
 
@@ -111,7 +133,10 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
                 </button>
               ))}
               <button
-                onClick={() => { setContactOpen(true); setMenuOpen(false); }}
+                onClick={() => {
+                  setContactOpen(true);
+                  setMenuOpen(false);
+                }}
                 className="px-4 py-3 rounded-2xl text-sm font-medium text-primary hover:bg-muted transition-colors text-left"
               >
                 {t("nav.contactBtn")}
