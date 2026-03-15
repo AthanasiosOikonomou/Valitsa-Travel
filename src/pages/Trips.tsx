@@ -1048,10 +1048,10 @@ const TripResultCard = ({ trip, index, onClick }: TripResultCardProps) => {
       viewport={{ once: true }}
       transition={{ duration: 0.4, delay: index * 0.05 }}
       onClick={() => onClick(trip)}
-      className="group premium-panel-soft cursor-pointer rounded-[1.8rem] overflow-hidden flex flex-col sm:flex-row border-white/65 hover:border-primary/30 transition-all duration-300"
+      className="group premium-panel-soft cursor-pointer rounded-[1.8rem] overflow-hidden flex flex-col sm:flex-row sm:h-[18rem] border-white/65 hover:border-primary/30 transition-all duration-300"
       style={{ boxShadow: "var(--shadow-md)" }}
     >
-      <div className="sm:w-64 md:w-80 shrink-0 relative overflow-hidden">
+      <div className="sm:w-64 md:w-80 shrink-0 relative overflow-hidden h-56 sm:h-full">
         <img
           src={trip.image}
           alt={localized.title}
@@ -1065,13 +1065,13 @@ const TripResultCard = ({ trip, index, onClick }: TripResultCardProps) => {
         )}
       </div>
 
-      <div className="flex-1 p-5 md:p-6 flex flex-col justify-between">
+      <div className="flex-1 p-5 md:p-6 flex flex-col justify-between min-h-0">
         <div>
           <p className="label-ui text-primary/80 mb-2">{localized.dateRange}</p>
-          <h3 className="text-xl text-display mb-2 group-hover:text-primary transition-colors leading-tight">
+          <h3 className="text-xl text-display mb-2 group-hover:text-primary transition-colors leading-tight line-clamp-2 min-h-[3.75rem]">
             {localized.title}
           </h3>
-          <p className="premium-subheading text-sm mb-3 line-clamp-2">
+          <p className="premium-subheading text-sm mb-3 line-clamp-2 min-h-[3rem]">
             {localized.description}
           </p>
         </div>
