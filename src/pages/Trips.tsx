@@ -12,28 +12,21 @@ import TripDetail from "@/components/TripDetail";
 // Map nav filter params to actual data filters
 const filterPresets: Record<
   string,
-  { durationRange?: [number, number]; category?: string; domestic?: boolean }
+  { durationRange?: [number, number]; category?: string }
 > = {
   daily: { durationRange: [1, 1] },
   twoday: { durationRange: [2, 2] },
-  internal: { domestic: true },
-  external: { domestic: false },
+  internal: {},
+  external: {},
 };
 
 const getPresetTrips = (preset?: {
   durationRange?: [number, number];
   category?: string;
-  domestic?: boolean;
 }) => {
   if (!preset) return trips;
 
   return trips.filter((trip) => {
-    const isDomesticTrip = trip.location.toLowerCase().includes("greece");
-
-    if (preset.domestic !== undefined && isDomesticTrip !== preset.domestic) {
-      return false;
-    }
-
     if (preset.category && trip.category !== preset.category) return false;
 
     if (
@@ -60,6 +53,27 @@ const getBounds = (
     min: Math.min(...values),
     max: Math.max(...values),
   };
+};
+
+const countryToContinent: Record<string, string> = {
+  Greece: "Europe",
+  Italy: "Europe",
+  Iceland: "Europe",
+  Switzerland: "Europe",
+  France: "Europe",
+  Japan: "Asia",
+  Tanzania: "Africa",
+  Egypt: "Africa",
+  Chile: "South America",
+  Peru: "South America",
+  USA: "North America",
+};
+
+const getPresetCountries = (filter: string | null, countries: string[]) => {
+  if (filter === "internal") return ["Greece"];
+  if (filter === "external")
+    return countries.filter((country) => country !== "Greece");
+  return [];
 };
 
 interface FilterSectionProps {
@@ -109,6 +123,7 @@ const TripsContent = () => {
   const { darkMode, toggleDark } = useTheme();
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const { t } = useLanguage();
+  const activeFilter = searchParams.get("filter");
 
   const activePreset = useMemo(() => {
     const filter = searchParams.get("filter");
@@ -133,6 +148,16 @@ const TripsContent = () => {
 
   const departureCities = useMemo(
     () => [...new Set(trips.map((trip) => trip.departureCity))],
+    [],
+  );
+
+  const countries = useMemo(
+    () =>
+      [...new Set(trips.map((trip) => trip.country))].sort((a, b) => {
+        if (a === "Greece") return -1;
+        if (b === "Greece") return 1;
+        return a.localeCompare(b);
+      }),
     [],
   );
 
@@ -161,6 +186,16 @@ const TripsContent = () => {
     [],
   );
 
+  const continents = useMemo(
+    () =>
+      [
+        ...new Set(
+          trips.map((trip) => countryToContinent[trip.country] ?? "Other"),
+        ),
+      ].sort((a, b) => a.localeCompare(b)),
+    [],
+  );
+
   const hasBonusTrips = useMemo(() => trips.some((trip) => trip.isBonus), []);
   const hasGuaranteedTrips = useMemo(
     () => trips.some((trip) => trip.guaranteedDeparture),
@@ -168,6 +203,10 @@ const TripsContent = () => {
   );
   const hasAvailableTrips = useMemo(
     () => trips.some((trip) => trip.hasAvailableSeats),
+    [],
+  );
+  const hasFeaturedTrips = useMemo(
+    () => trips.some((trip) => trip.isFeatured),
     [],
   );
 
@@ -192,6 +231,10 @@ const TripsContent = () => {
         initialDurationBounds.max,
       ],
   );
+  const [selectedCountries, setSelectedCountries] = useState<string[]>(() =>
+    getPresetCountries(activeFilter, countries),
+  );
+  const [selectedContinents, setSelectedContinents] = useState<string[]>([]);
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(() =>
     activePreset?.category ? [activePreset.category] : [],
@@ -199,7 +242,11 @@ const TripsContent = () => {
   const [showBonus, setShowBonus] = useState(false);
   const [showGuaranteed, setShowGuaranteed] = useState(false);
   const [showAvailable, setShowAvailable] = useState(false);
+  const [showFeatured, setShowFeatured] = useState(false);
   const [tripType, setTripType] = useState<"all" | Trip["type"]>("all");
+  const [sortBy, setSortBy] = useState<
+    "recommended" | "priceAsc" | "priceDesc"
+  >("recommended");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const baseFilteredTrips = useMemo(() => {
@@ -209,6 +256,15 @@ const TripsContent = () => {
         !trip.title.toLowerCase().includes(searchQuery.toLowerCase())
       )
         return false;
+      if (
+        selectedCountries.length > 0 &&
+        !selectedCountries.includes(trip.country)
+      )
+        return false;
+      if (selectedContinents.length > 0) {
+        const tripContinent = countryToContinent[trip.country] ?? "Other";
+        if (!selectedContinents.includes(tripContinent)) return false;
+      }
       if (
         selectedCities.length > 0 &&
         !selectedCities.includes(trip.departureCity)
@@ -222,16 +278,20 @@ const TripsContent = () => {
       if (showBonus && !trip.isBonus) return false;
       if (showGuaranteed && !trip.guaranteedDeparture) return false;
       if (showAvailable && !trip.hasAvailableSeats) return false;
+      if (showFeatured && !trip.isFeatured) return false;
       if (tripType !== "all" && trip.type !== tripType) return false;
       return true;
     });
   }, [
     searchQuery,
+    selectedCountries,
+    selectedContinents,
     selectedCities,
     selectedCategories,
     showBonus,
     showGuaranteed,
     showAvailable,
+    showFeatured,
     tripType,
   ]);
 
@@ -276,6 +336,8 @@ const TripsContent = () => {
         initialDurationBounds.max,
       ],
     );
+    setSelectedCountries(getPresetCountries(activeFilter, countries));
+    setSelectedContinents([]);
     setSelectedCities([]);
     setSelectedCategories(
       activePreset?.category ? [activePreset.category] : [],
@@ -283,17 +345,28 @@ const TripsContent = () => {
     setShowBonus(false);
     setShowGuaranteed(false);
     setShowAvailable(false);
+    setShowFeatured(false);
     setTripType("all");
-  }, [activePreset, initialDurationBounds, initialPriceBounds]);
+    setSortBy("recommended");
+  }, [
+    activeFilter,
+    activePreset,
+    countries,
+    initialDurationBounds,
+    initialPriceBounds,
+  ]);
 
   // Collapsible sections
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     price: true,
     special: true,
     duration: true,
+    country: true,
+    continent: true,
     city: true,
     category: false,
     type: false,
+    sort: true,
   });
 
   useEffect(() => {
@@ -374,13 +447,27 @@ const TripsContent = () => {
       prev.includes(city) ? prev.filter((c) => c !== city) : [...prev, city],
     );
 
+  const toggleCountry = (country: string) =>
+    setSelectedCountries((prev) =>
+      prev.includes(country)
+        ? prev.filter((c) => c !== country)
+        : [...prev, country],
+    );
+
+  const toggleContinent = (continent: string) =>
+    setSelectedContinents((prev) =>
+      prev.includes(continent)
+        ? prev.filter((c) => c !== continent)
+        : [...prev, continent],
+    );
+
   const toggleCategory = (cat: string) =>
     setSelectedCategories((prev) =>
       prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat],
     );
 
   const filtered = useMemo(() => {
-    return baseFilteredTrips.filter((trip) => {
+    const matchingTrips = baseFilteredTrips.filter((trip) => {
       if (trip.priceNum < priceRange[0] || trip.priceNum > priceRange[1])
         return false;
       if (
@@ -390,18 +477,44 @@ const TripsContent = () => {
         return false;
       return true;
     });
-  }, [baseFilteredTrips, priceRange, durationRange]);
+
+    const sortedTrips = [...matchingTrips];
+    switch (sortBy) {
+      case "priceAsc":
+        sortedTrips.sort((a, b) => a.priceNum - b.priceNum);
+        break;
+      case "priceDesc":
+        sortedTrips.sort((a, b) => b.priceNum - a.priceNum);
+        break;
+      case "recommended":
+      default:
+        sortedTrips.sort((a, b) => {
+          const scoreA =
+            Number(Boolean(a.isFeatured)) + Number(Boolean(a.isBonus));
+          const scoreB =
+            Number(Boolean(b.isFeatured)) + Number(Boolean(b.isBonus));
+          return scoreB - scoreA;
+        });
+        break;
+    }
+
+    return sortedTrips;
+  }, [baseFilteredTrips, durationRange, priceRange, sortBy]);
 
   const resetFilters = () => {
     setSearchQuery("");
     setPriceRange([globalPriceBounds.min, globalPriceBounds.max]);
     setDurationRange([globalDurationBounds.min, globalDurationBounds.max]);
+    setSelectedCountries(getPresetCountries(activeFilter, countries));
+    setSelectedContinents([]);
     setSelectedCities([]);
     setSelectedCategories([]);
     setShowBonus(false);
     setShowGuaranteed(false);
     setShowAvailable(false);
+    setShowFeatured(false);
     setTripType("all");
+    setSortBy("recommended");
   };
 
   const filtersContent = (
@@ -442,7 +555,10 @@ const TripsContent = () => {
         />
       </FilterSection>
 
-      {(hasBonusTrips || hasGuaranteedTrips || hasAvailableTrips) && (
+      {(hasBonusTrips ||
+        hasGuaranteedTrips ||
+        hasAvailableTrips ||
+        hasFeaturedTrips) && (
         <FilterSection
           id="special"
           title={t("archive.specialFilters")}
@@ -488,8 +604,83 @@ const TripsContent = () => {
               </span>
             </label>
           )}
+          {hasFeaturedTrips && (
+            <label className="flex items-center gap-3 py-2 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={showFeatured}
+                onChange={() => setShowFeatured(!showFeatured)}
+                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+              />
+              <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
+                {t("archive.featuredPicks")}
+              </span>
+            </label>
+          )}
         </FilterSection>
       )}
+
+      <FilterSection
+        id="sort"
+        title={t("archive.sortBy")}
+        isOpen={openSections.sort}
+        onToggle={toggleSection}
+      >
+        <div className="space-y-2">
+          {(
+            [
+              ["recommended", t("archive.sort.recommended")],
+              ["priceAsc", t("archive.sort.priceAsc")],
+              ["priceDesc", t("archive.sort.priceDesc")],
+            ] as const
+          ).map(([value, label]) => (
+            <label
+              key={value}
+              className="flex items-center gap-3 py-2 cursor-pointer group"
+            >
+              <input
+                type="radio"
+                name="sortBy"
+                checked={sortBy === value}
+                onChange={() => setSortBy(value)}
+                className="w-4 h-4 border-border text-primary focus:ring-primary"
+              />
+              <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
+                {label}
+              </span>
+            </label>
+          ))}
+        </div>
+      </FilterSection>
+
+      <FilterSection
+        id="continent"
+        title={t("archive.continent")}
+        isOpen={openSections.continent}
+        onToggle={toggleSection}
+      >
+        {continents.map((continent) => (
+          <label
+            key={continent}
+            className="flex items-center gap-3 py-2 cursor-pointer group"
+          >
+            <input
+              type="checkbox"
+              checked={selectedContinents.includes(continent)}
+              onChange={() => toggleContinent(continent)}
+              className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+            />
+            <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
+              {(() => {
+                const translated = t(`continent.${continent}`);
+                return translated === `continent.${continent}`
+                  ? continent
+                  : translated;
+              })()}
+            </span>
+          </label>
+        ))}
+      </FilterSection>
 
       <FilterSection
         id="duration"
@@ -509,6 +700,35 @@ const TripsContent = () => {
             setDurationRange([value[0], value[1]] as [number, number])
           }
         />
+      </FilterSection>
+
+      <FilterSection
+        id="country"
+        title={t("archive.country")}
+        isOpen={openSections.country}
+        onToggle={toggleSection}
+      >
+        {countries.map((country) => (
+          <label
+            key={country}
+            className="flex items-center gap-3 py-2 cursor-pointer group"
+          >
+            <input
+              type="checkbox"
+              checked={selectedCountries.includes(country)}
+              onChange={() => toggleCountry(country)}
+              className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+            />
+            <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
+              {(() => {
+                const translated = t(`country.${country}`);
+                return translated === `country.${country}`
+                  ? country
+                  : translated;
+              })()}
+            </span>
+          </label>
+        ))}
       </FilterSection>
 
       <FilterSection
