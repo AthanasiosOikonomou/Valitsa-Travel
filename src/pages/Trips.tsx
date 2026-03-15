@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Search, SlidersHorizontal, X, ChevronDown } from "lucide-react";
@@ -7,16 +7,6 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Slider } from "@/components/ui/slider";
 import Navbar from "@/components/Navbar";
 import TripDetail from "@/components/TripDetail";
-
-const departureCities = ["Αθήνα", "Θεσσαλονίκη", "Λάρνακα"];
-const tripCategories = [
-  "cultural",
-  "adventure",
-  "religious",
-  "wellness",
-  "wildlife",
-  "expedition",
-];
 
 // Map nav filter params to actual data filters
 const filterPresets: Record<
@@ -35,19 +25,126 @@ const TripsContent = () => {
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const { t } = useLanguage();
 
+  const globalPriceBounds = useMemo(() => {
+    const values = trips.map((trip) => trip.priceNum);
+    return {
+      min: Math.min(...values),
+      max: Math.max(...values),
+    };
+  }, []);
+
+  const globalDurationBounds = useMemo(() => {
+    const values = trips.map((trip) => trip.durationDays);
+    return {
+      min: Math.min(...values),
+      max: Math.max(...values),
+    };
+  }, []);
+
+  const departureCities = useMemo(
+    () => [...new Set(trips.map((trip) => trip.departureCity))],
+    [],
+  );
+
+  const tripCategories = useMemo(
+    () => [...new Set(trips.map((trip) => trip.category))],
+    [],
+  );
+
+  const tripTypes = useMemo(
+    () => [...new Set(trips.map((trip) => trip.type))],
+    [],
+  );
+
+  const hasBonusTrips = useMemo(() => trips.some((trip) => trip.isBonus), []);
+  const hasGuaranteedTrips = useMemo(
+    () => trips.some((trip) => trip.guaranteedDeparture),
+    [],
+  );
+  const hasAvailableTrips = useMemo(
+    () => trips.some((trip) => trip.hasAvailableSeats),
+    [],
+  );
+
+  const priceStep = useMemo(() => {
+    const spread = globalPriceBounds.max - globalPriceBounds.min;
+    if (spread <= 1000) return 50;
+    if (spread <= 5000) return 100;
+    if (spread <= 10000) return 250;
+    return 500;
+  }, [globalPriceBounds.max, globalPriceBounds.min]);
+
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
-  const [priceRange, setPriceRange] = useState([0, 20000]);
-  const [durationRange, setDurationRange] = useState([1, 40]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([
+    globalPriceBounds.min,
+    globalPriceBounds.max,
+  ]);
+  const [durationRange, setDurationRange] = useState<[number, number]>([
+    globalDurationBounds.min,
+    globalDurationBounds.max,
+  ]);
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showBonus, setShowBonus] = useState(false);
   const [showGuaranteed, setShowGuaranteed] = useState(false);
   const [showAvailable, setShowAvailable] = useState(false);
-  const [tripType, setTripType] = useState<"all" | "group" | "individual">(
-    "all",
-  );
+  const [tripType, setTripType] = useState<"all" | Trip["type"]>("all");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
+  const baseFilteredTrips = useMemo(() => {
+    return trips.filter((trip) => {
+      if (
+        searchQuery &&
+        !trip.title.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+        return false;
+      if (
+        selectedCities.length > 0 &&
+        !selectedCities.includes(trip.departureCity)
+      )
+        return false;
+      if (
+        selectedCategories.length > 0 &&
+        !selectedCategories.includes(trip.category)
+      )
+        return false;
+      if (showBonus && !trip.isBonus) return false;
+      if (showGuaranteed && !trip.guaranteedDeparture) return false;
+      if (showAvailable && !trip.hasAvailableSeats) return false;
+      if (tripType !== "all" && trip.type !== tripType) return false;
+      return true;
+    });
+  }, [
+    searchQuery,
+    selectedCities,
+    selectedCategories,
+    showBonus,
+    showGuaranteed,
+    showAvailable,
+    tripType,
+  ]);
+
+  const priceBounds = useMemo(() => {
+    if (baseFilteredTrips.length === 0) return globalPriceBounds;
+    const values = baseFilteredTrips.map((trip) => trip.priceNum);
+    return {
+      min: Math.min(...values),
+      max: Math.max(...values),
+    };
+  }, [baseFilteredTrips, globalPriceBounds]);
+
+  const durationBounds = useMemo(() => {
+    if (baseFilteredTrips.length === 0) return globalDurationBounds;
+    const values = baseFilteredTrips.map((trip) => trip.durationDays);
+    return {
+      min: Math.min(...values),
+      max: Math.max(...values),
+    };
+  }, [baseFilteredTrips, globalDurationBounds]);
+
+  const prevPriceBoundsRef = useRef(priceBounds);
+  const prevDurationBoundsRef = useRef(durationBounds);
 
   // Apply URL filter presets
   useEffect(() => {
@@ -93,6 +190,45 @@ const TripsContent = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [mobileFiltersOpen]);
 
+  useEffect(() => {
+    const prev = prevPriceBoundsRef.current;
+    setPriceRange((current) => {
+      const wasFull = current[0] === prev.min && current[1] === prev.max;
+      if (wasFull) {
+        return [priceBounds.min, priceBounds.max];
+      }
+
+      const nextMin = Math.max(
+        priceBounds.min,
+        Math.min(current[0], priceBounds.max),
+      );
+      const nextMax = Math.max(nextMin, Math.min(current[1], priceBounds.max));
+      return [nextMin, nextMax];
+    });
+    prevPriceBoundsRef.current = priceBounds;
+  }, [priceBounds]);
+
+  useEffect(() => {
+    const prev = prevDurationBoundsRef.current;
+    setDurationRange((current) => {
+      const wasFull = current[0] === prev.min && current[1] === prev.max;
+      if (wasFull) {
+        return [durationBounds.min, durationBounds.max];
+      }
+
+      const nextMin = Math.max(
+        durationBounds.min,
+        Math.min(current[0], durationBounds.max),
+      );
+      const nextMax = Math.max(
+        nextMin,
+        Math.min(current[1], durationBounds.max),
+      );
+      return [nextMin, nextMax];
+    });
+    prevDurationBoundsRef.current = durationBounds;
+  }, [durationBounds]);
+
   const toggleSection = (key: string) =>
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
 
@@ -107,12 +243,7 @@ const TripsContent = () => {
     );
 
   const filtered = useMemo(() => {
-    return trips.filter((trip) => {
-      if (
-        searchQuery &&
-        !trip.title.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-        return false;
+    return baseFilteredTrips.filter((trip) => {
       if (trip.priceNum < priceRange[0] || trip.priceNum > priceRange[1])
         return false;
       if (
@@ -120,36 +251,14 @@ const TripsContent = () => {
         trip.durationDays > durationRange[1]
       )
         return false;
-      if (
-        selectedCities.length > 0 &&
-        !selectedCities.includes(trip.departureCity)
-      )
-        return false;
-      if (
-        selectedCategories.length > 0 &&
-        !selectedCategories.includes(trip.category)
-      )
-        return false;
-      if (showBonus && !trip.isBonus) return false;
-      if (showGuaranteed && !trip.guaranteedDeparture) return false;
-      if (showAvailable && !trip.hasAvailableSeats) return false;
       return true;
     });
-  }, [
-    searchQuery,
-    priceRange,
-    durationRange,
-    selectedCities,
-    selectedCategories,
-    showBonus,
-    showGuaranteed,
-    showAvailable,
-  ]);
+  }, [baseFilteredTrips, priceRange, durationRange]);
 
   const resetFilters = () => {
     setSearchQuery("");
-    setPriceRange([0, 20000]);
-    setDurationRange([1, 40]);
+    setPriceRange([globalPriceBounds.min, globalPriceBounds.max]);
+    setDurationRange([globalDurationBounds.min, globalDurationBounds.max]);
     setSelectedCities([]);
     setSelectedCategories([]);
     setShowBonus(false);
@@ -217,60 +326,72 @@ const TripsContent = () => {
           ${priceRange[0].toLocaleString()} – ${priceRange[1].toLocaleString()}
         </p>
         <Slider
-          min={0}
-          max={20000}
-          step={500}
+          min={priceBounds.min}
+          max={priceBounds.max}
+          step={priceStep}
           value={priceRange}
-          onValueChange={setPriceRange}
+          onValueChange={(value) =>
+            setPriceRange([value[0], value[1]] as [number, number])
+          }
         />
       </FilterSection>
 
-      <FilterSection id="special" title={t("archive.specialFilters")}>
-        <label className="flex items-center gap-3 py-2 cursor-pointer group">
-          <input
-            type="checkbox"
-            checked={showBonus}
-            onChange={() => setShowBonus(!showBonus)}
-            className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-          />
-          <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
-            {t("archive.bonusTrips")}
-          </span>
-        </label>
-        <label className="flex items-center gap-3 py-2 cursor-pointer group">
-          <input
-            type="checkbox"
-            checked={showGuaranteed}
-            onChange={() => setShowGuaranteed(!showGuaranteed)}
-            className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-          />
-          <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
-            {t("archive.guaranteedDepartures")}
-          </span>
-        </label>
-        <label className="flex items-center gap-3 py-2 cursor-pointer group">
-          <input
-            type="checkbox"
-            checked={showAvailable}
-            onChange={() => setShowAvailable(!showAvailable)}
-            className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-          />
-          <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
-            {t("archive.availableSeats")}
-          </span>
-        </label>
-      </FilterSection>
+      {(hasBonusTrips || hasGuaranteedTrips || hasAvailableTrips) && (
+        <FilterSection id="special" title={t("archive.specialFilters")}>
+          {hasBonusTrips && (
+            <label className="flex items-center gap-3 py-2 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={showBonus}
+                onChange={() => setShowBonus(!showBonus)}
+                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+              />
+              <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
+                {t("archive.bonusTrips")}
+              </span>
+            </label>
+          )}
+          {hasGuaranteedTrips && (
+            <label className="flex items-center gap-3 py-2 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={showGuaranteed}
+                onChange={() => setShowGuaranteed(!showGuaranteed)}
+                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+              />
+              <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
+                {t("archive.guaranteedDepartures")}
+              </span>
+            </label>
+          )}
+          {hasAvailableTrips && (
+            <label className="flex items-center gap-3 py-2 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={showAvailable}
+                onChange={() => setShowAvailable(!showAvailable)}
+                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+              />
+              <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
+                {t("archive.availableSeats")}
+              </span>
+            </label>
+          )}
+        </FilterSection>
+      )}
 
       <FilterSection id="duration" title={t("archive.duration")}>
         <p className="text-xs text-foreground-muted mb-3">
           {durationRange[0]} – {durationRange[1]} {t("archive.days")}
         </p>
         <Slider
-          min={1}
-          max={40}
+          min={durationBounds.min}
+          max={durationBounds.max}
           step={1}
           value={durationRange}
-          onValueChange={setDurationRange}
+          onValueChange={(value) =>
+            setDurationRange([value[0], value[1]] as [number, number])
+          }
         />
       </FilterSection>
 
@@ -306,14 +427,17 @@ const TripsContent = () => {
               className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
             />
             <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
-              {t(`search.${cat}`)}
+              {(() => {
+                const translated = t(`search.${cat}`);
+                return translated === `search.${cat}` ? cat : translated;
+              })()}
             </span>
           </label>
         ))}
       </FilterSection>
 
       <FilterSection id="type" title={t("archive.tripType")}>
-        {(["all", "group", "individual"] as const).map((type) => (
+        {(["all", ...tripTypes] as const).map((type) => (
           <label
             key={type}
             className="flex items-center gap-3 py-2 cursor-pointer group"
@@ -322,11 +446,11 @@ const TripsContent = () => {
               type="radio"
               name="tripType"
               checked={tripType === type}
-              onChange={() => setTripType(type)}
+              onChange={() => setTripType(type as "all" | Trip["type"])}
               className="w-4 h-4 border-border text-primary focus:ring-primary"
             />
             <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
-              {t(`archive.${type}`)}
+              {type === "all" ? t("archive.all") : type}
             </span>
           </label>
         ))}
