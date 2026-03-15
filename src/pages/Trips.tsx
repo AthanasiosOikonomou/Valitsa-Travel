@@ -581,7 +581,7 @@ const TripsContent = () => {
               className="w-4 h-4 border-border text-primary focus:ring-primary"
             />
             <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
-              {type === "all" ? t("archive.all") : type}
+              {type === "all" ? t("archive.all") : t(`tripType.${type}`)}
             </span>
           </label>
         ))}
@@ -758,7 +758,7 @@ const TripResultCard = ({ trip, index, onClick }: TripResultCardProps) => {
         />
         {trip.isBonus && (
           <span className="absolute top-3 left-3 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold">
-            Extra Bonus
+            {t("archive.bonus")}
           </span>
         )}
       </div>

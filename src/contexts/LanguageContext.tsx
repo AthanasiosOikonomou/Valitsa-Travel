@@ -18,6 +18,12 @@ const translations: Record<Lang, Record<string, string>> = {
     "nav.internal": "Domestic Trips",
     "nav.external": "International Trips",
     "nav.contactBtn": "Contact",
+    "nav.toggleLanguage": "Toggle language",
+    "nav.toggleTheme": "Toggle theme",
+    "nav.menu": "Menu",
+
+    // Common
+    "common.close": "Close",
 
     // Contact Modal
     "contact.title": "Contact Us",
@@ -39,6 +45,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "hero.subtitle":
       "Handcrafted journeys to the world's most extraordinary places. Every detail curated, every moment unforgettable.",
     "hero.cta": "View All Our Trips",
+    "hero.alt": "Aerial view of a serene tropical coastline",
 
     // Featured
     "featured.label": "Curated Collections",
@@ -89,7 +96,17 @@ const translations: Record<Lang, Record<string, string>> = {
     "archive.individual": "Individual",
     "archive.more": "MORE",
     "archive.guaranteed": "Guaranteed",
+    "archive.bonus": "Extra Bonus",
     "archive.noResults": "No trips match your filters.",
+
+    // Trip Types
+    "tripType.Exotic": "Exotic",
+    "tripType.Road Trip": "Road Trip",
+    "tripType.Flight": "Flight",
+
+    // Not Found
+    "notFound.message": "Oops! Page not found",
+    "notFound.backHome": "Return to Home",
 
     // Advanced Search
     "search.title": "Advanced Search",
@@ -125,6 +142,12 @@ const translations: Record<Lang, Record<string, string>> = {
     "nav.internal": "Εκδρομές Εσωτερικού",
     "nav.external": "Εκδρομές Εξωτερικού",
     "nav.contactBtn": "Επικοινωνία",
+    "nav.toggleLanguage": "Αλλαγή γλώσσας",
+    "nav.toggleTheme": "Αλλαγή θέματος",
+    "nav.menu": "Μενού",
+
+    // Common
+    "common.close": "Κλείσιμο",
 
     // Contact Modal
     "contact.title": "Επικοινωνία",
@@ -147,6 +170,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "hero.subtitle":
       "Χειροποίητα ταξίδια στα πιο εξαιρετικά μέρη του κόσμου. Κάθε λεπτομέρεια επιμελημένη, κάθε στιγμή αξέχαστη.",
     "hero.cta": "Δείτε όλα τα ταξίδια μας",
+    "hero.alt": "Εναέρια θέα σε ήρεμη τροπική ακτογραμμή",
 
     // Featured
     "featured.label": "Επιλεγμένες Συλλογές",
@@ -197,7 +221,17 @@ const translations: Record<Lang, Record<string, string>> = {
     "archive.individual": "Ατομικά",
     "archive.more": "ΠΕΡΙΣΣΟΤΕΡΑ",
     "archive.guaranteed": "Εξασφαλισμένη",
+    "archive.bonus": "Επιπλέον Bonus",
     "archive.noResults": "Δεν βρέθηκαν ταξίδια με αυτά τα φίλτρα.",
+
+    // Trip Types
+    "tripType.Exotic": "Εξωτικό",
+    "tripType.Road Trip": "Οδικό",
+    "tripType.Flight": "Αεροπορικό",
+
+    // Not Found
+    "notFound.message": "Ουπς! Η σελίδα δεν βρέθηκε",
+    "notFound.backHome": "Επιστροφή στην Αρχική",
 
     // Advanced Search
     "search.title": "Σύνθετη Αναζήτηση",

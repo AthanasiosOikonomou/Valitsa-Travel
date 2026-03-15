@@ -54,7 +54,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
       <button
         onClick={onClose}
         className="fixed top-6 right-6 z-[110] p-3.5 bg-foreground text-background rounded-full hover:opacity-90 transition-opacity"
-        aria-label="Close"
+        aria-label={t("common.close")}
       >
         <X size={20} />
       </button>

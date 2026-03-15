@@ -80,7 +80,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
           <button
             onClick={() => setLang(lang === "en" ? "gr" : "en")}
             className="p-3 rounded-full hover:bg-muted transition-colors duration-200 flex items-center gap-1.5 text-sm font-semibold"
-            aria-label="Toggle language"
+            aria-label={t("nav.toggleLanguage")}
           >
             <Globe size={16} />
             <span className="text-xs uppercase">
@@ -91,7 +91,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
           <button
             onClick={onToggleDark}
             className="p-3 rounded-full hover:bg-muted transition-colors duration-200"
-            aria-label="Toggle theme"
+            aria-label={t("nav.toggleTheme")}
           >
             {darkMode ? <Sun size={18} /> : <Moon size={18} />}
           </button>
@@ -99,7 +99,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="lg:hidden p-3 rounded-full hover:bg-muted transition-colors duration-200"
-            aria-label="Menu"
+            aria-label={t("nav.menu")}
           >
             <div className="flex flex-col gap-1.5">
               <span

@@ -10,7 +10,7 @@ const HeroSection = () => {
     <section className="relative h-[92vh] flex items-center justify-center overflow-hidden">
       <img
         src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=2000"
-        alt="Aerial view of a serene tropical coastline"
+        alt={t("hero.alt")}
         loading="eager"
         fetchPriority="high"
         decoding="async"
