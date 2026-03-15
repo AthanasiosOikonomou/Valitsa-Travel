@@ -66,13 +66,13 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-        className="fixed top-0 left-0 right-0 z-[100] px-4 py-4 md:px-8"
+        className="fixed top-0 left-0 right-0 z-[100] px-2 py-3 sm:px-4 md:px-8 md:py-4"
       >
         <div
           aria-hidden="true"
           className="pointer-events-none absolute left-0 right-0 top-0 h-4 bg-background"
         />
-        <div className="premium-panel navbar-shell mx-auto flex w-full max-w-7xl items-center justify-between overflow-hidden rounded-[1.75rem] px-4 py-3 md:px-6 md:py-4">
+        <div className="premium-panel navbar-shell mx-auto flex w-full max-w-7xl items-center justify-between rounded-[1.75rem] px-3 py-2.5 sm:px-4 md:px-6 md:py-4">
           <Link to="/" className="shrink-0" aria-label={t("nav.brand")}>
             <img
               src={
@@ -81,7 +81,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
                   : "/branding/navbar/logo-light.svg"
               }
               alt={t("nav.brand")}
-              className="h-11 w-auto"
+              className="h-9 w-auto sm:h-11"
             />
           </Link>
 
@@ -98,10 +98,10 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
             ))}
           </div>
 
-          <div className="flex gap-2 items-center">
+          <div className="flex shrink-0 gap-1.5 sm:gap-2 items-center">
             <button
               onClick={() => setLang(lang === "en" ? "gr" : "en")}
-              className="premium-outline-button p-3 flex items-center gap-1.5 text-sm"
+              className="premium-outline-button p-2.5 sm:p-3 flex items-center gap-1 text-sm"
               aria-label={t("nav.toggleLanguage")}
             >
               <Globe size={16} />
@@ -112,7 +112,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
 
             <button
               onClick={onToggleDark}
-              className="premium-outline-button p-3"
+              className="premium-outline-button p-2.5 sm:p-3"
               aria-label={t("nav.toggleTheme")}
             >
               {darkMode ? <Sun size={18} /> : <Moon size={18} />}
@@ -120,7 +120,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
 
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="lg:hidden premium-outline-button p-3"
+              className="lg:hidden premium-outline-button p-2.5 sm:p-3"
               aria-label={t("nav.menu")}
             >
               <div className="flex flex-col gap-1.5">

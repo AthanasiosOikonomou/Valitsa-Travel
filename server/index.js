@@ -119,7 +119,9 @@ const inquirySpeedLimiter = slowDown({
   delayMs: () => 500,
 });
 
-app.use("/api/send-inquiry", inquiryLimiter, inquirySpeedLimiter);
+const inquiryRoutes = ["/api/send-inquiry", "/send-inquiry"];
+
+app.use(inquiryRoutes, inquiryLimiter, inquirySpeedLimiter);
 
 const inquirySchema = z.object({
   from_name: z.string().trim().min(2).max(120),
@@ -254,11 +256,11 @@ const transporter = !hasMissingConfig
     })
   : null;
 
-app.get("/api/health", (_req, res) => {
+app.get(["/api/health", "/health"], (_req, res) => {
   res.json({ ok: true });
 });
 
-app.post("/api/send-inquiry", async (req, res) => {
+app.post(inquiryRoutes, async (req, res) => {
   if (hasMissingConfig || !transporter) {
     res.status(500).json({
       error:
