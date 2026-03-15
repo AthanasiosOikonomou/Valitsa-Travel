@@ -8,6 +8,7 @@ export interface InquiryPayload {
   tripTitle?: string;
   tripLocation?: string;
   tripPrice?: string;
+  tripUrl?: string;
 }
 
 const mailApiUrl = import.meta.env.VITE_MAIL_API_URL || "/api/send-inquiry";
@@ -32,6 +33,7 @@ export const sendInquiryEmail = async (payload: InquiryPayload) => {
     trip_title: payload.tripTitle ?? "",
     trip_location: payload.tripLocation ?? "",
     trip_price: payload.tripPrice ?? "",
+    trip_url: payload.tripUrl ?? "",
     submitted_at: new Date().toISOString(),
   };
 

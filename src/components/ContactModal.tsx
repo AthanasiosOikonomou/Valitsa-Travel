@@ -39,8 +39,13 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
 
   const validateEmail = (val: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim());
-  const validatePhone = (val: string) =>
-    /^[+\d][\d\s\-().]{5,19}$/.test(val.trim());
+  const validatePhone = (val: string) => {
+    const input = val.trim();
+    if (!/^[+\d\s\-().]+$/.test(input)) return false;
+
+    const digits = input.replace(/\D/g, "");
+    return digits.length >= 10 && digits.length <= 15;
+  };
 
   const validateForm = () => {
     const errs = {

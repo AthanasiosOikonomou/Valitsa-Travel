@@ -30,27 +30,42 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
     lastName: "",
     email: "",
     mobile: "",
+    message: "",
   });
 
   const firstNameRef = useRef<HTMLInputElement>(null);
   const lastNameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const mobileRef = useRef<HTMLInputElement>(null);
+  const messageRef = useRef<HTMLTextAreaElement>(null);
 
   const validateEmail = (val: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim());
-  const validatePhone = (val: string) =>
-    /^[+\d][\d\s\-().]{5,19}$/.test(val.trim());
+  const validatePhone = (val: string) => {
+    const input = val.trim();
+    if (!/^[+\d\s\-().]+$/.test(input)) return false;
+
+    const digits = input.replace(/\D/g, "");
+    return digits.length >= 10 && digits.length <= 15;
+  };
 
   const validateForm = () => {
-    const errs = { firstName: "", lastName: "", email: "", mobile: "" };
+    const errs = {
+      firstName: "",
+      lastName: "",
+      email: "",
+      mobile: "",
+      message: "",
+    };
     if (!formData.firstName.trim()) errs.firstName = t("validation.required");
     if (!formData.lastName.trim()) errs.lastName = t("validation.required");
     if (!formData.email.trim()) errs.email = t("validation.required");
     else if (!validateEmail(formData.email))
       errs.email = t("validation.emailInvalid");
-    if (formData.mobile.trim() && !validatePhone(formData.mobile))
+    if (!formData.mobile.trim()) errs.mobile = t("validation.required");
+    else if (!validatePhone(formData.mobile))
       errs.mobile = t("validation.phoneInvalid");
+    if (!formData.message.trim()) errs.message = t("validation.required");
     return errs;
   };
 
@@ -74,6 +89,10 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
       mobileRef.current?.focus();
       return;
     }
+    if (errs.message) {
+      messageRef.current?.focus();
+      return;
+    }
 
     setError("");
     setIsSending(true);
@@ -89,6 +108,10 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
         tripTitle: trip.title,
         tripLocation: trip.location,
         tripPrice: trip.price,
+        tripUrl:
+          typeof window !== "undefined"
+            ? `${window.location.origin}/trips?trip=${trip.id}`
+            : "",
       });
 
       setSubmitted(true);
@@ -392,7 +415,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                           ? "ring-2 ring-red-500/50 bg-red-500/5"
                           : "focus:ring-primary/30"
                       }`}
-                      placeholder={t("detail.mobile")}
+                      placeholder={t("detail.mobile") + " *"}
                     />
                     {fieldErrors.mobile && (
                       <p className="text-xs text-red-500 mt-1">
@@ -401,12 +424,26 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                     )}
                   </div>
                   <textarea
+                    ref={messageRef}
                     maxLength={1000}
                     value={formData.message}
-                    onChange={(e) => updateField("message", e.target.value)}
-                    className="w-full bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground h-28 resize-none focus:ring-2 focus:ring-primary/30 transition-shadow"
-                    placeholder={t("detail.message")}
+                    onChange={(e) => {
+                      updateField("message", e.target.value);
+                      if (fieldErrors.message)
+                        setFieldErrors((p) => ({ ...p, message: "" }));
+                    }}
+                    className={`w-full bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground h-28 resize-none focus:ring-2 transition-shadow ${
+                      fieldErrors.message
+                        ? "ring-2 ring-red-500/50 bg-red-500/5"
+                        : "focus:ring-primary/30"
+                    }`}
+                    placeholder={t("detail.message") + " *"}
                   />
+                  {fieldErrors.message && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {fieldErrors.message}
+                    </p>
+                  )}
                   <button
                     type="submit"
                     disabled={isSending}

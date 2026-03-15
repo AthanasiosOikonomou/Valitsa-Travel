@@ -389,6 +389,19 @@ const TripsContent = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [mobileFiltersOpen]);
 
+  useEffect(() => {
+    const tripParam = searchParams.get("trip");
+    if (!tripParam) return;
+
+    const tripId = Number(tripParam);
+    if (Number.isNaN(tripId)) return;
+
+    const matchedTrip = trips.find((trip) => trip.id === tripId);
+    if (matchedTrip) {
+      setSelectedTrip(matchedTrip);
+    }
+  }, [searchParams]);
+
   useLayoutEffect(() => {
     const prev = prevPriceBoundsRef.current;
     if (prev.min === priceBounds.min && prev.max === priceBounds.max) {
