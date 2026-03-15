@@ -46,7 +46,7 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
         </div>
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
-          <button className="bg-white/95 text-foreground w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2 text-sm hover:bg-white transition-colors">
+          <button className="bg-white/95 text-black w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2 text-sm hover:bg-white transition-colors">
             {t("grid.viewDetails")} <ArrowRight size={16} />
           </button>
         </div>
