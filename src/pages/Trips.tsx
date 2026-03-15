@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Search, SlidersHorizontal, X, ChevronDown } from "lucide-react";
@@ -98,7 +99,7 @@ const FilterSection = ({
 
 const TripsContent = () => {
   const [searchParams] = useSearchParams();
-  const [darkMode, setDarkMode] = useState(false);
+  const { darkMode, toggleDark } = useTheme();
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const { t } = useLanguage();
 
@@ -287,10 +288,6 @@ const TripsContent = () => {
     category: false,
     type: false,
   });
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
-  }, [darkMode]);
 
   useEffect(() => {
     document.body.style.overflow = selectedTrip ? "hidden" : "";
@@ -594,7 +591,7 @@ const TripsContent = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-500">
-      <Navbar darkMode={darkMode} onToggleDark={() => setDarkMode(!darkMode)} />
+      <Navbar darkMode={darkMode} onToggleDark={toggleDark} />
 
       {/* Page header */}
       <div className="pt-24 pb-10 px-6 md:px-10 max-w-7xl mx-auto">

@@ -2,19 +2,16 @@ import { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import type { Trip } from "@/data/mockData";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import FeaturedTrips from "@/components/FeaturedTrips";
 import TripDetail from "@/components/TripDetail";
 
 const IndexContent = () => {
-  const [darkMode, setDarkMode] = useState(false);
+  const { darkMode, toggleDark } = useTheme();
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const { t } = useLanguage();
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
-  }, [darkMode]);
 
   useEffect(() => {
     document.body.style.overflow = selectedTrip ? "hidden" : "";
@@ -25,7 +22,7 @@ const IndexContent = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-500">
-      <Navbar darkMode={darkMode} onToggleDark={() => setDarkMode(!darkMode)} />
+      <Navbar darkMode={darkMode} onToggleDark={toggleDark} />
       <HeroSection />
       <FeaturedTrips onSelectTrip={setSelectedTrip} />
 
