@@ -250,7 +250,7 @@ const mailCc = process.env.MAIL_CC || "";
 const mailLogoUrl = process.env.MAIL_LOGO_URL || "";
 const localLogoPath = path.resolve(
   __dirname,
-  "../public/branding/navbar/logo-dark.svg",
+  "../public/branding/navbar/logo-dark.png",
 );
 const hasLocalLogo = fs.existsSync(localLogoPath);
 
@@ -424,7 +424,7 @@ app.post(inquiryRoutes, async (req, res) => {
         ? {
             attachments: [
               {
-                filename: "logo-dark.svg",
+                filename: "logo-dark.png",
                 path: localLogoPath,
                 cid: "valitsa-logo",
               },
