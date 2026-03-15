@@ -34,6 +34,15 @@ const normalizeOrigin = (value) => {
   }
 };
 
+const isLocalDevOrigin = (value) => {
+  try {
+    const url = new URL(value);
+    return /^(localhost|127\.0\.0\.1)$/i.test(url.hostname);
+  } catch {
+    return false;
+  }
+};
+
 const parseCorsOrigins = (rawValue) =>
   rawValue
     .split(",")
@@ -53,9 +62,7 @@ const configuredOrigins = parseCorsOrigins(process.env.CORS_ORIGIN || "");
 const corsOrigins = new Set(
   isProduction
     ? configuredOrigins
-    : configuredOrigins.length > 0
-      ? configuredOrigins
-      : defaultCorsOrigins,
+    : [...defaultCorsOrigins, ...configuredOrigins],
 );
 
 if (isProduction && corsOrigins.size === 0) {
@@ -83,6 +90,11 @@ app.use(
   cors({
     origin(origin, callback) {
       if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      if (!isProduction && isLocalDevOrigin(origin)) {
         callback(null, true);
         return;
       }
