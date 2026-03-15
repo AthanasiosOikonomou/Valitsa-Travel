@@ -234,6 +234,10 @@ const TripsContent = () => {
 
   useEffect(() => {
     const prev = prevPriceBoundsRef.current;
+    if (prev.min === priceBounds.min && prev.max === priceBounds.max) {
+      return;
+    }
+
     setPriceRange((current) => {
       const wasFull = current[0] === prev.min && current[1] === prev.max;
       if (wasFull) {
@@ -252,6 +256,10 @@ const TripsContent = () => {
 
   useEffect(() => {
     const prev = prevDurationBoundsRef.current;
+    if (prev.min === durationBounds.min && prev.max === durationBounds.max) {
+      return;
+    }
+
     setDurationRange((current) => {
       const wasFull = current[0] === prev.min && current[1] === prev.max;
       if (wasFull) {
