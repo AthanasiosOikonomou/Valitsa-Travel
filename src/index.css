@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -38,9 +38,11 @@
     --radius: 0.5rem;
 
     --surface: 0 0% 100% / 0.7;
-    --shadow-sm: 0 0 0 1px rgba(0,0,0,.05), 0 2px 4px rgba(0,0,0,.05);
-    --shadow-md: 0 0 0 1px rgba(0,0,0,.05), 0 10px 15px -3px rgba(0,0,0,.1);
-    --shadow-lg: 0 0 0 1px rgba(0,0,0,.03), 0 20px 40px -8px rgba(0,0,0,.12);
+    --shadow-sm: 0 0 0 1px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.05);
+    --shadow-md:
+      0 0 0 1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --shadow-lg:
+      0 0 0 1px rgba(0, 0, 0, 0.03), 0 20px 40px -8px rgba(0, 0, 0, 0.12);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -83,9 +85,12 @@
     --ring: 217 91% 60%;
 
     --surface: 222 47% 11% / 0.6;
-    --shadow-sm: 0 0 0 1px rgba(255,255,255,.05), 0 2px 4px rgba(0,0,0,.3);
-    --shadow-md: 0 0 0 1px rgba(255,255,255,.05), 0 10px 15px -3px rgba(0,0,0,.4);
-    --shadow-lg: 0 0 0 1px rgba(255,255,255,.03), 0 20px 40px -8px rgba(0,0,0,.5);
+    --shadow-sm:
+      0 0 0 1px rgba(255, 255, 255, 0.05), 0 2px 4px rgba(0, 0, 0, 0.3);
+    --shadow-md:
+      0 0 0 1px rgba(255, 255, 255, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+    --shadow-lg:
+      0 0 0 1px rgba(255, 255, 255, 0.03), 0 20px 40px -8px rgba(0, 0, 0, 0.5);
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
@@ -104,12 +109,24 @@
   }
 
   html {
-    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
     scroll-behavior: smooth;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-feature-settings:
+      "liga" 1,
+      "kern" 1,
+      "ss01" 1;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    letter-spacing: -0.035em;
   }
 }
 
@@ -124,22 +141,41 @@
   }
 
   .text-display {
+    font-family: "Playfair Display", "Times New Roman", serif;
     text-wrap: balance;
-    letter-spacing: -0.04em;
+    letter-spacing: -0.045em;
     font-weight: 600;
+    line-height: 0.95;
   }
 
   .text-body-prose {
     text-wrap: pretty;
-    line-height: 1.6;
+    line-height: 1.8;
+    font-size: 1.04rem;
+    letter-spacing: -0.012em;
     color: hsl(var(--foreground-muted));
   }
 
   .label-ui {
     font-size: 0.75rem;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.18em;
+  }
+
+  .text-editorial-title {
+    font-family: "Playfair Display", "Times New Roman", serif;
+    font-size: clamp(1.25rem, 1rem + 1vw, 1.8rem);
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    font-weight: 600;
+  }
+
+  .text-editorial-body {
+    color: hsl(var(--foreground-muted));
+    font-size: 0.98rem;
+    line-height: 1.75;
+    letter-spacing: -0.01em;
   }
 
   .valitsa-card {

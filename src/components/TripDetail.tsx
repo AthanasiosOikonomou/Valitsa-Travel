@@ -15,6 +15,28 @@ const tabKeys = ["description", "program", "included"] as const;
 const formatProgramStep = (value: string) =>
   value.replace(/^((Day|Days|Ημέρα|Ημέρες)\s*\d+(?:[–-]\d+)?\s*[—:-]\s*)/i, "");
 
+const splitProgramStep = (value: string) => {
+  const richParts = value.split(/\s*\|\|\s*/);
+  if (richParts.length > 1) {
+    return {
+      title: richParts[0].trim(),
+      detail: richParts.slice(1).join(" ").trim(),
+    };
+  }
+
+  const cleaned = formatProgramStep(value).trim();
+  const parts = cleaned.split(/,\s+|·\s+|•\s+/);
+
+  if (parts.length <= 1) {
+    return { title: cleaned, detail: "" };
+  }
+
+  return {
+    title: parts[0],
+    detail: parts.slice(1).join(", "),
+  };
+};
+
 const TripDetail = ({ trip, onClose }: TripDetailProps) => {
   const [activeTab, setActiveTab] = useState<string>("description");
   const { t, lang } = useLanguage();
@@ -246,38 +268,47 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                   </p>
                 )}
                 {activeTab === "program" && (
-                  <ul className="space-y-0">
+                  <ul className="space-y-0 pt-2">
                     {localized.program.map((day, i) => (
                       <li
                         key={i}
-                        className="relative flex gap-5 items-start pb-8 last:pb-0"
+                        className="relative flex gap-5 items-start pb-10 last:pb-0"
                       >
                         {i < localized.program.length - 1 && (
                           <span
                             aria-hidden="true"
-                            className="absolute left-[1.15rem] top-11 bottom-0 border-l-2 border-dashed border-fuchsia-300/80"
+                            className="absolute left-[0.45rem] top-7 bottom-0 border-l border-dashed border-fuchsia-300/80 dark:border-fuchsia-700/60"
                           />
                         )}
-                        <span className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-fuchsia-600 text-white text-sm font-bold shadow-[0_10px_30px_-12px_rgba(192,38,211,0.85)]">
-                          {i + 1}
-                        </span>
-                        <div className="flex-1 rounded-2xl border border-fuchsia-100 bg-gradient-to-br from-fuchsia-50 to-white px-5 py-4 shadow-sm dark:border-fuchsia-900/40 dark:from-fuchsia-950/30 dark:to-card">
-                          <p className="text-foreground font-medium leading-relaxed">
-                            {formatProgramStep(day)}
-                          </p>
+                        <span
+                          aria-hidden="true"
+                          className="relative z-10 mt-2 flex h-4 w-4 shrink-0 rounded-full bg-gradient-to-br from-fuchsia-500 via-fuchsia-600 to-violet-700 shadow-[0_12px_26px_-16px_rgba(168,85,247,0.9)] ring-4 ring-fuchsia-100 dark:ring-fuchsia-950/50"
+                        />
+                        <div className="flex-1 border-b border-fuchsia-100/80 pb-8 last:border-b-0 dark:border-fuchsia-900/30">
+                          <h4 className="text-[0.94rem] md:text-[0.98rem] font-semibold leading-6 tracking-[-0.012em] text-foreground mb-2">
+                            {splitProgramStep(day).title}
+                          </h4>
+                          {splitProgramStep(day).detail && (
+                            <p className="text-[0.9rem] leading-7 tracking-[-0.008em] text-foreground-muted">
+                              {splitProgramStep(day).detail}
+                            </p>
+                          )}
                         </div>
                       </li>
                     ))}
                   </ul>
                 )}
                 {activeTab === "included" && (
-                  <ul className="space-y-3">
+                  <ul className="space-y-3.5">
                     {localized.included.map((item, i) => (
                       <li
                         key={i}
-                        className="flex gap-3 items-center text-body-prose"
+                        className="flex gap-3.5 items-start rounded-[1.15rem] border border-fuchsia-100/70 bg-gradient-to-r from-fuchsia-50/65 via-white to-white px-4 py-3.5 text-[0.92rem] leading-7 tracking-[-0.008em] text-foreground-muted dark:border-fuchsia-900/30 dark:from-fuchsia-950/20 dark:via-card dark:to-card"
                       >
-                        <Check size={16} className="text-primary shrink-0" />
+                        <Check
+                          size={16}
+                          className="text-primary shrink-0 mt-1"
+                        />
                         {item}
                       </li>
                     ))}
