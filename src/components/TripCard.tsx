@@ -1,4 +1,4 @@
-import { MapPin, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { getLocalizedTripContent, type Trip } from "@/data/mockData";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -58,13 +58,6 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
           </button>
         </div>
       </div>
-
-      <h4 className="text-lg font-bold mb-1 group-hover:text-primary transition-colors duration-250 line-clamp-2">
-        {localized.title}
-      </h4>
-      <p className="text-foreground-muted text-sm flex items-center gap-1.5">
-        <MapPin size={13} /> {localized.location}
-      </p>
     </motion.div>
   );
 };
