@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 510 100">
+  <!-- Suitcase handle (scaled to icon height ~90px within 100px tall logo) -->
+  <path d="M27,27 L27,17 Q27,8 36,8 L46,8 Q55,8 55,17 L55,27"
+        fill="none" stroke="#111111" stroke-width="4.8"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Left arm of V -->
+  <polygon points="2,30 31,30 41,94" fill="#111111"/>
+  <!-- Right arm of V -->
+  <polygon points="80,30 51,30 41,94" fill="#111111"/>
+  <!-- ALITSA text -->
+  <text x="70" y="90"
+        font-family="'Arial Black', Impact, 'Helvetica Neue', sans-serif"
+        font-size="82" font-weight="900" fill="#111111"
+        letter-spacing="-2">ALITSA</text>
+</svg>

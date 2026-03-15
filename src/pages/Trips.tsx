@@ -699,7 +699,15 @@ const TripsContent = () => {
 
       <footer className="border-t border-border py-16 px-6 md:px-10">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <span className="text-xl font-bold tracking-[-0.06em]">VALITSA</span>
+          <img
+            src={
+              darkMode
+                ? "/branding/navbar/logo-dark.svg"
+                : "/branding/navbar/logo-light.svg"
+            }
+            alt={t("nav.brand")}
+            className="h-8 w-auto"
+          />
           <div className="flex items-center gap-6">
             <a
               href="#"

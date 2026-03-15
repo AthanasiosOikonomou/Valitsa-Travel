@@ -51,8 +51,16 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
         transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
         className="fixed top-0 w-full z-50 px-6 md:px-10 py-4 flex justify-between items-center backdrop-blur-xl bg-background/80 border-b border-border/50"
       >
-        <Link to="/" className="text-2xl font-bold tracking-[-0.06em]">
-          {t("nav.brand")}
+        <Link to="/" className="shrink-0" aria-label={t("nav.brand")}>
+          <img
+            src={
+              darkMode
+                ? "/branding/navbar/logo-dark.svg"
+                : "/branding/navbar/logo-light.svg"
+            }
+            alt={t("nav.brand")}
+            className="h-11 w-auto"
+          />
         </Link>
 
         {/* Desktop categories */}

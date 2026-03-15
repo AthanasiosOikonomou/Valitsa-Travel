@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 115">
+  <!-- Suitcase handle -->
+  <path d="M34,27 L34,16 Q34,6 44,6 L56,6 Q66,6 66,16 L66,27"
+        fill="none" stroke="#ffffff" stroke-width="5.5"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Left arm of V -->
+  <polygon points="2,30 37,30 50,110" fill="#ffffff"/>
+  <!-- Right arm of V -->
+  <polygon points="98,30 63,30 50,110" fill="#ffffff"/>
+</svg>
