@@ -835,7 +835,7 @@ const TripsContent = () => {
 
       <button
         onClick={resetFilters}
-        className="w-full py-3 rounded-xl text-sm font-medium border border-border text-foreground-muted hover:border-foreground hover:text-foreground transition-colors"
+        className="premium-outline-button w-full justify-center text-sm"
       >
         {t("search.reset")}
       </button>
@@ -843,21 +843,21 @@ const TripsContent = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-500">
+    <div className="premium-page min-h-screen bg-background text-foreground transition-colors duration-500 relative z-0">
       <Navbar darkMode={darkMode} onToggleDark={toggleDark} />
 
       {/* Page header */}
-      <div className="pt-24 pb-10 px-6 md:px-10 max-w-7xl mx-auto">
-        <h1 className="text-3xl md:text-4xl text-display mb-2">
+      <div className="pt-36 pb-10 px-6 md:px-10 max-w-7xl mx-auto">
+        <h1 className="text-3xl md:text-4xl text-display mb-3">
           {t("archive.title")}
         </h1>
-        <p className="text-foreground-muted text-sm">
+        <p className="premium-subheading text-sm md:text-base">
           {filtered.length} {t("archive.resultsFound")}
         </p>
 
         <button
           onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
-          className="lg:hidden mt-4 flex items-center gap-2 px-5 py-3 rounded-full bg-card border border-border text-sm font-semibold"
+          className="lg:hidden premium-outline-button mt-5 text-sm"
         >
           <SlidersHorizontal size={16} />
           {t("search.filters")}
@@ -865,13 +865,10 @@ const TripsContent = () => {
       </div>
 
       {/* 2-column layout */}
-      <div className="max-w-7xl mx-auto px-6 md:px-10 pb-24 flex gap-10">
+      <div className="max-w-7xl mx-auto px-6 md:px-10 pb-24 flex gap-10 relative z-0">
         {/* Sidebar - Desktop (sticky) */}
         <aside className="hidden lg:block w-72 shrink-0">
-          <div
-            className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto bg-card border border-border rounded-2xl p-6"
-            style={{ boxShadow: "var(--shadow-md)" }}
-          >
+          <div className="premium-panel sticky top-32 max-h-[calc(100vh-9rem)] overflow-y-auto rounded-[1.8rem] p-6">
             {filtersContent}
           </div>
         </aside>
@@ -892,7 +889,7 @@ const TripsContent = () => {
                 animate={{ x: 0 }}
                 exit={{ x: "-100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="fixed left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-background z-50 overflow-y-auto p-6 lg:hidden"
+                className="premium-panel fixed left-3 top-3 bottom-3 w-80 max-w-[85vw] z-50 overflow-y-auto rounded-[1.75rem] p-6 lg:hidden"
               >
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-bold">{t("search.filters")}</h3>
@@ -912,13 +909,13 @@ const TripsContent = () => {
         {/* Results */}
         <div className="flex-1 min-w-0">
           {filtered.length === 0 ? (
-            <div className="text-center py-20">
+            <div className="premium-panel rounded-[2rem] text-center py-20 px-6">
               <p className="text-foreground-muted text-lg">
                 {t("archive.noResults")}
               </p>
               <button
                 onClick={resetFilters}
-                className="mt-4 text-primary font-semibold text-sm hover:underline"
+                className="premium-outline-button mt-6 text-sm"
               >
                 {t("search.reset")}
               </button>
@@ -947,8 +944,8 @@ const TripsContent = () => {
         )}
       </AnimatePresence>
 
-      <footer className="border-t border-border py-16 px-6 md:px-10">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+      <footer className="border-t border-border/70 py-16 px-6 md:px-10">
+        <div className="premium-panel max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 rounded-[1.8rem] px-6 py-8 md:px-8">
           <img
             src={
               darkMode
@@ -993,8 +990,8 @@ const TripResultCard = ({ trip, index, onClick }: TripResultCardProps) => {
       viewport={{ once: true }}
       transition={{ duration: 0.4, delay: index * 0.05 }}
       onClick={() => onClick(trip)}
-      className="group cursor-pointer bg-card border border-border rounded-2xl overflow-hidden flex flex-col sm:flex-row hover:border-primary/30 transition-all duration-300"
-      style={{ boxShadow: "var(--shadow-sm)" }}
+      className="group premium-panel-soft cursor-pointer rounded-[1.8rem] overflow-hidden flex flex-col sm:flex-row border-white/65 hover:border-primary/30 transition-all duration-300"
+      style={{ boxShadow: "var(--shadow-md)" }}
     >
       <div className="sm:w-64 md:w-80 shrink-0 relative overflow-hidden">
         <img
@@ -1004,7 +1001,7 @@ const TripResultCard = ({ trip, index, onClick }: TripResultCardProps) => {
           loading="lazy"
         />
         {trip.isBonus && (
-          <span className="absolute top-3 left-3 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold">
+          <span className="absolute top-4 left-4 premium-chip px-3 py-1.5 text-xs font-bold text-white">
             {t("archive.bonus")}
           </span>
         )}
@@ -1012,28 +1009,28 @@ const TripResultCard = ({ trip, index, onClick }: TripResultCardProps) => {
 
       <div className="flex-1 p-5 md:p-6 flex flex-col justify-between">
         <div>
-          <p className="text-xs text-foreground-muted mb-1">
-            {localized.dateRange}
-          </p>
-          <h3 className="text-lg font-bold mb-1 group-hover:text-primary transition-colors">
+          <p className="label-ui text-primary/80 mb-2">{localized.dateRange}</p>
+          <h3 className="text-xl text-display mb-2 group-hover:text-primary transition-colors leading-tight">
             {localized.title}
           </h3>
-          <p className="text-foreground-muted text-sm mb-3 line-clamp-2">
+          <p className="premium-subheading text-sm mb-3 line-clamp-2">
             {localized.description}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 mt-2">
           <div className="flex items-center gap-4 text-sm">
-            <span className="font-bold text-primary">{trip.price}</span>
+            <span className="font-bold text-primary text-base">
+              {trip.price}
+            </span>
             <span className="text-foreground-muted">{localized.duration}</span>
             {trip.guaranteedDeparture && (
-              <span className="text-xs bg-muted text-foreground-muted px-2.5 py-1 rounded-full">
+              <span className="premium-outline-button px-3 py-1.5 text-xs">
                 {t("archive.guaranteed")}
               </span>
             )}
           </div>
-          <span className="text-sm font-bold text-primary group-hover:underline">
+          <span className="premium-outline-button text-sm">
             {t("archive.more")} →
           </span>
         </div>

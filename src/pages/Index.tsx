@@ -21,7 +21,7 @@ const IndexContent = () => {
   }, [selectedTrip]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-500">
+    <div className="premium-page min-h-screen bg-background text-foreground transition-colors duration-500">
       <Navbar darkMode={darkMode} onToggleDark={toggleDark} />
       <HeroSection />
       <FeaturedTrips onSelectTrip={setSelectedTrip} />
@@ -35,8 +35,8 @@ const IndexContent = () => {
         )}
       </AnimatePresence>
 
-      <footer className="border-t border-border py-16 px-6 md:px-10">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+      <footer className="border-t border-border/70 py-16 px-6 md:px-10">
+        <div className="premium-panel max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 rounded-[1.8rem] px-6 py-8 md:px-8">
           <img
             src={
               darkMode

@@ -27,7 +27,7 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
       className="group cursor-pointer"
       onClick={() => onClick(trip)}
     >
-      <div className="valitsa-card relative aspect-[4/5] mb-5">
+      <div className="valitsa-card premium-panel-soft relative aspect-[4/5] mb-5 border-white/60">
         <img
           src={trip.image}
           alt={localized.title}
@@ -38,22 +38,26 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
         />
 
         <div className="absolute top-5 left-5 flex gap-2">
-          <span className="glass rounded-full px-4 py-1.5 text-xs font-semibold text-white">
+          <span className="premium-chip px-4 py-1.5 text-xs font-semibold text-white">
             {trip.price}
           </span>
-          <span className="glass rounded-full px-4 py-1.5 text-xs font-semibold text-white">
+          <span className="premium-chip px-4 py-1.5 text-xs font-semibold text-white">
             {localized.duration}
           </span>
         </div>
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
-          <button className="bg-white/95 text-black w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2 text-sm hover:bg-white transition-colors">
+        <div className="absolute inset-x-4 bottom-4 rounded-[1.6rem] border border-white/20 bg-gradient-to-t from-black/70 via-black/45 to-transparent px-5 py-5 opacity-100 transition-all duration-300 flex flex-col justify-end backdrop-blur-[3px]">
+          <p className="label-ui text-white/60 mb-2">{localized.location}</p>
+          <h4 className="text-xl text-display text-white mb-3 leading-tight">
+            {localized.title}
+          </h4>
+          <button className="premium-button-light w-full py-4 rounded-2xl text-sm">
             {t("grid.viewDetails")} <ArrowRight size={16} />
           </button>
         </div>
       </div>
 
-      <h4 className="text-lg font-bold mb-1 group-hover:text-primary transition-colors duration-250">
+      <h4 className="text-lg font-bold mb-1 group-hover:text-primary transition-colors duration-250 line-clamp-2">
         {localized.title}
       </h4>
       <p className="text-foreground-muted text-sm flex items-center gap-1.5">

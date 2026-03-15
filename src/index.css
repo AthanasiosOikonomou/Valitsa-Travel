@@ -120,6 +120,23 @@
       "kern" 1,
       "ss01" 1;
     text-rendering: optimizeLegibility;
+    background-image:
+      radial-gradient(
+        circle at top,
+        rgba(148, 163, 184, 0.14),
+        transparent 30%
+      ),
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.98),
+        rgba(247, 249, 252, 0.98)
+      );
+  }
+
+  .dark body {
+    background-image:
+      radial-gradient(circle at top, rgba(59, 130, 246, 0.12), transparent 30%),
+      linear-gradient(180deg, rgba(9, 14, 23, 0.98), rgba(7, 11, 18, 0.98));
   }
 
   h1,
@@ -185,5 +202,229 @@
 
   .valitsa-card:hover {
     box-shadow: var(--shadow-lg);
+  }
+
+  .premium-page {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .premium-page::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        circle at 15% 10%,
+        rgba(14, 165, 233, 0.08),
+        transparent 22%
+      ),
+      radial-gradient(
+        circle at 85% 12%,
+        rgba(244, 114, 182, 0.08),
+        transparent 24%
+      ),
+      linear-gradient(180deg, transparent, rgba(148, 163, 184, 0.06));
+    z-index: -1;
+  }
+
+  .premium-panel {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.9),
+      rgba(248, 250, 252, 0.88)
+    );
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    box-shadow: 0 24px 70px -34px rgba(15, 23, 42, 0.28);
+    backdrop-filter: blur(18px);
+  }
+
+  .dark .premium-panel {
+    background: linear-gradient(
+      180deg,
+      rgba(15, 23, 42, 0.82),
+      rgba(15, 23, 42, 0.68)
+    );
+    border-color: rgba(148, 163, 184, 0.16);
+    box-shadow: 0 24px 70px -34px rgba(0, 0, 0, 0.65);
+  }
+
+  .navbar-shell {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.96),
+      rgba(248, 250, 252, 0.93)
+    );
+    border-color: rgba(255, 255, 255, 0.76);
+  }
+
+  .dark .navbar-shell {
+    background: linear-gradient(
+      180deg,
+      rgba(15, 23, 42, 0.96),
+      rgba(15, 23, 42, 0.9)
+    );
+    border-color: rgba(148, 163, 184, 0.24);
+  }
+
+  .premium-panel-soft {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.76),
+      rgba(255, 255, 255, 0.58)
+    );
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    backdrop-filter: blur(14px);
+  }
+
+  .dark .premium-panel-soft {
+    background: linear-gradient(
+      180deg,
+      rgba(15, 23, 42, 0.52),
+      rgba(15, 23, 42, 0.38)
+    );
+    border-color: rgba(71, 85, 105, 0.45);
+  }
+
+  .premium-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    border-radius: 9999px;
+    padding: 0.95rem 1.6rem;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--foreground)),
+      rgba(30, 41, 59, 0.95)
+    );
+    color: hsl(var(--background));
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    box-shadow: 0 22px 40px -22px rgba(15, 23, 42, 0.75);
+    transition:
+      transform 220ms ease,
+      opacity 220ms ease,
+      box-shadow 220ms ease;
+  }
+
+  .premium-button:hover {
+    transform: translateY(-1px);
+    opacity: 0.96;
+    box-shadow: 0 28px 45px -20px rgba(15, 23, 42, 0.85);
+  }
+
+  .premium-button-light {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    border-radius: 9999px;
+    padding: 0.9rem 1.45rem;
+    background: rgba(255, 255, 255, 0.92);
+    color: #0f172a;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow: 0 22px 35px -22px rgba(15, 23, 42, 0.45);
+    transition:
+      transform 220ms ease,
+      background-color 220ms ease,
+      box-shadow 220ms ease;
+  }
+
+  .premium-button-light:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 28px 45px -20px rgba(15, 23, 42, 0.55);
+  }
+
+  .dark .premium-button-light {
+    color: #0f172a;
+  }
+
+  .premium-button-navbar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    border-radius: 9999px;
+    padding: 0.95rem 1.6rem;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.96),
+      rgba(226, 232, 240, 0.92)
+    );
+    color: #0f172a;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow: none;
+    transition:
+      transform 220ms ease,
+      background-color 220ms ease,
+      border-color 220ms ease;
+  }
+
+  .premium-button-navbar:hover {
+    transform: translateY(-1px);
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.98),
+      rgba(241, 245, 249, 0.95)
+    );
+    border-color: rgba(148, 163, 184, 0.32);
+  }
+
+  .dark .premium-button-navbar {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.94),
+      rgba(226, 232, 240, 0.88)
+    );
+    color: #0f172a;
+  }
+
+  .premium-outline-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    border-radius: 9999px;
+    padding: 0.9rem 1.35rem;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    background: rgba(255, 255, 255, 0.52);
+    color: hsl(var(--foreground));
+    font-weight: 600;
+    transition:
+      border-color 220ms ease,
+      transform 220ms ease,
+      background-color 220ms ease;
+  }
+
+  .premium-outline-button:hover {
+    transform: translateY(-1px);
+    border-color: rgba(59, 130, 246, 0.35);
+    background: rgba(255, 255, 255, 0.78);
+  }
+
+  .dark .premium-outline-button {
+    background: rgba(15, 23, 42, 0.45);
+  }
+
+  .premium-chip {
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 15px 30px -22px rgba(15, 23, 42, 0.55);
+  }
+
+  .premium-subheading {
+    text-wrap: balance;
+    line-height: 1.75;
+    letter-spacing: -0.012em;
+    color: hsl(var(--foreground-muted));
   }
 }
