@@ -279,7 +279,16 @@ app.post(inquiryRoutes, async (req, res) => {
 
   const parsed = inquirySchema.safeParse(req.body ?? {});
   if (!parsed.success) {
-    res.status(400).json({ error: "Invalid inquiry payload." });
+    const firstIssue = parsed.error.issues[0];
+    if (!firstIssue) {
+      res.status(400).json({ error: "Invalid inquiry payload." });
+      return;
+    }
+
+    const field = firstIssue.path.join(".") || "payload";
+    res
+      .status(400)
+      .json({ error: `Invalid ${field}: ${firstIssue.message}` });
     return;
   }
 

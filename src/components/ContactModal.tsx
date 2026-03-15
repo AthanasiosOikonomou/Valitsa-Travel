@@ -68,6 +68,8 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
     else if (!validateEmail(form.email))
       errs.email = t("validation.emailInvalid");
     if (!form.message.trim()) errs.message = t("validation.required");
+    else if (form.message.trim().length < 10)
+      errs.message = "Message must be at least 10 characters.";
     return errs;
   };
 

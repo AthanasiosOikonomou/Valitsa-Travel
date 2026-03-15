@@ -96,6 +96,8 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
     else if (!validatePhone(formData.mobile))
       errs.mobile = t("validation.phoneInvalid");
     if (!formData.message.trim()) errs.message = t("validation.required");
+    else if (formData.message.trim().length < 10)
+      errs.message = "Message must be at least 10 characters.";
     return errs;
   };
 
