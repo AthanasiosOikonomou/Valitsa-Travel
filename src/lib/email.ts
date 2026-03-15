@@ -3,6 +3,7 @@ export interface InquiryPayload {
   firstName: string;
   lastName: string;
   email: string;
+  captchaToken: string;
   mobile?: string;
   message: string;
   tripTitle?: string;
@@ -30,6 +31,7 @@ export const sendInquiryEmail = async (payload: InquiryPayload) => {
     phone: payload.mobile ?? "",
     message: payload.message,
     source: payload.source,
+    captcha_token: payload.captchaToken,
     trip_title: payload.tripTitle ?? "",
     trip_location: payload.tripLocation ?? "",
     trip_price: payload.tripPrice ?? "",

@@ -4,6 +4,7 @@ import { X, MapPin, Clock, Check } from "lucide-react";
 import { getLocalizedTripContent, type Trip } from "@/data/mockData";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { sendInquiryEmail } from "@/lib/email";
+import CaptchaField from "@/components/CaptchaField";
 
 interface TripDetailProps {
   trip: Trip;
@@ -40,6 +41,7 @@ const splitProgramStep = (value: string) => {
 const TripDetail = ({ trip, onClose }: TripDetailProps) => {
   const [activeTab, setActiveTab] = useState<string>("description");
   const { t, lang } = useLanguage();
+  const requiresCaptcha = !import.meta.env.DEV;
   const localized = getLocalizedTripContent(trip, lang);
   const [formData, setFormData] = useState({
     firstName: "",
@@ -51,6 +53,8 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
   const [submitted, setSubmitted] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaError, setCaptchaError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({
     firstName: "",
     lastName: "",
@@ -119,8 +123,13 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
       messageRef.current?.focus();
       return;
     }
+    if (requiresCaptcha && !captchaToken) {
+      setCaptchaError("Please complete CAPTCHA verification.");
+      return;
+    }
 
     setError("");
+    setCaptchaError("");
     setIsSending(true);
 
     try {
@@ -129,6 +138,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
+        captchaToken: requiresCaptcha ? captchaToken : "dev-bypass",
         mobile: formData.mobile,
         message: formData.message,
         tripTitle: localized.title,
@@ -148,6 +158,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
         mobile: "",
         message: "",
       });
+      setCaptchaToken("");
     } catch (err) {
       setError(err instanceof Error ? err.message : t("detail.sendFailed"));
     } finally {
@@ -481,6 +492,15 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                       {fieldErrors.message}
                     </p>
                   )}
+                  {requiresCaptcha ? (
+                    <CaptchaField
+                      onTokenChange={(token) => {
+                        setCaptchaToken(token);
+                        if (captchaError && token) setCaptchaError("");
+                      }}
+                      error={captchaError}
+                    />
+                  ) : null}
                   <button
                     type="submit"
                     disabled={isSending}

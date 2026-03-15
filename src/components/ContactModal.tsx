@@ -4,6 +4,7 @@ import { X, Phone, MessageSquare, Send, CheckCircle } from "lucide-react";
 import { FaViber, FaWhatsapp } from "react-icons/fa";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { sendInquiryEmail } from "@/lib/email";
+import CaptchaField from "@/components/CaptchaField";
 
 interface ContactModalProps {
   open: boolean;
@@ -12,10 +13,13 @@ interface ContactModalProps {
 
 const ContactModal = ({ open, onClose }: ContactModalProps) => {
   const { t } = useLanguage();
+  const requiresCaptcha = !import.meta.env.DEV;
   const [view, setView] = useState<"options" | "form">("options");
   const [sent, setSent] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaError, setCaptchaError] = useState("");
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -74,6 +78,8 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
       setSent(false);
       setIsSending(false);
       setError("");
+      setCaptchaToken("");
+      setCaptchaError("");
       setFieldErrors({
         firstName: "",
         lastName: "",
@@ -108,8 +114,13 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
       messageRef.current?.focus();
       return;
     }
+    if (requiresCaptcha && !captchaToken) {
+      setCaptchaError("Please complete CAPTCHA verification.");
+      return;
+    }
 
     setError("");
+    setCaptchaError("");
     setIsSending(true);
 
     try {
@@ -118,6 +129,7 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
         firstName: form.firstName,
         lastName: form.lastName,
         email: form.email,
+        captchaToken: requiresCaptcha ? captchaToken : "dev-bypass",
         mobile: form.mobile,
         message: form.message,
       });
@@ -383,6 +395,15 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
                       </p>
                     )}
                   </div>
+                  {requiresCaptcha ? (
+                    <CaptchaField
+                      onTokenChange={(token) => {
+                        setCaptchaToken(token);
+                        if (captchaError && token) setCaptchaError("");
+                      }}
+                      error={captchaError}
+                    />
+                  ) : null}
                   <div className="flex gap-3">
                     <button
                       type="button"
