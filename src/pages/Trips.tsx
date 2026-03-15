@@ -12,21 +12,28 @@ import TripDetail from "@/components/TripDetail";
 // Map nav filter params to actual data filters
 const filterPresets: Record<
   string,
-  { durationRange?: [number, number]; category?: string }
+  { durationRange?: [number, number]; category?: string; domestic?: boolean }
 > = {
   daily: { durationRange: [1, 1] },
   twoday: { durationRange: [2, 2] },
-  internal: { category: "cultural" }, // maps to internal trips
-  external: { category: "adventure" }, // maps to external trips
+  internal: { domestic: true },
+  external: { domestic: false },
 };
 
 const getPresetTrips = (preset?: {
   durationRange?: [number, number];
   category?: string;
+  domestic?: boolean;
 }) => {
   if (!preset) return trips;
 
   return trips.filter((trip) => {
+    const isDomesticTrip = trip.location.toLowerCase().includes("greece");
+
+    if (preset.domestic !== undefined && isDomesticTrip !== preset.domestic) {
+      return false;
+    }
+
     if (preset.category && trip.category !== preset.category) return false;
 
     if (
