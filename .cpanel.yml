@@ -4,9 +4,6 @@ deployment:
     - /bin/echo "[cpanel-deploy] Start deployment for Valitsa-Travel"
     - /bin/mkdir -p /home/va648965/valitsa_app
     - /bin/rsync -a --delete --exclude='.git' --exclude='node_modules' ./ /home/va648965/valitsa_app/
-    - /bin/bash -lc 'cd /home/va648965/valitsa_app && npm install && npm run build'
-    - /bin/mkdir -p /home/va648965/public_html
-    - /bin/rsync -a --delete /home/va648965/valitsa_app/dist/ /home/va648965/public_html/
     - /bin/mkdir -p /home/va648965/valitsa_app/tmp
     - /bin/touch /home/va648965/valitsa_app/tmp/restart.txt
     - /bin/echo "[cpanel-deploy] Deployment finished"
