@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
+import { Helmet } from "react-helmet-async";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface TermsModalProps {
@@ -17,6 +18,9 @@ const TermsModal = ({ open, onClose }: TermsModalProps) => {
     : "Terms and Conditions of Participation in a Trip";
 
   const closeLabel = isGreek ? "Κλείσιμο" : "Close";
+  const seoDescription = isGreek
+    ? "Διαβάστε τους όρους και τις προϋποθέσεις συμμετοχής σε ταξίδι με τη Valitsa Travel."
+    : "Read the terms and conditions for participating in a trip with Valitsa Travel.";
 
   const sectionTitles = isGreek
     ? {
@@ -142,6 +146,21 @@ const TermsModal = ({ open, onClose }: TermsModalProps) => {
             style={{ boxShadow: "var(--shadow-lg)" }}
             onClick={(event) => event.stopPropagation()}
           >
+            <Helmet prioritizeSeoTags>
+              <title>{`${modalTitle} | Valitsa Travel`}</title>
+              <meta name="description" content={seoDescription} />
+              <meta
+                property="og:title"
+                content={`${modalTitle} | Valitsa Travel`}
+              />
+              <meta property="og:description" content={seoDescription} />
+              <meta
+                name="twitter:title"
+                content={`${modalTitle} | Valitsa Travel`}
+              />
+              <meta name="twitter:description" content={seoDescription} />
+            </Helmet>
+
             <div className="flex items-center justify-between p-6 border-b border-border">
               <h2 className="text-lg md:text-xl font-bold">{modalTitle}</h2>
               <button
