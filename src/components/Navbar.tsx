@@ -143,6 +143,21 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
         </div>
       </motion.nav>
 
+      {/* Mobile menu backdrop */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setMenuOpen(false)}
+            className="fixed inset-0 z-[48] bg-black/30 backdrop-blur-sm lg:hidden"
+            aria-hidden="true"
+          />
+        )}
+      </AnimatePresence>
+
       {/* Mobile menu */}
       <AnimatePresence>
         {menuOpen && (
@@ -152,6 +167,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
             className="fixed top-[92px] left-4 right-4 z-[49] premium-panel rounded-[1.6rem] p-4 lg:hidden"
+            style={{ boxShadow: "0 20px 60px -10px rgba(0, 0, 0, 0.7)" }}
           >
             <div className="flex flex-col gap-2">
               {navCategories.map((cat) => (
