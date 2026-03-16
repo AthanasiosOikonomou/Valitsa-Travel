@@ -14,6 +14,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import Navbar from "@/components/Navbar";
 import TripDetail from "@/components/TripDetail";
+import ContactModal from "@/components/ContactModal";
 import Seo from "@/components/Seo";
 import TermsModal from "@/components/TermsModal";
 import { Slider } from "@/components/ui/slider";
@@ -166,6 +167,7 @@ const TripsContent = () => {
   const activeFilter = searchParams.get("filter");
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [termsOpen, setTermsOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const resultsTopRef = useRef<HTMLDivElement | null>(null);
   const hasMountedFilterScrollRef = useRef(false);
@@ -383,11 +385,12 @@ const TripsContent = () => {
   });
 
   useEffect(() => {
-    document.body.style.overflow = selectedTrip || termsOpen ? "hidden" : "";
+    document.body.style.overflow =
+      selectedTrip || termsOpen || contactOpen ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [selectedTrip, termsOpen]);
+  }, [contactOpen, selectedTrip, termsOpen]);
 
   useEffect(() => {
     if (!mobileFiltersOpen) return;
@@ -448,6 +451,26 @@ const TripsContent = () => {
       : `Show ${filtered.length} ${filtered.length === 1 ? "Trip" : "Trips"}`;
 
   const mobileClearLabel = lang === "gr" ? "Καθαρισμός" : "Clear";
+
+  const noTripsTitle =
+    lang === "gr"
+      ? "Δεν βρήκαμε διαθέσιμα ταξίδια με αυτά τα φίλτρα"
+      : "No trips match these filters right now";
+
+  const noTripsDescription =
+    lang === "gr"
+      ? "Δοκιμάστε να χαλαρώσετε κάποια φίλτρα ή περιγράψτε μας ακριβώς τι θέλετε και θα σας προτείνουμε το ιδανικό ταξίδι."
+      : "Try relaxing some filters, or tell us exactly what you need and we will suggest the best trip for you.";
+
+  const noTripsContactPrefix =
+    lang === "gr"
+      ? "Για κάτι πιο συγκεκριμένο,"
+      : "If you want something more specific,";
+
+  const noTripsContactLink = lang === "gr" ? "πατήστε εδώ" : "click here";
+
+  const noTripsContactSuffix =
+    lang === "gr" ? "για να μιλήσουμε." : "to talk with us.";
 
   const resetFilters = () => {
     dispatch({ type: "replace", value: initialFilterState });
@@ -920,16 +943,37 @@ const TripsContent = () => {
 
         <div className="flex-1 min-w-0">
           {filtered.length === 0 ? (
-            <div className="premium-panel rounded-[2rem] text-center py-20 px-6">
-              <p className="text-foreground-muted text-lg">
-                {t("archive.noResults")}
-              </p>
-              <button
-                onClick={resetFilters}
-                className="premium-outline-button mt-6 text-sm"
-              >
-                {t("search.reset")}
-              </button>
+            <div className="premium-panel-soft trips-card-surface rounded-[2rem] py-14 px-6 md:px-10 border border-border/70">
+              <div className="max-w-2xl">
+                <p className="label-ui uppercase tracking-[0.18em] text-primary/85 mb-3">
+                  {lang === "gr" ? "Καμία Διαθεσιμότητα" : "No Availability"}
+                </p>
+                <h3 className="text-display text-[1.65rem] md:text-[2rem] leading-tight text-foreground mb-4">
+                  {noTripsTitle}
+                </h3>
+                <p className="premium-subheading text-[1rem] md:text-[1.05rem] leading-relaxed mb-6 max-w-xl">
+                  {noTripsDescription}
+                </p>
+                <p className="text-sm md:text-base text-foreground-muted mb-8">
+                  {noTripsContactPrefix}{" "}
+                  <button
+                    onClick={() => setContactOpen(true)}
+                    className="font-semibold text-primary underline decoration-primary/50 underline-offset-4 hover:text-foreground transition-colors"
+                  >
+                    {noTripsContactLink}
+                  </button>{" "}
+                  {noTripsContactSuffix}
+                </p>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    onClick={resetFilters}
+                    className="premium-outline-button text-sm"
+                  >
+                    {t("search.reset")}
+                  </button>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="space-y-6">
@@ -956,6 +1000,7 @@ const TripsContent = () => {
       </AnimatePresence>
 
       <TermsModal open={termsOpen} onClose={() => setTermsOpen(false)} />
+      <ContactModal open={contactOpen} onClose={() => setContactOpen(false)} />
 
       <footer className="border-t border-border/70 py-16 px-6 md:px-10">
         <div className="premium-panel max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 rounded-[1.8rem] px-6 py-8 md:px-8">
