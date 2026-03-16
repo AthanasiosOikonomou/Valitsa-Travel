@@ -1,82 +1,34 @@
-import { useState, useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import { useTheme } from "@/contexts/ThemeContext";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useReducer,
+  useState,
+} from "react";
 import { useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Search, SlidersHorizontal, X, ChevronDown } from "lucide-react";
 import { getLocalizedTripContent, trips, type Trip } from "@/data/mockData";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Slider } from "@/components/ui/slider";
+import { useTheme } from "@/contexts/ThemeContext";
 import Navbar from "@/components/Navbar";
 import TripDetail from "@/components/TripDetail";
 import Seo from "@/components/Seo";
 import TermsModal from "@/components/TermsModal";
-
-// Map nav filter params to actual data filters
-const filterPresets: Record<
-  string,
-  { durationRange?: [number, number]; category?: string }
-> = {
-  daily: { durationRange: [1, 1] },
-  twoday: { durationRange: [2, 2] },
-  internal: {},
-  external: {},
-};
-
-const getPresetTrips = (preset?: {
-  durationRange?: [number, number];
-  category?: string;
-}) => {
-  if (!preset) return trips;
-
-  return trips.filter((trip) => {
-    if (preset.category && trip.category !== preset.category) return false;
-
-    if (
-      preset.durationRange &&
-      (trip.durationDays < preset.durationRange[0] ||
-        trip.durationDays > preset.durationRange[1])
-    ) {
-      return false;
-    }
-
-    return true;
-  });
-};
-
-const getBounds = (
-  presetTrips: Trip[],
-  fallback: { min: number; max: number },
-  key: "priceNum" | "durationDays",
-) => {
-  if (presetTrips.length === 0) return fallback;
-
-  const values = presetTrips.map((trip) => trip[key]);
-  return {
-    min: Math.min(...values),
-    max: Math.max(...values),
-  };
-};
-
-const countryToContinent: Record<string, string> = {
-  Greece: "Europe",
-  Italy: "Europe",
-  Iceland: "Europe",
-  Switzerland: "Europe",
-  France: "Europe",
-  Japan: "Asia",
-  Tanzania: "Africa",
-  Egypt: "Africa",
-  Chile: "South America",
-  Peru: "South America",
-  USA: "North America",
-};
-
-const getPresetCountries = (filter: string | null, countries: string[]) => {
-  if (filter === "internal") return ["Greece"];
-  if (filter === "external")
-    return countries.filter((country) => country !== "Greece");
-  return [];
-};
+import { Slider } from "@/components/ui/slider";
+import {
+  areTripFilterStatesEqual,
+  buildAvailableTripFacets,
+  buildFilteredTrips,
+  buildTripFilterMetadata,
+  createInitialTripFilterState,
+  getCityLabelMap,
+  sanitizeTripFilterState,
+  sortTrips,
+  tripFilterReducer,
+  type SortOption,
+  type TripTypeFilter,
+} from "@/lib/tripFilters";
 
 interface FilterSectionProps {
   id: string;
@@ -84,6 +36,18 @@ interface FilterSectionProps {
   isOpen: boolean;
   onToggle: (id: string) => void;
   children: React.ReactNode;
+}
+
+interface FacetOptionProps {
+  checked: boolean;
+  count: number;
+  disabled: boolean;
+  isDayMode?: boolean;
+  label: string;
+  name?: string;
+  onChange: () => void;
+  showCount?: boolean;
+  type: "checkbox" | "radio";
 }
 
 const FilterSection = ({
@@ -120,13 +84,74 @@ const FilterSection = ({
   </div>
 );
 
+const FacetOption = ({
+  checked,
+  count,
+  disabled,
+  isDayMode = false,
+  label,
+  name,
+  onChange,
+  showCount = true,
+  type,
+}: FacetOptionProps) => (
+  <label
+    className={`flex items-center gap-3 py-2 transition-colors ${
+      disabled
+        ? "cursor-not-allowed opacity-35 grayscale saturate-0"
+        : "cursor-pointer group"
+    }`}
+  >
+    <input
+      type={type}
+      name={name}
+      checked={checked}
+      disabled={disabled}
+      onChange={onChange}
+      style={
+        type === "checkbox"
+          ? {
+              accentColor: isDayMode ? "#ffffff" : undefined,
+            }
+          : undefined
+      }
+      className={`w-4 h-4 shrink-0 border focus:ring-1 focus:ring-black ${
+        type === "checkbox"
+          ? "rounded border-black bg-white text-black"
+          : "border-border text-primary"
+      }`}
+    />
+    <span
+      className={`flex-1 text-sm transition-colors ${
+        disabled
+          ? "text-foreground-muted/65 line-through"
+          : "text-foreground-muted group-hover:text-foreground"
+      }`}
+    >
+      {label}
+    </span>
+    {showCount ? (
+      <span
+        className={`text-xs tabular-nums px-2 py-0.5 rounded-full border ${
+          disabled
+            ? "text-foreground-muted/70 border-border/60 bg-muted/35"
+            : "text-foreground-muted border-border/70"
+        }`}
+      >
+        {count}
+      </span>
+    ) : null}
+  </label>
+);
+
 const TripsContent = () => {
   const [searchParams] = useSearchParams();
   const { darkMode, toggleDark } = useTheme();
-  const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
-  const [termsOpen, setTermsOpen] = useState(false);
   const { t, lang } = useLanguage();
   const activeFilter = searchParams.get("filter");
+  const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
+  const [termsOpen, setTermsOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const scrollTripsToTop = () => {
     const prev = document.documentElement.style.scrollBehavior;
@@ -149,11 +174,6 @@ const TripsContent = () => {
       );
     };
   }, []);
-
-  const activePreset = useMemo(() => {
-    const filter = searchParams.get("filter");
-    return filter ? filterPresets[filter] : undefined;
-  }, [searchParams]);
 
   const seoTitle =
     lang === "gr"
@@ -209,242 +229,64 @@ const TripsContent = () => {
     ],
   };
 
-  const globalPriceBounds = useMemo(() => {
-    const values = trips.map((trip) => trip.priceNum);
-    return {
-      min: Math.min(...values),
-      max: Math.max(...values),
-    };
-  }, []);
+  const filterMetadata = useMemo(() => buildTripFilterMetadata(trips), []);
+  const initialFilterState = useMemo(
+    () => createInitialTripFilterState(trips, filterMetadata, activeFilter),
+    [activeFilter, filterMetadata],
+  );
+  const [filterState, dispatch] = useReducer(
+    tripFilterReducer,
+    initialFilterState,
+  );
 
-  const globalDurationBounds = useMemo(() => {
-    const values = trips.map((trip) => trip.durationDays);
-    return {
-      min: Math.min(...values),
-      max: Math.max(...values),
-    };
-  }, []);
-
-  const departureCities = useMemo(
-    () => [
-      ...new Set(
-        trips.map((trip) => getLocalizedTripContent(trip, lang).departureCity),
+  const preliminaryFacets = useMemo(
+    () =>
+      buildAvailableTripFacets(
+        trips,
+        filterState,
+        lang,
+        filterMetadata.globalPriceBounds,
       ),
-    ],
-    [lang],
+    [filterMetadata.globalPriceBounds, filterState, lang],
   );
-
-  const countries = useMemo(
+  const normalizedFilterState = useMemo(
     () =>
-      [...new Set(trips.map((trip) => trip.country))].sort((a, b) => {
-        if (a === "Greece") return -1;
-        if (b === "Greece") return 1;
-        return a.localeCompare(b);
-      }),
-    [],
+      sanitizeTripFilterState(filterState, preliminaryFacets, filterMetadata),
+    [preliminaryFacets, filterMetadata, filterState],
   );
-
-  const presetTrips = useMemo(
-    () => getPresetTrips(activePreset),
-    [activePreset],
-  );
-
-  const initialPriceBounds = useMemo(
-    () => getBounds(presetTrips, globalPriceBounds, "priceNum"),
-    [presetTrips, globalPriceBounds],
-  );
-
-  const initialDurationBounds = useMemo(
-    () => getBounds(presetTrips, globalDurationBounds, "durationDays"),
-    [presetTrips, globalDurationBounds],
-  );
-
-  const tripCategories = useMemo(
-    () => [...new Set(trips.map((trip) => trip.category))],
-    [],
-  );
-
-  const tripTypes = useMemo(
-    () => [...new Set(trips.map((trip) => trip.type))],
-    [],
-  );
-
-  const continents = useMemo(
+  const availableFacets = useMemo(
     () =>
-      [
-        ...new Set(
-          trips.map((trip) => countryToContinent[trip.country] ?? "Other"),
-        ),
-      ].sort((a, b) => a.localeCompare(b)),
-    [],
+      buildAvailableTripFacets(
+        trips,
+        normalizedFilterState,
+        lang,
+        filterMetadata.globalPriceBounds,
+      ),
+    [filterMetadata.globalPriceBounds, lang, normalizedFilterState],
+  );
+  const filtered = useMemo(
+    () =>
+      sortTrips(
+        buildFilteredTrips(trips, normalizedFilterState, lang),
+        normalizedFilterState.sortBy,
+      ),
+    [lang, normalizedFilterState],
   );
 
-  const hasBonusTrips = useMemo(() => trips.some((trip) => trip.isBonus), []);
-  const hasGuaranteedTrips = useMemo(
-    () => trips.some((trip) => trip.guaranteedDeparture),
-    [],
-  );
-  const hasAvailableTrips = useMemo(
-    () => trips.some((trip) => trip.hasAvailableSeats),
-    [],
-  );
-  const hasFeaturedTrips = useMemo(
-    () => trips.some((trip) => trip.isFeatured),
-    [],
-  );
-
+  const cityLabels = useMemo(() => getCityLabelMap(trips, lang), [lang]);
   const priceStep = useMemo(() => {
-    const spread = globalPriceBounds.max - globalPriceBounds.min;
+    const spread =
+      availableFacets.priceBounds.max - availableFacets.priceBounds.min;
     if (spread <= 1000) return 50;
     if (spread <= 5000) return 100;
     if (spread <= 10000) return 250;
     return 500;
-  }, [globalPriceBounds.max, globalPriceBounds.min]);
+  }, [availableFacets.priceBounds.max, availableFacets.priceBounds.min]);
 
-  // Filters
-  const [searchQuery, setSearchQuery] = useState("");
-  const [priceRange, setPriceRange] = useState<[number, number]>([
-    initialPriceBounds.min,
-    initialPriceBounds.max,
-  ]);
-  const [durationRange, setDurationRange] = useState<[number, number]>(
-    () =>
-      activePreset?.durationRange ?? [
-        initialDurationBounds.min,
-        initialDurationBounds.max,
-      ],
-  );
-  const [selectedCountries, setSelectedCountries] = useState<string[]>(() =>
-    getPresetCountries(activeFilter, countries),
-  );
-  const [selectedContinents, setSelectedContinents] = useState<string[]>([]);
-  const [selectedCities, setSelectedCities] = useState<string[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(() =>
-    activePreset?.category ? [activePreset.category] : [],
-  );
-  const [showBonus, setShowBonus] = useState(false);
-  const [showGuaranteed, setShowGuaranteed] = useState(false);
-  const [showAvailable, setShowAvailable] = useState(false);
-  const [showFeatured, setShowFeatured] = useState(false);
-  const [tripType, setTripType] = useState<"all" | Trip["type"]>("all");
-  const [sortBy, setSortBy] = useState<
-    "recommended" | "priceAsc" | "priceDesc"
-  >("recommended");
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-
-  const baseFilteredTrips = useMemo(() => {
-    return trips.filter((trip) => {
-      const localized = getLocalizedTripContent(trip, lang);
-
-      if (
-        searchQuery &&
-        !`${localized.title} ${localized.location}`
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase())
-      )
-        return false;
-      if (
-        selectedCountries.length > 0 &&
-        !selectedCountries.includes(trip.country)
-      )
-        return false;
-      if (selectedContinents.length > 0) {
-        const tripContinent = countryToContinent[trip.country] ?? "Other";
-        if (!selectedContinents.includes(tripContinent)) return false;
-      }
-      if (
-        selectedCities.length > 0 &&
-        !selectedCities.includes(localized.departureCity)
-      )
-        return false;
-      if (
-        selectedCategories.length > 0 &&
-        !selectedCategories.includes(trip.category)
-      )
-        return false;
-      if (showBonus && !trip.isBonus) return false;
-      if (showGuaranteed && !trip.guaranteedDeparture) return false;
-      if (showAvailable && !trip.hasAvailableSeats) return false;
-      if (showFeatured && !trip.isFeatured) return false;
-      if (tripType !== "all" && trip.type !== tripType) return false;
-      return true;
-    });
-  }, [
-    searchQuery,
-    selectedCountries,
-    selectedContinents,
-    selectedCities,
-    selectedCategories,
-    showBonus,
-    showGuaranteed,
-    showAvailable,
-    showFeatured,
-    tripType,
-    lang,
-  ]);
-
-  const priceBounds = useMemo(() => {
-    if (baseFilteredTrips.length === 0) return globalPriceBounds;
-    const values = baseFilteredTrips.map((trip) => trip.priceNum);
-    return {
-      min: Math.min(...values),
-      max: Math.max(...values),
-    };
-  }, [baseFilteredTrips, globalPriceBounds]);
-
-  const durationBounds = useMemo(() => {
-    if (baseFilteredTrips.length === 0) return globalDurationBounds;
-    const values = baseFilteredTrips.map((trip) => trip.durationDays);
-    return {
-      min: Math.min(...values),
-      max: Math.max(...values),
-    };
-  }, [baseFilteredTrips, globalDurationBounds]);
-
-  const availableDurationBounds = useMemo(() => {
-    if (!activePreset?.durationRange) return durationBounds;
-
-    const [presetMin, presetMax] = activePreset.durationRange;
-    return {
-      min: Math.min(durationBounds.min, presetMin),
-      max: Math.max(durationBounds.max, presetMax),
-    };
-  }, [activePreset, durationBounds]);
-
-  const prevPriceBoundsRef = useRef(priceBounds);
-  const prevDurationBoundsRef = useRef(availableDurationBounds);
-
-  // Keep URL filter presets in sync if query param changes while mounted
   useLayoutEffect(() => {
-    setSearchQuery("");
-    setPriceRange([initialPriceBounds.min, initialPriceBounds.max]);
-    setDurationRange(
-      activePreset?.durationRange ?? [
-        initialDurationBounds.min,
-        initialDurationBounds.max,
-      ],
-    );
-    setSelectedCountries(getPresetCountries(activeFilter, countries));
-    setSelectedContinents([]);
-    setSelectedCities([]);
-    setSelectedCategories(
-      activePreset?.category ? [activePreset.category] : [],
-    );
-    setShowBonus(false);
-    setShowGuaranteed(false);
-    setShowAvailable(false);
-    setShowFeatured(false);
-    setTripType("all");
-    setSortBy("recommended");
-  }, [
-    activeFilter,
-    activePreset,
-    countries,
-    initialDurationBounds,
-    initialPriceBounds,
-  ]);
+    dispatch({ type: "replace", value: initialFilterState });
+  }, [initialFilterState]);
 
-  // Collapsible sections
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     price: true,
     special: true,
@@ -478,10 +320,6 @@ const TripsContent = () => {
   }, [mobileFiltersOpen]);
 
   useEffect(() => {
-    setSelectedCities([]);
-  }, [lang]);
-
-  useEffect(() => {
     const tripParam = searchParams.get("trip");
     if (!tripParam) return;
 
@@ -494,132 +332,24 @@ const TripsContent = () => {
     }
   }, [searchParams]);
 
-  useLayoutEffect(() => {
-    const prev = prevPriceBoundsRef.current;
-    if (prev.min === priceBounds.min && prev.max === priceBounds.max) {
-      return;
-    }
-
-    setPriceRange((current) => {
-      const wasFull = current[0] === prev.min && current[1] === prev.max;
-      if (wasFull) {
-        return [priceBounds.min, priceBounds.max];
-      }
-
-      const nextMin = Math.max(
-        priceBounds.min,
-        Math.min(current[0], priceBounds.max),
-      );
-      const nextMax = Math.max(nextMin, Math.min(current[1], priceBounds.max));
-      return [nextMin, nextMax];
-    });
-    prevPriceBoundsRef.current = priceBounds;
-  }, [priceBounds]);
-
-  useLayoutEffect(() => {
-    const prev = prevDurationBoundsRef.current;
-    if (
-      prev.min === availableDurationBounds.min &&
-      prev.max === availableDurationBounds.max
-    ) {
-      return;
-    }
-
-    setDurationRange((current) => {
-      const wasFull = current[0] === prev.min && current[1] === prev.max;
-      if (wasFull) {
-        return [availableDurationBounds.min, availableDurationBounds.max];
-      }
-
-      const nextMin = Math.max(
-        availableDurationBounds.min,
-        Math.min(current[0], availableDurationBounds.max),
-      );
-      const nextMax = Math.max(
-        nextMin,
-        Math.min(current[1], availableDurationBounds.max),
-      );
-      return [nextMin, nextMax];
-    });
-    prevDurationBoundsRef.current = availableDurationBounds;
-  }, [availableDurationBounds]);
+  useEffect(() => {
+    if (areTripFilterStatesEqual(filterState, normalizedFilterState)) return;
+    dispatch({ type: "replace", value: normalizedFilterState });
+  }, [filterState, normalizedFilterState]);
 
   const toggleSection = (key: string) =>
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  const toggleCity = (city: string) =>
-    setSelectedCities((prev) =>
-      prev.includes(city) ? prev.filter((c) => c !== city) : [...prev, city],
-    );
+  const translateFacetValue = (prefix: string, fallback: string) => {
+    const translated = t(`${prefix}.${fallback}`);
+    return translated === `${prefix}.${fallback}` ? fallback : translated;
+  };
 
-  const toggleCountry = (country: string) =>
-    setSelectedCountries((prev) =>
-      prev.includes(country)
-        ? prev.filter((c) => c !== country)
-        : [...prev, country],
-    );
-
-  const toggleContinent = (continent: string) =>
-    setSelectedContinents((prev) =>
-      prev.includes(continent)
-        ? prev.filter((c) => c !== continent)
-        : [...prev, continent],
-    );
-
-  const toggleCategory = (cat: string) =>
-    setSelectedCategories((prev) =>
-      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat],
-    );
-
-  const filtered = useMemo(() => {
-    const matchingTrips = baseFilteredTrips.filter((trip) => {
-      if (trip.priceNum < priceRange[0] || trip.priceNum > priceRange[1])
-        return false;
-      if (
-        trip.durationDays < durationRange[0] ||
-        trip.durationDays > durationRange[1]
-      )
-        return false;
-      return true;
-    });
-
-    const sortedTrips = [...matchingTrips];
-    switch (sortBy) {
-      case "priceAsc":
-        sortedTrips.sort((a, b) => a.priceNum - b.priceNum);
-        break;
-      case "priceDesc":
-        sortedTrips.sort((a, b) => b.priceNum - a.priceNum);
-        break;
-      case "recommended":
-      default:
-        sortedTrips.sort((a, b) => {
-          const scoreA =
-            Number(Boolean(a.isFeatured)) + Number(Boolean(a.isBonus));
-          const scoreB =
-            Number(Boolean(b.isFeatured)) + Number(Boolean(b.isBonus));
-          return scoreB - scoreA;
-        });
-        break;
-    }
-
-    return sortedTrips;
-  }, [baseFilteredTrips, durationRange, priceRange, sortBy]);
+  const isDisabled = (count: number, selected: boolean) =>
+    !selected && count === 0;
 
   const resetFilters = () => {
-    setSearchQuery("");
-    setPriceRange([globalPriceBounds.min, globalPriceBounds.max]);
-    setDurationRange([globalDurationBounds.min, globalDurationBounds.max]);
-    setSelectedCountries(getPresetCountries(activeFilter, countries));
-    setSelectedContinents([]);
-    setSelectedCities([]);
-    setSelectedCategories([]);
-    setShowBonus(false);
-    setShowGuaranteed(false);
-    setShowAvailable(false);
-    setShowFeatured(false);
-    setTripType("all");
-    setSortBy("recommended");
+    dispatch({ type: "replace", value: initialFilterState });
   };
 
   const filtersContent = (
@@ -632,8 +362,10 @@ const TripsContent = () => {
           />
           <input
             type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={filterState.searchQuery}
+            onChange={(event) =>
+              dispatch({ type: "setSearchQuery", value: event.target.value })
+            }
             placeholder={t("archive.searchPlaceholder")}
             className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
           />
@@ -647,83 +379,25 @@ const TripsContent = () => {
         onToggle={toggleSection}
       >
         <p className="text-xs text-foreground-muted mb-3">
-          ${priceRange[0].toLocaleString()} – ${priceRange[1].toLocaleString()}
+          ${normalizedFilterState.priceRange[0].toLocaleString()} - $
+          {normalizedFilterState.priceRange[1].toLocaleString()}
         </p>
         <Slider
-          min={priceBounds.min}
-          max={priceBounds.max}
+          min={availableFacets.priceBounds.min}
+          max={availableFacets.priceBounds.max}
           step={priceStep}
-          value={priceRange}
+          disabled={
+            availableFacets.priceBounds.min === availableFacets.priceBounds.max
+          }
+          value={normalizedFilterState.priceRange}
           onValueChange={(value) =>
-            setPriceRange([value[0], value[1]] as [number, number])
+            dispatch({
+              type: "setPriceRange",
+              value: [value[0], value[1]] as [number, number],
+            })
           }
         />
       </FilterSection>
-
-      {(hasBonusTrips ||
-        hasGuaranteedTrips ||
-        hasAvailableTrips ||
-        hasFeaturedTrips) && (
-        <FilterSection
-          id="special"
-          title={t("archive.specialFilters")}
-          isOpen={openSections.special}
-          onToggle={toggleSection}
-        >
-          {hasBonusTrips && (
-            <label className="flex items-center gap-3 py-2 cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={showBonus}
-                onChange={() => setShowBonus(!showBonus)}
-                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-              />
-              <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
-                {t("archive.bonusTrips")}
-              </span>
-            </label>
-          )}
-          {hasGuaranteedTrips && (
-            <label className="flex items-center gap-3 py-2 cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={showGuaranteed}
-                onChange={() => setShowGuaranteed(!showGuaranteed)}
-                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-              />
-              <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
-                {t("archive.guaranteedDepartures")}
-              </span>
-            </label>
-          )}
-          {hasAvailableTrips && (
-            <label className="flex items-center gap-3 py-2 cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={showAvailable}
-                onChange={() => setShowAvailable(!showAvailable)}
-                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-              />
-              <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
-                {t("archive.availableSeats")}
-              </span>
-            </label>
-          )}
-          {hasFeaturedTrips && (
-            <label className="flex items-center gap-3 py-2 cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={showFeatured}
-                onChange={() => setShowFeatured(!showFeatured)}
-                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-              />
-              <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
-                {t("archive.featuredPicks")}
-              </span>
-            </label>
-          )}
-        </FilterSection>
-      )}
 
       <FilterSection
         id="sort"
@@ -739,24 +413,95 @@ const TripsContent = () => {
               ["priceDesc", t("archive.sort.priceDesc")],
             ] as const
           ).map(([value, label]) => (
-            <label
+            <FacetOption
               key={value}
-              className="flex items-center gap-3 py-2 cursor-pointer group"
-            >
-              <input
-                type="radio"
-                name="sortBy"
-                checked={sortBy === value}
-                onChange={() => setSortBy(value)}
-                className="w-4 h-4 border-border text-primary focus:ring-primary"
-              />
-              <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
-                {label}
-              </span>
-            </label>
+              type="radio"
+              name="sortBy"
+              label={label}
+              checked={normalizedFilterState.sortBy === value}
+              count={0}
+              showCount={false}
+              disabled={false}
+              onChange={() =>
+                dispatch({ type: "setSortBy", value: value as SortOption })
+              }
+            />
           ))}
         </div>
       </FilterSection>
+
+      {(filterMetadata.hasBonusTrips ||
+        filterMetadata.hasGuaranteedTrips ||
+        filterMetadata.hasAvailableTrips ||
+        filterMetadata.hasFeaturedTrips) && (
+        <FilterSection
+          id="special"
+          title={t("archive.specialFilters")}
+          isOpen={openSections.special}
+          onToggle={toggleSection}
+        >
+          {filterMetadata.hasBonusTrips && (
+            <FacetOption
+              type="checkbox"
+              label={t("archive.bonusTrips")}
+              checked={normalizedFilterState.showBonus}
+              count={availableFacets.specialCounts.bonus}
+              disabled={isDisabled(
+                availableFacets.specialCounts.bonus,
+                normalizedFilterState.showBonus,
+              )}
+              onChange={() =>
+                dispatch({ type: "toggleFlag", key: "showBonus" })
+              }
+            />
+          )}
+          {filterMetadata.hasGuaranteedTrips && (
+            <FacetOption
+              type="checkbox"
+              label={t("archive.guaranteedDepartures")}
+              checked={normalizedFilterState.showGuaranteed}
+              count={availableFacets.specialCounts.guaranteed}
+              disabled={isDisabled(
+                availableFacets.specialCounts.guaranteed,
+                normalizedFilterState.showGuaranteed,
+              )}
+              onChange={() =>
+                dispatch({ type: "toggleFlag", key: "showGuaranteed" })
+              }
+            />
+          )}
+          {filterMetadata.hasAvailableTrips && (
+            <FacetOption
+              type="checkbox"
+              label={t("archive.availableSeats")}
+              checked={normalizedFilterState.showAvailable}
+              count={availableFacets.specialCounts.available}
+              disabled={isDisabled(
+                availableFacets.specialCounts.available,
+                normalizedFilterState.showAvailable,
+              )}
+              onChange={() =>
+                dispatch({ type: "toggleFlag", key: "showAvailable" })
+              }
+            />
+          )}
+          {filterMetadata.hasFeaturedTrips && (
+            <FacetOption
+              type="checkbox"
+              label={t("archive.featuredPicks")}
+              checked={normalizedFilterState.showFeatured}
+              count={availableFacets.specialCounts.featured}
+              disabled={isDisabled(
+                availableFacets.specialCounts.featured,
+                normalizedFilterState.showFeatured,
+              )}
+              onChange={() =>
+                dispatch({ type: "toggleFlag", key: "showFeatured" })
+              }
+            />
+          )}
+        </FilterSection>
+      )}
 
       <FilterSection
         id="continent"
@@ -764,27 +509,29 @@ const TripsContent = () => {
         isOpen={openSections.continent}
         onToggle={toggleSection}
       >
-        {continents.map((continent) => (
-          <label
-            key={continent}
-            className="flex items-center gap-3 py-2 cursor-pointer group"
-          >
-            <input
+        {filterMetadata.continents.map((continent) => {
+          const count = availableFacets.continentCounts.get(continent) ?? 0;
+          const checked =
+            normalizedFilterState.selectedContinents.includes(continent);
+
+          return (
+            <FacetOption
+              key={continent}
               type="checkbox"
-              checked={selectedContinents.includes(continent)}
-              onChange={() => toggleContinent(continent)}
-              className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+              label={translateFacetValue("continent", continent)}
+              checked={checked}
+              count={count}
+              disabled={isDisabled(count, checked)}
+              onChange={() =>
+                dispatch({
+                  type: "toggleMulti",
+                  key: "selectedContinents",
+                  value: continent,
+                })
+              }
             />
-            <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
-              {(() => {
-                const translated = t(`continent.${continent}`);
-                return translated === `continent.${continent}`
-                  ? continent
-                  : translated;
-              })()}
-            </span>
-          </label>
-        ))}
+          );
+        })}
       </FilterSection>
 
       <FilterSection
@@ -793,18 +540,30 @@ const TripsContent = () => {
         isOpen={openSections.duration}
         onToggle={toggleSection}
       >
-        <p className="text-xs text-foreground-muted mb-3">
-          {durationRange[0]} – {durationRange[1]} {t("archive.days")}
-        </p>
-        <Slider
-          min={availableDurationBounds.min}
-          max={availableDurationBounds.max}
-          step={1}
-          value={durationRange}
-          onValueChange={(value) =>
-            setDurationRange([value[0], value[1]] as [number, number])
-          }
-        />
+        {filterMetadata.durations.map((duration) => {
+          const count = availableFacets.durationCounts.get(duration) ?? 0;
+          const checked =
+            normalizedFilterState.selectedDurations.includes(duration);
+
+          return (
+            <FacetOption
+              key={duration}
+              type="checkbox"
+              isDayMode
+              label={`${duration} ${t("archive.days")}`}
+              checked={checked}
+              count={count}
+              disabled={isDisabled(count, checked)}
+              onChange={() =>
+                dispatch({
+                  type: "toggleMulti",
+                  key: "selectedDurations",
+                  value: duration,
+                })
+              }
+            />
+          );
+        })}
       </FilterSection>
 
       <FilterSection
@@ -813,27 +572,29 @@ const TripsContent = () => {
         isOpen={openSections.country}
         onToggle={toggleSection}
       >
-        {countries.map((country) => (
-          <label
-            key={country}
-            className="flex items-center gap-3 py-2 cursor-pointer group"
-          >
-            <input
+        {filterMetadata.countries.map((country) => {
+          const count = availableFacets.countryCounts.get(country) ?? 0;
+          const checked =
+            normalizedFilterState.selectedCountries.includes(country);
+
+          return (
+            <FacetOption
+              key={country}
               type="checkbox"
-              checked={selectedCountries.includes(country)}
-              onChange={() => toggleCountry(country)}
-              className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+              label={translateFacetValue("country", country)}
+              checked={checked}
+              count={count}
+              disabled={isDisabled(count, checked)}
+              onChange={() =>
+                dispatch({
+                  type: "toggleMulti",
+                  key: "selectedCountries",
+                  value: country,
+                })
+              }
             />
-            <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
-              {(() => {
-                const translated = t(`country.${country}`);
-                return translated === `country.${country}`
-                  ? country
-                  : translated;
-              })()}
-            </span>
-          </label>
-        ))}
+          );
+        })}
       </FilterSection>
 
       <FilterSection
@@ -842,22 +603,28 @@ const TripsContent = () => {
         isOpen={openSections.city}
         onToggle={toggleSection}
       >
-        {departureCities.map((city) => (
-          <label
-            key={city}
-            className="flex items-center gap-3 py-2 cursor-pointer group"
-          >
-            <input
+        {filterMetadata.cities.map((city) => {
+          const count = availableFacets.cityCounts.get(city) ?? 0;
+          const checked = normalizedFilterState.selectedCities.includes(city);
+
+          return (
+            <FacetOption
+              key={city}
               type="checkbox"
-              checked={selectedCities.includes(city)}
-              onChange={() => toggleCity(city)}
-              className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+              label={cityLabels.get(city) ?? city}
+              checked={checked}
+              count={count}
+              disabled={isDisabled(count, checked)}
+              onChange={() =>
+                dispatch({
+                  type: "toggleMulti",
+                  key: "selectedCities",
+                  value: city,
+                })
+              }
             />
-            <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
-              {city}
-            </span>
-          </label>
-        ))}
+          );
+        })}
       </FilterSection>
 
       <FilterSection
@@ -866,25 +633,29 @@ const TripsContent = () => {
         isOpen={openSections.category}
         onToggle={toggleSection}
       >
-        {tripCategories.map((cat) => (
-          <label
-            key={cat}
-            className="flex items-center gap-3 py-2 cursor-pointer group"
-          >
-            <input
+        {filterMetadata.categories.map((category) => {
+          const count = availableFacets.categoryCounts.get(category) ?? 0;
+          const checked =
+            normalizedFilterState.selectedCategories.includes(category);
+
+          return (
+            <FacetOption
+              key={category}
               type="checkbox"
-              checked={selectedCategories.includes(cat)}
-              onChange={() => toggleCategory(cat)}
-              className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+              label={translateFacetValue("search", category)}
+              checked={checked}
+              count={count}
+              disabled={isDisabled(count, checked)}
+              onChange={() =>
+                dispatch({
+                  type: "toggleMulti",
+                  key: "selectedCategories",
+                  value: category,
+                })
+              }
             />
-            <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
-              {(() => {
-                const translated = t(`search.${cat}`);
-                return translated === `search.${cat}` ? cat : translated;
-              })()}
-            </span>
-          </label>
-        ))}
+          );
+        })}
       </FilterSection>
 
       <FilterSection
@@ -893,23 +664,31 @@ const TripsContent = () => {
         isOpen={openSections.type}
         onToggle={toggleSection}
       >
-        {(["all", ...tripTypes] as const).map((type) => (
-          <label
-            key={type}
-            className="flex items-center gap-3 py-2 cursor-pointer group"
-          >
-            <input
+        {(["all", ...filterMetadata.tripTypes] as const).map((type) => {
+          const count =
+            type === "all"
+              ? filtered.length
+              : (availableFacets.tripTypeCounts.get(type) ?? 0);
+          const checked = normalizedFilterState.tripType === type;
+
+          return (
+            <FacetOption
+              key={type}
               type="radio"
               name="tripType"
-              checked={tripType === type}
-              onChange={() => setTripType(type as "all" | Trip["type"])}
-              className="w-4 h-4 border-border text-primary focus:ring-primary"
+              label={type === "all" ? t("archive.all") : t(`tripType.${type}`)}
+              checked={checked}
+              count={count}
+              disabled={type !== "all" && isDisabled(count, checked)}
+              onChange={() =>
+                dispatch({
+                  type: "setTripType",
+                  value: type as TripTypeFilter,
+                })
+              }
             />
-            <span className="text-sm text-foreground-muted group-hover:text-foreground transition-colors">
-              {type === "all" ? t("archive.all") : t(`tripType.${type}`)}
-            </span>
-          </label>
-        ))}
+          );
+        })}
       </FilterSection>
 
       <button
@@ -934,7 +713,6 @@ const TripsContent = () => {
       />
       <Navbar darkMode={darkMode} onToggleDark={toggleDark} />
 
-      {/* Page header */}
       <div className="pt-36 pb-10 px-6 md:px-10 max-w-7xl mx-auto">
         <h1 className="text-3xl md:text-4xl text-display mb-3">
           {t("archive.title")}
@@ -952,16 +730,13 @@ const TripsContent = () => {
         </button>
       </div>
 
-      {/* 2-column layout */}
       <div className="max-w-7xl mx-auto px-6 md:px-10 pb-24 flex gap-10 relative z-0">
-        {/* Sidebar - Desktop (sticky) */}
         <aside className="hidden lg:block w-72 shrink-0">
           <div className="premium-panel sticky top-32 max-h-[calc(100vh-9rem)] overflow-y-auto rounded-[1.8rem] p-6">
             {filtersContent}
           </div>
         </aside>
 
-        {/* Mobile filters drawer */}
         <AnimatePresence>
           {mobileFiltersOpen && (
             <>
@@ -994,7 +769,6 @@ const TripsContent = () => {
           )}
         </AnimatePresence>
 
-        {/* Results */}
         <div className="flex-1 min-w-0">
           {filtered.length === 0 ? (
             <div className="premium-panel rounded-[2rem] text-center py-20 px-6">
@@ -1066,7 +840,6 @@ const TripsContent = () => {
   );
 };
 
-/* ── Trip Result Card ── */
 interface TripResultCardProps {
   trip: Trip;
   index: number;
