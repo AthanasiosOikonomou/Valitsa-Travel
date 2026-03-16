@@ -1,6 +1,6 @@
 import { Moon, Sun, Globe } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ContactModal from "@/components/ContactModal";
@@ -21,6 +21,8 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
   const { lang, setLang, t } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuToggleRef = useRef<HTMLButtonElement>(null);
   const { pathname, search } = useLocation();
   const navigate = useNavigate();
 
@@ -62,15 +64,27 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
   useEffect(() => {
     if (!menuOpen) return;
 
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      const clickedMenu = menuRef.current?.contains(target);
+      const clickedToggle = menuToggleRef.current?.contains(target);
+
+      if (!clickedMenu && !clickedToggle) {
+        setMenuOpen(false);
+      }
+    };
+
     const originalBodyOverflow = document.body.style.overflow;
     const originalHtmlOverflow = document.documentElement.style.overflow;
 
     document.body.style.overflow = "hidden";
     document.documentElement.style.overflow = "hidden";
+    document.addEventListener("pointerdown", handlePointerDown);
 
     return () => {
       document.body.style.overflow = originalBodyOverflow;
       document.documentElement.style.overflow = originalHtmlOverflow;
+      document.removeEventListener("pointerdown", handlePointerDown);
     };
   }, [menuOpen]);
 
@@ -134,6 +148,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
             </button>
 
             <button
+              ref={menuToggleRef}
               onClick={() => setMenuOpen(!menuOpen)}
               className="lg:hidden premium-outline-button p-2.5 sm:p-3"
               aria-label={t("nav.menu")}
@@ -177,6 +192,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
       <AnimatePresence>
         {menuOpen && (
           <motion.div
+            ref={menuRef}
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
