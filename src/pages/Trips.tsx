@@ -121,7 +121,7 @@ const FacetOption = ({
         ) : (
           <svg
             viewBox="0 0 16 16"
-            className="w-3 h-3 text-black"
+            className="w-3 h-3 text-black dark:text-primary"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
