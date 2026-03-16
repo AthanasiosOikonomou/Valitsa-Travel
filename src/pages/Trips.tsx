@@ -298,10 +298,20 @@ const TripsContent = () => {
       ),
     [filterMetadata.globalPriceBounds, filterState, lang, scopedTrips],
   );
+  const preservedDurations = useMemo(() => {
+    if (activeFilter === "daily") return [1];
+    if (activeFilter === "twoday") return [2];
+    return [] as number[];
+  }, [activeFilter]);
   const normalizedFilterState = useMemo(
     () =>
-      sanitizeTripFilterState(filterState, preliminaryFacets, filterMetadata),
-    [preliminaryFacets, filterMetadata, filterState],
+      sanitizeTripFilterState(
+        filterState,
+        preliminaryFacets,
+        filterMetadata,
+        preservedDurations,
+      ),
+    [preliminaryFacets, filterMetadata, filterState, preservedDurations],
   );
   const availableFacets = useMemo(
     () =>

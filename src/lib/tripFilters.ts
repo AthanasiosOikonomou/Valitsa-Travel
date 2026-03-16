@@ -380,6 +380,7 @@ export const sanitizeTripFilterState = (
   state: TripFilterState,
   availableFacets: AvailableTripFacets,
   metadata: TripFilterMetadata,
+  preservedDurations: number[] = [],
 ): TripFilterState => {
   // Keep user-selected price range stable across facet toggles.
   // Only clamp against global bounds to avoid locking other facets.
@@ -397,8 +398,10 @@ export const sanitizeTripFilterState = (
     selectedCountries: state.selectedCountries.filter((value) =>
       availableFacets.countryCounts.has(value),
     ),
-    selectedDurations: state.selectedDurations.filter((value) =>
-      availableFacets.durationCounts.has(value),
+    selectedDurations: state.selectedDurations.filter(
+      (value) =>
+        preservedDurations.includes(value) ||
+        availableFacets.durationCounts.has(value),
     ),
     selectedCities: state.selectedCities.filter((value) =>
       availableFacets.cityCounts.has(value),
