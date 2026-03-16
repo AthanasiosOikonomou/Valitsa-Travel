@@ -328,6 +328,56 @@
     border-color: rgba(71, 85, 105, 0.45);
   }
 
+  .trips-mobile-apply-button {
+    background:
+      linear-gradient(
+        135deg,
+        rgba(96, 165, 250, 0.98),
+        rgba(56, 189, 248, 0.96)
+      ),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 54%);
+    color: #eff6ff;
+    border: 1px solid rgba(186, 230, 253, 0.52);
+    box-shadow: none;
+  }
+
+  .trips-mobile-apply-button:hover {
+    background:
+      linear-gradient(
+        135deg,
+        rgba(59, 130, 246, 0.98),
+        rgba(14, 165, 233, 0.96)
+      ),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent 52%);
+    color: #f8fbff;
+    border-color: rgba(224, 242, 254, 0.62);
+    box-shadow: none;
+  }
+
+  .dark .trips-mobile-apply-button {
+    background:
+      linear-gradient(
+        135deg,
+        rgba(96, 165, 250, 0.94),
+        rgba(14, 165, 233, 0.9)
+      ),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 58%);
+    color: #eff6ff;
+    border-color: rgba(125, 211, 252, 0.38);
+  }
+
+  .dark .trips-mobile-apply-button:hover {
+    background:
+      linear-gradient(
+        135deg,
+        rgba(125, 211, 252, 0.96),
+        rgba(56, 189, 248, 0.92)
+      ),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.14), transparent 56%);
+    color: #f8fbff;
+    border-color: rgba(186, 230, 253, 0.46);
+  }
+
   .premium-button {
     display: inline-flex;
     align-items: center;

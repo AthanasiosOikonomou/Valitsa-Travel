@@ -414,11 +414,18 @@ const TripsContent = () => {
   const isDisabled = (count: number, selected: boolean) =>
     !selected && count === 0;
 
+  const mobileApplyLabel =
+    lang === "gr"
+      ? `Εμφάνιση ${filtered.length} ταξιδ${filtered.length === 1 ? "ιού" : "ιών"}`
+      : `Show ${filtered.length} ${filtered.length === 1 ? "Trip" : "Trips"}`;
+
+  const mobileClearLabel = lang === "gr" ? "Καθαρισμός" : "Clear";
+
   const resetFilters = () => {
     dispatch({ type: "replace", value: initialFilterState });
   };
 
-  const filtersContent = (
+  const renderFiltersContent = (showResetButton: boolean) => (
     <div className="space-y-0">
       <div className="pb-5 mb-5 border-b border-border">
         <div className="relative">
@@ -757,14 +764,19 @@ const TripsContent = () => {
         })}
       </FilterSection>
 
-      <button
-        onClick={resetFilters}
-        className="premium-outline-button w-full justify-center text-sm"
-      >
-        {t("search.reset")}
-      </button>
+      {showResetButton ? (
+        <button
+          onClick={resetFilters}
+          className="premium-outline-button w-full justify-center text-sm"
+        >
+          {t("search.reset")}
+        </button>
+      ) : null}
     </div>
   );
+
+  const filtersContent = renderFiltersContent(true);
+  const mobileFiltersContent = renderFiltersContent(false);
 
   return (
     <div className="premium-page trips-page-surface min-h-screen bg-background text-foreground transition-colors duration-500 relative z-0">
@@ -825,7 +837,7 @@ const TripsContent = () => {
                 animate={{ x: 0 }}
                 exit={{ x: "-100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="premium-panel trips-filter-surface fixed left-3 top-3 bottom-3 w-80 max-w-[85vw] z-50 overflow-y-auto rounded-[1.75rem] p-6 lg:hidden"
+                className="premium-panel trips-filter-surface fixed left-3 top-3 bottom-3 w-80 max-w-[85vw] z-50 rounded-[1.75rem] p-4 sm:p-5 lg:hidden flex flex-col"
               >
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-bold">{t("search.filters")}</h3>
@@ -836,7 +848,29 @@ const TripsContent = () => {
                     <X size={18} />
                   </button>
                 </div>
-                {filtersContent}
+
+                <div className="min-h-0 flex-1 overflow-y-auto pr-1 pb-28">
+                  {mobileFiltersContent}
+                </div>
+
+                <div className="absolute inset-x-4 bottom-4 sm:inset-x-5">
+                  <div className="rounded-[1.35rem] border border-white/65 bg-white/88 p-3 shadow-[0_18px_36px_-18px_rgba(15,23,42,0.38)] backdrop-blur-xl dark:border-slate-700/70 dark:bg-slate-950/86 dark:shadow-[0_18px_36px_-18px_rgba(0,0,0,0.62)]">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={resetFilters}
+                        className="premium-outline-button min-w-0 flex-1 justify-center text-sm px-4 py-3"
+                      >
+                        {mobileClearLabel}
+                      </button>
+                      <button
+                        onClick={() => setMobileFiltersOpen(false)}
+                        className="premium-button trips-mobile-apply-button min-w-0 flex-[1.35] justify-center text-sm px-4 py-3"
+                      >
+                        {mobileApplyLabel}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             </>
           )}
