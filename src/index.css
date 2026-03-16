@@ -293,6 +293,23 @@
       linear-gradient(180deg, #f8fafc 0%, #f1f5f9 45%, #eef2f7 100%);
   }
 
+  .trips-page-surface::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 9.5rem;
+    pointer-events: none;
+    z-index: 90;
+    background: linear-gradient(
+      180deg,
+      rgba(248, 250, 252, 1) 0%,
+      rgba(248, 250, 252, 0.94) 42%,
+      rgba(248, 250, 252, 0) 100%
+    );
+  }
+
   .trips-summary-surface {
     border-color: rgba(203, 213, 225, 0.42);
     box-shadow: 0 18px 42px -30px rgba(15, 23, 42, 0.34);
@@ -320,6 +337,15 @@
 
   .dark .trips-page-surface {
     background: hsl(var(--background));
+  }
+
+  .dark .trips-page-surface::after {
+    background: linear-gradient(
+      180deg,
+      rgba(7, 11, 18, 1) 0%,
+      rgba(7, 11, 18, 0.92) 42%,
+      rgba(7, 11, 18, 0) 100%
+    );
   }
 
   .dark .trips-summary-surface,
