@@ -1,0 +1,14 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+# Keep API routes untouched (handled by backend/proxy)
+
+RewriteRule ^api(/|$) - [L]
+
+# If the request is not an existing file or directory, serve the SPA entry
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.html [L]
+</IfModule>
