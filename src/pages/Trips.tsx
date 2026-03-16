@@ -20,6 +20,7 @@ import {
   areTripFilterStatesEqual,
   buildAvailableTripFacets,
   buildFilteredTrips,
+  buildPriceFacetValues,
   buildTripFilterMetadata,
   createInitialTripFilterState,
   getCityLabelMap,
@@ -201,6 +202,18 @@ const TripsContent = () => {
       ? "ταξίδια, εκδρομές, premium πακέτα, ταξίδια Ελλάδα, yacht charter, πολιτιστικές εμπειρίες, ιδιωτικές έπαυλες"
       : "luxury travel packages, curated tours, destinations, yacht charters, private estates, cultural experiences, destination travel";
 
+  const scopedTrips = useMemo(() => {
+    if (activeFilter === "internal") {
+      return trips.filter((trip) => trip.country === "Greece");
+    }
+
+    if (activeFilter === "external") {
+      return trips.filter((trip) => trip.country !== "Greece");
+    }
+
+    return trips;
+  }, [activeFilter]);
+
   const itemListSchema = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -242,9 +255,13 @@ const TripsContent = () => {
     ],
   };
 
-  const filterMetadata = useMemo(() => buildTripFilterMetadata(trips), []);
+  const filterMetadata = useMemo(
+    () => buildTripFilterMetadata(scopedTrips),
+    [scopedTrips],
+  );
   const initialFilterState = useMemo(
-    () => createInitialTripFilterState(trips, filterMetadata, activeFilter),
+    () =>
+      createInitialTripFilterState(scopedTrips, filterMetadata, activeFilter),
     [activeFilter, filterMetadata],
   );
   const [filterState, dispatch] = useReducer(
@@ -255,12 +272,12 @@ const TripsContent = () => {
   const preliminaryFacets = useMemo(
     () =>
       buildAvailableTripFacets(
-        trips,
+        scopedTrips,
         filterState,
         lang,
         filterMetadata.globalPriceBounds,
       ),
-    [filterMetadata.globalPriceBounds, filterState, lang],
+    [filterMetadata.globalPriceBounds, filterState, lang, scopedTrips],
   );
   const normalizedFilterState = useMemo(
     () =>
@@ -270,31 +287,67 @@ const TripsContent = () => {
   const availableFacets = useMemo(
     () =>
       buildAvailableTripFacets(
-        trips,
+        scopedTrips,
         normalizedFilterState,
         lang,
         filterMetadata.globalPriceBounds,
       ),
-    [filterMetadata.globalPriceBounds, lang, normalizedFilterState],
+    [
+      filterMetadata.globalPriceBounds,
+      lang,
+      normalizedFilterState,
+      scopedTrips,
+    ],
   );
   const filtered = useMemo(
     () =>
       sortTrips(
-        buildFilteredTrips(trips, normalizedFilterState, lang),
+        buildFilteredTrips(scopedTrips, normalizedFilterState, lang),
         normalizedFilterState.sortBy,
       ),
-    [lang, normalizedFilterState],
+    [lang, normalizedFilterState, scopedTrips],
   );
 
-  const cityLabels = useMemo(() => getCityLabelMap(trips, lang), [lang]);
-  const priceStep = useMemo(() => {
-    const spread =
-      availableFacets.priceBounds.max - availableFacets.priceBounds.min;
-    if (spread <= 1000) return 50;
-    if (spread <= 5000) return 100;
-    if (spread <= 10000) return 250;
-    return 500;
-  }, [availableFacets.priceBounds.max, availableFacets.priceBounds.min]);
+  const cityLabels = useMemo(
+    () => getCityLabelMap(scopedTrips, lang),
+    [lang, scopedTrips],
+  );
+  const pricePoints = useMemo(
+    () => buildPriceFacetValues(scopedTrips, normalizedFilterState, lang),
+    [lang, normalizedFilterState, scopedTrips],
+  );
+
+  const uiPriceRange = useMemo<[number, number]>(() => {
+    if (pricePoints.length === 0) {
+      return [availableFacets.priceBounds.min, availableFacets.priceBounds.max];
+    }
+
+    const minPoint =
+      pricePoints.find(
+        (value) => value >= normalizedFilterState.priceRange[0],
+      ) ?? pricePoints[0];
+
+    const maxPoint =
+      [...pricePoints]
+        .reverse()
+        .find((value) => value <= normalizedFilterState.priceRange[1]) ??
+      pricePoints[pricePoints.length - 1];
+
+    return [minPoint, Math.max(minPoint, maxPoint)];
+  }, [
+    availableFacets.priceBounds.max,
+    availableFacets.priceBounds.min,
+    normalizedFilterState.priceRange,
+    pricePoints,
+  ]);
+
+  const priceSliderRange = useMemo<[number, number]>(() => {
+    if (pricePoints.length === 0) return [0, 0];
+
+    const minIndex = Math.max(0, pricePoints.indexOf(uiPriceRange[0]));
+    const maxIndex = Math.max(minIndex, pricePoints.indexOf(uiPriceRange[1]));
+    return [minIndex, maxIndex];
+  }, [pricePoints, uiPriceRange]);
 
   useLayoutEffect(() => {
     dispatch({ type: "replace", value: initialFilterState });
@@ -339,11 +392,11 @@ const TripsContent = () => {
     const tripId = Number(tripParam);
     if (Number.isNaN(tripId)) return;
 
-    const matchedTrip = trips.find((trip) => trip.id === tripId);
+    const matchedTrip = scopedTrips.find((trip) => trip.id === tripId);
     if (matchedTrip) {
       setSelectedTrip(matchedTrip);
     }
-  }, [searchParams]);
+  }, [scopedTrips, searchParams]);
 
   useEffect(() => {
     if (areTripFilterStatesEqual(filterState, normalizedFilterState)) return;
@@ -392,21 +445,22 @@ const TripsContent = () => {
         onToggle={toggleSection}
       >
         <p className="text-xs text-foreground-muted mb-3">
-          ${normalizedFilterState.priceRange[0].toLocaleString()} - $
-          {normalizedFilterState.priceRange[1].toLocaleString()}
+          ${uiPriceRange[0].toLocaleString()} - $
+          {uiPriceRange[1].toLocaleString()}
         </p>
         <Slider
-          min={availableFacets.priceBounds.min}
-          max={availableFacets.priceBounds.max}
-          step={priceStep}
-          disabled={
-            availableFacets.priceBounds.min === availableFacets.priceBounds.max
-          }
-          value={normalizedFilterState.priceRange}
+          min={0}
+          max={Math.max(0, pricePoints.length - 1)}
+          step={1}
+          disabled={pricePoints.length <= 1}
+          value={priceSliderRange}
           onValueChange={(value) =>
             dispatch({
               type: "setPriceRange",
-              value: [value[0], value[1]] as [number, number],
+              value: [
+                pricePoints[value[0]] ?? uiPriceRange[0],
+                pricePoints[value[1]] ?? uiPriceRange[1],
+              ] as [number, number],
             })
           }
         />

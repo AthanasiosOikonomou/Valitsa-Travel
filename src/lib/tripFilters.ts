@@ -119,10 +119,7 @@ const filterPresets: Record<
 };
 
 const getPresetCountries = (filter: string | null, countries: string[]) => {
-  if (filter === "internal") return ["Greece"];
-  if (filter === "external") {
-    return countries.filter((country) => country !== "Greece");
-  }
+  if (filter === "internal" || filter === "external") return [];
   return [];
 };
 
@@ -362,6 +359,21 @@ export const sortTrips = (trips: Trip[], sortBy: SortOption) => {
       });
       return sortedTrips;
   }
+};
+
+export const buildPriceFacetValues = (
+  trips: Trip[],
+  state: TripFilterState,
+  lang: TripLang,
+) => {
+  const prices = new Set<number>();
+
+  for (const trip of trips) {
+    if (!matchesTripFilters(trip, state, lang, "price")) continue;
+    prices.add(trip.priceNum);
+  }
+
+  return [...prices].sort((left, right) => left - right);
 };
 
 export const sanitizeTripFilterState = (
