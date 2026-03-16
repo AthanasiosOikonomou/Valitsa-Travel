@@ -3,6 +3,7 @@ import {
   useLayoutEffect,
   useMemo,
   useReducer,
+  useRef,
   useState,
 } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -166,11 +167,27 @@ const TripsContent = () => {
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [termsOpen, setTermsOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const resultsTopRef = useRef<HTMLDivElement | null>(null);
+  const hasMountedFilterScrollRef = useRef(false);
 
   const scrollTripsToTop = () => {
     const prev = document.documentElement.style.scrollBehavior;
     document.documentElement.style.scrollBehavior = "auto";
     window.scrollTo(0, 0);
+    document.documentElement.style.scrollBehavior = prev;
+  };
+
+  const scrollResultsToTop = () => {
+    if (!resultsTopRef.current) return;
+
+    const prev = document.documentElement.style.scrollBehavior;
+    const top = Math.max(
+      0,
+      resultsTopRef.current.getBoundingClientRect().top + window.scrollY - 120,
+    );
+
+    document.documentElement.style.scrollBehavior = "auto";
+    window.scrollTo({ top });
     document.documentElement.style.scrollBehavior = prev;
   };
 
@@ -402,6 +419,17 @@ const TripsContent = () => {
     if (areTripFilterStatesEqual(filterState, normalizedFilterState)) return;
     dispatch({ type: "replace", value: normalizedFilterState });
   }, [filterState, normalizedFilterState]);
+
+  useEffect(() => {
+    if (!hasMountedFilterScrollRef.current) {
+      hasMountedFilterScrollRef.current = true;
+      return;
+    }
+
+    if (mobileFiltersOpen) return;
+
+    scrollResultsToTop();
+  }, [mobileFiltersOpen, normalizedFilterState]);
 
   const toggleSection = (key: string) =>
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -815,7 +843,10 @@ const TripsContent = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 md:px-10 pb-24 flex gap-10 relative z-0">
+      <div
+        ref={resultsTopRef}
+        className="max-w-7xl mx-auto px-6 md:px-10 pb-24 flex gap-10 relative z-0"
+      >
         <aside className="hidden lg:block w-72 shrink-0">
           <div className="premium-panel trips-filter-surface sticky top-32 max-h-[calc(100vh-9rem)] rounded-[1.8rem] p-6 flex flex-col">
             <div className="min-h-0 flex-1 overflow-y-auto pr-1 pb-6">
