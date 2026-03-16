@@ -157,28 +157,56 @@ const TripsContent = () => {
 
   const seoTitle =
     lang === "gr"
-      ? "Όλα τα Ταξίδια | Valitsa Travel"
-      : "All Trips | Valitsa Travel";
+      ? "Όλα τα Ταξίδια | Valitsa Travel - Premium Εκδρομές & Πακέτα"
+      : "All Trips | Valitsa Travel - Premium Packages & Curated Tours";
   const seoDescription =
     lang === "gr"
-      ? "Δείτε όλες τις διαθέσιμες εκδρομές και οργανωμένα ταξίδια της Valitsa Travel με αναζήτηση και φίλτρα."
-      : "Browse all available tours and curated trips from Valitsa Travel with smart filters and search.";
+      ? "Εξερευνήστε τη συλλογή μας από premium ταξιδιωτικά πακέτα. Ιδιωτικές έπαυλες, yacht charters, πολιτιστικές εμπειρίες. Φίλτρα ανά χώρα, τιμή & διάρκεια."
+      : "Explore our collection of premium travel packages. Private estates, yacht experiences, cultural tours. Filter by destination, price, and duration.";
   const seoKeywords =
     lang === "gr"
-      ? "εκδρομές, οργανωμένα ταξίδια, φίλτρα ταξιδιών, Valitsa Travel"
-      : "trips, tours, travel filters, curated travel, Valitsa Travel";
+      ? "ταξίδια, εκδρομές, premium πακέτα, ταξίδια Ελλάδα, yacht charter, πολιτιστικές εμπειρίες, ιδιωτικές έπαυλες"
+      : "luxury travel packages, curated tours, destinations, yacht charters, private estates, cultural experiences, destination travel";
 
   const itemListSchema = {
     "@context": "https://schema.org",
     "@type": "ItemList",
+    "@id": "https://valitsatravel.gr/trips#itemlist",
     name: lang === "gr" ? "Λίστα Ταξιδιών" : "Trips List",
     numberOfItems: trips.length,
-    itemListElement: trips.slice(0, 10).map((trip, idx) => ({
-      "@type": "ListItem",
-      position: idx + 1,
-      name: getLocalizedTripContent(trip, lang).title,
-      url: `https://valitsatravel.gr/trips?trip=${trip.id}`,
-    })),
+    itemListElement: trips.slice(0, 10).map((trip, idx) => {
+      const localized = getLocalizedTripContent(trip, lang);
+      return {
+        "@type": "ListItem",
+        position: idx + 1,
+        name: localized.title,
+        url: `https://valitsatravel.gr/trips?trip=${trip.id}`,
+        image: trip.image,
+        description: localized.description,
+        priceCurrency: "USD",
+        price: String(trip.priceNum),
+        duration: localized.duration,
+      };
+    }),
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: lang === "gr" ? "Αρχική" : "Home",
+        item: "https://valitsatravel.gr/",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: lang === "gr" ? "Ταξίδια" : "Trips",
+        item: "https://valitsatravel.gr/trips",
+      },
+    ],
   };
 
   const globalPriceBounds = useMemo(() => {
@@ -902,7 +930,7 @@ const TripsContent = () => {
         image="/branding/navbar/logo-light.svg"
         keywords={seoKeywords}
         lang={lang}
-        structuredData={itemListSchema}
+        structuredData={[itemListSchema, breadcrumbSchema]}
       />
       <Navbar darkMode={darkMode} onToggleDark={toggleDark} />
 

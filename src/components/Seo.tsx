@@ -9,6 +9,7 @@ interface SeoProps {
   description: string;
   path?: string;
   image?: string;
+  imageAlt?: string;
   type?: "website" | "article";
   noindex?: boolean;
   keywords?: string;
@@ -29,6 +30,7 @@ const Seo = ({
   description,
   path = "/",
   image = "/branding/navbar/logo-light.svg",
+  imageAlt = "Valitsa Travel Logo",
   type = "website",
   noindex = false,
   keywords,
@@ -55,9 +57,15 @@ const Seo = ({
       <meta name="description" content={description} />
       <meta name="robots" content={robots} />
       <meta name="author" content="Valitsa Travel" />
+      <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=5"
+      />
       {keywords ? <meta name="keywords" content={keywords} /> : null}
 
       <link rel="canonical" href={canonicalUrl} />
+      <link rel="alternate" hrefLang="el" href={toAbsoluteUrl(path)} />
+      <link rel="alternate" hrefLang="en" href={toAbsoluteUrl(path)} />
 
       <meta property="og:site_name" content="Valitsa Travel" />
       <meta property="og:title" content={fullTitle} />
@@ -65,12 +73,24 @@ const Seo = ({
       <meta property="og:type" content={type} />
       <meta property="og:url" content={canonicalUrl} />
       <meta property="og:image" content={imageUrl} />
+      <meta property="og:image:alt" content={imageAlt} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
       <meta property="og:locale" content={locale} />
+      {locale === "el_GR" && (
+        <meta property="og:locale:alternate" content="en_US" />
+      )}
+      {locale === "en_US" && (
+        <meta property="og:locale:alternate" content="el_GR" />
+      )}
 
       <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:site" content="@valitsatravel" />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={imageUrl} />
+      <meta name="twitter:image:alt" content={imageAlt} />
+      <meta name="theme-color" content="#0f172a" />
 
       {jsonLdList.map((schema, idx) => (
         <script key={`jsonld-${idx}`} type="application/ld+json">

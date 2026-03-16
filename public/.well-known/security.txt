@@ -1,0 +1,4 @@
+Contact: support@valitsatravel.gr
+Expires: 2027-03-16T00:00:00Z
+Preferred-Languages: el, en
+Canonical: https://valitsatravel.gr/.well-known/security.txt

@@ -18,16 +18,16 @@ const IndexContent = () => {
 
   const seoTitle =
     lang === "gr"
-      ? "Valitsa Travel - Οργανωμένα Ταξίδια & Εκδρομές"
-      : "Valitsa Travel - Curated Trips & Travel Experiences";
+      ? "Valitsa Travel - Οργανωμένα Ταξίδια & Premium Εκδρομές"
+      : "Valitsa Travel - Curated Luxury Trips & Travel Experiences";
   const seoDescription =
     lang === "gr"
-      ? "Ανακαλύψτε οργανωμένες εκδρομές και premium ταξιδιωτικές εμπειρίες στην Ελλάδα και το εξωτερικό με τη Valitsa Travel."
-      : "Discover curated tours and premium travel experiences in Greece and abroad with Valitsa Travel.";
+      ? "Ανακαλύψτε χειροποίητα ταξίδια σε εξαιρετικούς προορισμούς. Premium εμπειρίες, ιδιωτικά πακέτα, και αξέχαστες στιγμές στην Ελλάδα και διεθνώς."
+      : "Discover handcrafted luxury travel experiences and curated adventures. Private estates, yacht charters, cultural immersion, and unforgettable moments worldwide.";
   const seoKeywords =
     lang === "gr"
-      ? "ταξίδια, εκδρομές, οργανωμένα ταξίδια, ταξιδιωτικό γραφείο, Valitsa Travel"
-      : "travel agency, curated trips, tours in Greece, premium travel, Valitsa Travel";
+      ? "οργανωμένα ταξίδια, εκδρομές, premium ταξίδια, ταξιδιωτικό γραφείο, ταξίδια Ελλάδα, χειροποίητα ταξίδια"
+      : "luxury travel, curated trips, travel agency, organized tours, Greece travel, bespoke adventures, premium experiences";
 
   const websiteSchema = {
     "@context": "https://schema.org",
@@ -40,11 +40,98 @@ const IndexContent = () => {
   const businessSchema = {
     "@context": "https://schema.org",
     "@type": "TravelAgency",
+    "@id": "https://valitsatravel.gr/#organization",
     name: "Valitsa Travel",
     url: "https://valitsatravel.gr/",
-    logo: "https://valitsatravel.gr/branding/navbar/logo-light.svg",
+    logo: {
+      "@type": "ImageObject",
+      url: "https://valitsatravel.gr/branding/navbar/logo-light.svg",
+      width: 200,
+      height: 60,
+    },
     image: "https://valitsatravel.gr/branding/navbar/logo-light.svg",
-    areaServed: ["Greece", "Europe"],
+    description:
+      lang === "gr"
+        ? "Premium ταξιδιωτικό γραφείο που δημιουργεί χειροποίητα ταξίδια στις πιο εξαιρετικές τοποθεσίες του κόσμου."
+        : "Premium travel agency creating bespoke travel experiences in the world's most exceptional destinations.",
+    areaServed: [
+      { "@type": "Country", name: "Greece" },
+      { "@type": "Continent", name: "Europe" },
+      { "@type": "Continent", name: "Asia" },
+      { "@type": "Continent", name: "Africa" },
+      { "@type": "Continent", name: "South America" },
+    ],
+    sameAs: [
+      "https://www.facebook.com/valitsatravel",
+      "https://www.instagram.com/valitsatravel",
+    ],
+  };
+
+  const contactPointSchema = {
+    "@type": "ContactPoint",
+    "@id": "https://valitsatravel.gr/#contact",
+    contactType: "Customer Service",
+    areaServed: ["GR", "EU"],
+    availableLanguage: ["el", "en"],
+  };
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity:
+      lang === "gr"
+        ? [
+            {
+              "@type": "Question",
+              name: "Τι είναι τα Valitsa Travel;",
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: "Η Valitsa Travel είναι ένα premium ταξιδιωτικό γραφείο που δημιουργεί χειροποίητα ταξίδια και κουρατορική εμπειρία συλλογών σε τις πιο εξαιρετικές τοποθεσίες του κόσμου.",
+              },
+            },
+            {
+              "@type": "Question",
+              name: "Ποιες χώρες καλύπτει η Valitsa Travel;",
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: "Προσφέρουμε ταξίδια σε όλη την Ευρώπη, Ασία, Αφρική και Νότια Αμερική. Έχουμε ειδικές συλλογές για την Ελλάδα και προορισμούς στο εξωτερικό.",
+              },
+            },
+            {
+              "@type": "Question",
+              name: "Μπορώ να προσαρμόσω ένα ταξίδι κατά τις ανάγκες μου;",
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: "Ναι! Όλα τα ταξίδια μας είναι διαθέσιμα για προσαρμογή. Επικοινωνήστε μαζί μας για να δημιουργήσουμε το τέλειο ταξίδι για σας.",
+              },
+            },
+          ]
+        : [
+            {
+              "@type": "Question",
+              name: "What is Valitsa Travel?",
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: "Valitsa Travel is a premium travel agency creating handcrafted journeys and curated experience collections in the world's most exceptional destinations.",
+              },
+            },
+            {
+              "@type": "Question",
+              name: "What destinations does Valitsa Travel cover?",
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: "We offer travels across Europe, Asia, Africa, and South America. Special collections for Greece and international destinations.",
+              },
+            },
+            {
+              "@type": "Question",
+              name: "Can I customize a trip to my needs?",
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: "Yes! All our trips can be customized. Contact us to create the perfect journey for you.",
+              },
+            },
+          ],
   };
 
   useEffect(() => {
@@ -63,7 +150,12 @@ const IndexContent = () => {
         image="/branding/navbar/logo-light.svg"
         keywords={seoKeywords}
         lang={lang}
-        structuredData={[websiteSchema, businessSchema]}
+        structuredData={[
+          websiteSchema,
+          businessSchema,
+          contactPointSchema,
+          faqSchema,
+        ]}
       />
       <Navbar darkMode={darkMode} onToggleDark={toggleDark} />
       <HeroSection />

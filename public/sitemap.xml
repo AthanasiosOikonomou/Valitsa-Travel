@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xmlns:mobile="http://www.mobile.googlebot.com/schemas/mobile-sitemap/1.0">
+
+  <!-- Homepage -->
+  <url>
+    <loc>https://valitsatravel.gr/</loc>
+    <lastmod>2026-03-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Trips Archive -->
+  <url>
+    <loc>https://valitsatravel.gr/trips</loc>
+    <lastmod>2026-03-16</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Trips Sub-filters -->
+  <url>
+    <loc>https://valitsatravel.gr/trips?filter=daily</loc>
+    <lastmod>2026-03-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://valitsatravel.gr/trips?filter=twoday</loc>
+    <lastmod>2026-03-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://valitsatravel.gr/trips?filter=internal</loc>
+    <lastmod>2026-03-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://valitsatravel.gr/trips?filter=external</loc>
+    <lastmod>2026-03-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Featured Trip Destinations (sample) -->
+  <!-- Amalfi Coast -->
+  <url>
+    <loc>https://valitsatravel.gr/trips?trip=1</loc>
+    <lastmod>2026-03-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&q=80&w=1200</image:loc>
+      <image:title>Amalfi Coast Private Estate</image:title>
+    </image:image>
+  </url>
+
+  <!-- Kyoto -->
+  <url>
+    <loc>https://valitsatravel.gr/trips?trip=2</loc>
+    <lastmod>2026-03-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&q=80&w=1200</image:loc>
+      <image:title>Kyoto Zen Sanctuary</image:title>
+    </image:image>
+  </url>
+
+  <!-- Switzerland Winter -->
+  <url>
+    <loc>https://valitsatravel.gr/trips?trip=3</loc>
+    <lastmod>2026-03-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&q=80&w=1200</image:loc>
+      <image:title>Alpine Mountain Escape</image:title>
+    </image:image>
+  </url>
+
+  <!-- Iceland Aurora -->
+  <url>
+    <loc>https://valitsatravel.gr/trips?trip=4</loc>
+    <lastmod>2026-03-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&q=80&w=1200</image:loc>
+      <image:title>Iceland Northern Lights</image:title>
+    </image:image>
+  </url>
+
+  <!-- Tanzania Safari -->
+  <url>
+    <loc>https://valitsatravel.gr/trips?trip=5</loc>
+    <lastmod>2026-03-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&q=80&w=1200</image:loc>
+      <image:title>Tanzania Safari Adventure</image:title>
+    </image:image>
+  </url>
+
+  <!-- Patagonia Chile -->
+  <url>
+    <loc>https://valitsatravel.gr/trips?trip=6</loc>
+    <lastmod>2026-03-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&q=80&w=1200</image:loc>
+      <image:title>Patagonia Adventure</image:title>
+    </image:image>
+  </url>
+
+</urlset>
