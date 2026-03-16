@@ -42,7 +42,6 @@ interface FacetOptionProps {
   checked: boolean;
   count: number;
   disabled: boolean;
-  isDayMode?: boolean;
   label: string;
   name?: string;
   onChange: () => void;
@@ -88,7 +87,6 @@ const FacetOption = ({
   checked,
   count,
   disabled,
-  isDayMode = false,
   label,
   name,
   onChange,
@@ -108,19 +106,34 @@ const FacetOption = ({
       checked={checked}
       disabled={disabled}
       onChange={onChange}
-      style={
-        type === "checkbox"
-          ? {
-              accentColor: isDayMode ? "#ffffff" : undefined,
-            }
-          : undefined
-      }
-      className={`w-4 h-4 shrink-0 border focus:ring-1 focus:ring-black ${
-        type === "checkbox"
-          ? "rounded border-black bg-white text-black"
-          : "border-border text-primary"
-      }`}
+      className="sr-only peer"
     />
+    <span
+      aria-hidden="true"
+      className={`relative grid place-items-center w-4 h-4 shrink-0 border border-black bg-white dark:bg-background ${
+        type === "radio" ? "rounded-full" : "rounded"
+      }`}
+    >
+      {checked &&
+        (type === "radio" ? (
+          <span className="block w-2 h-2 rounded-full bg-primary" />
+        ) : (
+          <svg
+            viewBox="0 0 16 16"
+            className="w-3 h-3 text-black"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M3.5 8.5L6.5 11.5L12.5 4.5"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        ))}
+    </span>
     <span
       className={`flex-1 text-sm transition-colors ${
         disabled
@@ -549,7 +562,6 @@ const TripsContent = () => {
             <FacetOption
               key={duration}
               type="checkbox"
-              isDayMode
               label={`${duration} ${t("archive.days")}`}
               checked={checked}
               count={count}
