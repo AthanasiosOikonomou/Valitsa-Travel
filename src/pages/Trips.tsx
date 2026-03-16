@@ -382,6 +382,25 @@ const TripsContent = () => {
     dispatch({ type: "replace", value: initialFilterState });
   }, [initialFilterState]);
 
+  useEffect(() => {
+    const handleResetFiltersRequest = () => {
+      dispatch({ type: "replace", value: initialFilterState });
+      setMobileFiltersOpen(false);
+    };
+
+    window.addEventListener(
+      "valitsa:reset-trips-filters",
+      handleResetFiltersRequest,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "valitsa:reset-trips-filters",
+        handleResetFiltersRequest,
+      );
+    };
+  }, [initialFilterState]);
+
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     price: true,
     special: true,
@@ -1109,6 +1128,10 @@ const TripResultCard = ({ trip, index, onClick }: TripResultCardProps) => {
   );
 };
 
-const TripsPage = () => <TripsContent />;
+const TripsPage = () => {
+  const [searchParams] = useSearchParams();
+  const activeFilter = searchParams.get("filter") ?? "all";
+  return <TripsContent key={activeFilter} />;
+};
 
 export default TripsPage;

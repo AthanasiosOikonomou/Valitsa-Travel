@@ -36,12 +36,16 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
     const targetSearch = `?filter=${filter}`;
 
     if (pathname === "/trips" && search === targetSearch) {
+      // Already on this category — reset any extra filters the user applied, then scroll to top.
+      window.dispatchEvent(new Event("valitsa:reset-trips-filters"));
       window.dispatchEvent(new Event("valitsa:scroll-trips-top"));
       scrollToPageTop();
       setMenuOpen(false);
       return;
     }
 
+    // Navigating to a different category — the useLayoutEffect in Trips.tsx
+    // will reset filters automatically once initialFilterState recomputes.
     navigate(`/trips${targetSearch}`);
 
     setMenuOpen(false);
