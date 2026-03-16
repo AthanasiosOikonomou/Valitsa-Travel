@@ -713,7 +713,7 @@ const TripsContent = () => {
   );
 
   return (
-    <div className="premium-page min-h-screen bg-background text-foreground transition-colors duration-500 relative z-0">
+    <div className="premium-page trips-page-surface min-h-screen bg-background text-foreground transition-colors duration-500 relative z-0">
       <Seo
         title={seoTitle}
         description={seoDescription}
@@ -726,7 +726,7 @@ const TripsContent = () => {
       <Navbar darkMode={darkMode} onToggleDark={toggleDark} />
 
       <div className="pt-36 pb-10 px-6 md:px-10 max-w-7xl mx-auto">
-        <div className="premium-panel-soft rounded-[1.4rem] border-white/70 px-5 py-4 md:px-6 md:py-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="premium-panel-soft trips-summary-surface rounded-[1.4rem] px-5 py-4 md:px-6 md:py-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="label-ui uppercase tracking-[0.18em] text-foreground-muted/80 mb-2">
               {lang === "gr" ? "Αποτελέσματα" : "Results"}
@@ -751,7 +751,7 @@ const TripsContent = () => {
 
       <div className="max-w-7xl mx-auto px-6 md:px-10 pb-24 flex gap-10 relative z-0">
         <aside className="hidden lg:block w-72 shrink-0">
-          <div className="premium-panel sticky top-32 max-h-[calc(100vh-9rem)] overflow-y-auto rounded-[1.8rem] p-6">
+          <div className="premium-panel trips-filter-surface sticky top-32 max-h-[calc(100vh-9rem)] overflow-y-auto rounded-[1.8rem] p-6">
             {filtersContent}
           </div>
         </aside>
@@ -771,7 +771,7 @@ const TripsContent = () => {
                 animate={{ x: 0 }}
                 exit={{ x: "-100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="premium-panel fixed left-3 top-3 bottom-3 w-80 max-w-[85vw] z-50 overflow-y-auto rounded-[1.75rem] p-6 lg:hidden"
+                className="premium-panel trips-filter-surface fixed left-3 top-3 bottom-3 w-80 max-w-[85vw] z-50 overflow-y-auto rounded-[1.75rem] p-6 lg:hidden"
               >
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-bold">{t("search.filters")}</h3>
@@ -876,8 +876,7 @@ const TripResultCard = ({ trip, index, onClick }: TripResultCardProps) => {
       viewport={{ once: true }}
       transition={{ duration: 0.4, delay: index * 0.05 }}
       onClick={() => onClick(trip)}
-      className="group premium-panel-soft cursor-pointer rounded-[1.8rem] overflow-hidden flex flex-col sm:flex-row sm:h-[18rem] border-white/65 hover:border-primary/30 transition-all duration-300"
-      style={{ boxShadow: "var(--shadow-md)" }}
+      className="group premium-panel-soft trips-card-surface cursor-pointer rounded-[1.8rem] overflow-hidden flex flex-col sm:flex-row sm:h-[18rem] border-white/65 hover:border-primary/30 transition-all duration-300"
     >
       <div className="sm:w-64 md:w-80 shrink-0 relative overflow-hidden h-56 sm:h-full">
         <img
