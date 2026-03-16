@@ -775,7 +775,7 @@ const TripsContent = () => {
     </div>
   );
 
-  const filtersContent = renderFiltersContent(true);
+  const filtersContent = renderFiltersContent(false);
   const mobileFiltersContent = renderFiltersContent(false);
 
   return (
@@ -817,8 +817,19 @@ const TripsContent = () => {
 
       <div className="max-w-7xl mx-auto px-6 md:px-10 pb-24 flex gap-10 relative z-0">
         <aside className="hidden lg:block w-72 shrink-0">
-          <div className="premium-panel trips-filter-surface sticky top-32 max-h-[calc(100vh-9rem)] overflow-y-auto rounded-[1.8rem] p-6">
-            {filtersContent}
+          <div className="premium-panel trips-filter-surface sticky top-32 max-h-[calc(100vh-9rem)] rounded-[1.8rem] p-6 flex flex-col">
+            <div className="min-h-0 flex-1 overflow-y-auto pr-1 pb-6">
+              {filtersContent}
+            </div>
+
+            <div className="pt-4 border-t border-border/70">
+              <button
+                onClick={resetFilters}
+                className="premium-outline-button w-full justify-center text-sm"
+              >
+                {t("search.reset")}
+              </button>
+            </div>
           </div>
         </aside>
 
