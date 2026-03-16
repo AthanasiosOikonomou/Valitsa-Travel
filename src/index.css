@@ -342,15 +342,11 @@
     gap: 0.75rem;
     border-radius: 9999px;
     padding: 0.95rem 1.6rem;
-    background: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.96),
-      rgba(226, 232, 240, 0.92)
-    );
-    color: #0f172a;
+    background: linear-gradient(180deg, rgb(15, 23, 42), rgb(15, 23, 42));
+    color: rgb(248, 250, 252);
     font-weight: 700;
     letter-spacing: -0.01em;
-    border: 1px solid rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(148, 163, 184, 0.24);
     box-shadow: none;
     transition:
       transform 220ms ease,
@@ -360,11 +356,7 @@
 
   .premium-button-navbar:hover {
     transform: translateY(-1px);
-    background: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.98),
-      rgba(241, 245, 249, 0.95)
-    );
+    background: linear-gradient(180deg, rgb(30, 41, 59), rgb(30, 41, 59));
     border-color: rgba(148, 163, 184, 0.32);
   }
 
