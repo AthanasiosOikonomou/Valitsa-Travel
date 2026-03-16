@@ -59,6 +59,21 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [menuOpen, contactOpen]);
 
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+    };
+  }, [menuOpen]);
+
   return (
     <>
       {/* Main nav */}
