@@ -726,20 +726,27 @@ const TripsContent = () => {
       <Navbar darkMode={darkMode} onToggleDark={toggleDark} />
 
       <div className="pt-36 pb-10 px-6 md:px-10 max-w-7xl mx-auto">
-        <h1 className="text-3xl md:text-4xl text-display mb-3">
-          {t("archive.title")}
-        </h1>
-        <p className="premium-subheading text-sm md:text-base">
-          {filtered.length} {t("archive.resultsFound")}
-        </p>
+        <div className="premium-panel-soft rounded-[1.4rem] border-white/70 px-5 py-4 md:px-6 md:py-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="label-ui uppercase tracking-[0.18em] text-foreground-muted/80 mb-2">
+              {lang === "gr" ? "Αποτελέσματα" : "Results"}
+            </p>
+            <p className="text-display text-[1.45rem] md:text-[1.85rem] leading-none text-foreground">
+              <span className="text-primary mr-2">{filtered.length}</span>
+              <span className="text-[0.95rem] md:text-[1.05rem] font-semibold text-foreground-muted align-middle">
+                {t("archive.resultsFound")}
+              </span>
+            </p>
+          </div>
 
-        <button
-          onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
-          className="lg:hidden premium-outline-button mt-5 text-sm"
-        >
-          <SlidersHorizontal size={16} />
-          {t("search.filters")}
-        </button>
+          <button
+            onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
+            className="lg:hidden premium-outline-button text-sm self-start md:self-auto"
+          >
+            <SlidersHorizontal size={16} />
+            {t("search.filters")}
+          </button>
+        </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 md:px-10 pb-24 flex gap-10 relative z-0">
