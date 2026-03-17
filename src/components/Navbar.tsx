@@ -99,7 +99,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-        className="navbar-bg-mask fixed top-2 sm:top-0 left-0 right-0 z-[100] px-2 py-3 sm:px-4 md:px-8 md:py-4"
+        className="fixed top-2 sm:top-0 left-0 right-0 z-[100] px-2 py-3 sm:px-4 md:px-8 md:py-4"
       >
         <div className="premium-panel navbar-shell mx-auto flex w-full max-w-7xl items-center justify-between rounded-[1.75rem] px-3 py-2.5 sm:px-4 md:px-6 md:py-4">
           <Link to="/" className="shrink-0" aria-label={t("nav.brand")}>

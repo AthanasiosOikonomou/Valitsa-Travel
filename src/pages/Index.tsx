@@ -142,7 +142,7 @@ const IndexContent = () => {
   }, [selectedTrip, termsOpen]);
 
   return (
-    <div className="premium-page min-h-screen bg-background text-foreground transition-colors duration-500">
+    <div className="premium-page trips-page-surface min-h-screen bg-background text-foreground transition-colors duration-500">
       <Seo
         title={seoTitle}
         description={seoDescription}
