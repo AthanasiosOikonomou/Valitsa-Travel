@@ -39,6 +39,13 @@
     <link rel="apple-touch-icon" href="/branding/favicon/favicon-light.svg" />
     <link rel="alternate" hreflang="el" href="https://valitsatravel.gr/" />
     <link rel="alternate" hreflang="en" href="https://valitsatravel.gr/" />
+    <script>
+      try {
+        var s = localStorage.getItem("darkMode");
+        var dark = s === null ? true : s === "true";
+        if (dark) document.documentElement.classList.add("dark");
+      } catch (e) {}
+    </script>
     <title>
       Valitsa Travel - Premium Luxury Travel Experiences & Curated Journeys
     </title>
