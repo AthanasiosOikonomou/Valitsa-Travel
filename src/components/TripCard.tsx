@@ -1,9 +1,8 @@
 import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState } from "react";
 import { getLocalizedTripContent, type Trip } from "@/data/mockData";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { optimizeImageUrl } from "@/lib/utils";
+import ProgressiveImage from "@/components/ProgressiveImage";
 
 interface TripCardProps {
   trip: Trip;
@@ -13,7 +12,6 @@ interface TripCardProps {
 
 const TripCard = ({ trip, index, onClick }: TripCardProps) => {
   const { t, lang } = useLanguage();
-  const [imageLoaded, setImageLoaded] = useState(false);
   const localized = getLocalizedTripContent(trip, lang);
 
   return (
@@ -31,19 +29,17 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
       onClick={() => onClick(trip)}
     >
       <div className="valitsa-card premium-panel-soft relative aspect-[4/5] mb-5 border-white/60 transform-gpu [backface-visibility:hidden] [contain:layout]">
-        {!imageLoaded ? (
-          <div className="absolute inset-0 animate-pulse bg-slate-200/75 dark:bg-slate-800/70" />
-        ) : null}
-        <img
-          src={optimizeImageUrl(trip.image, 1200)}
+        <ProgressiveImage
+          src={trip.image}
           alt={localized.title}
           width={1200}
           height={1500}
-          onLoad={() => setImageLoaded(true)}
-          className={`w-full h-full object-cover transform-gpu [backface-visibility:hidden] transition-transform duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04] ${imageLoaded ? "opacity-100" : "opacity-0"}`}
+          sizes="(max-width: 768px) 400px, 800px"
+          responsiveWidths={[320, 400, 640, 800, 960]}
           loading="lazy"
-          decoding="async"
-          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+          fetchPriority={index < 3 ? "low" : "auto"}
+          className="absolute inset-0"
+          imgClassName="transition-transform duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04]"
         />
 
         <div className="absolute top-5 left-5 flex gap-2">

@@ -3,25 +3,25 @@ import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Link } from "react-router-dom";
 import { prefetchTripsRoute } from "@/lib/routePrefetch";
-import { optimizeImageUrl } from "@/lib/utils";
+import ProgressiveImage from "@/components/ProgressiveImage";
 
 const HeroSection = () => {
   const { t } = useLanguage();
 
   return (
     <section className="relative min-h-[96vh] flex items-center justify-center overflow-hidden px-4 pt-24 pb-12 md:px-8">
-      <img
-        src={optimizeImageUrl(
-          "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=2000",
-          2000,
-        )}
+      <ProgressiveImage
+        src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=2000"
         alt={t("hero.alt")}
         width={2000}
         height={1200}
+        priority
         loading="eager"
-        fetchpriority="high"
-        decoding="async"
-        className="absolute inset-0 w-full h-full object-cover brightness-[0.55] animate-scale-hero"
+        fetchPriority="high"
+        responsiveWidths={[768, 1024, 1440, 1920, 2400]}
+        sizes="100vw"
+        className="absolute inset-0"
+        imgClassName="brightness-[0.55] animate-scale-hero"
       />
 
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.14),rgba(15,23,42,0.72))]" />
