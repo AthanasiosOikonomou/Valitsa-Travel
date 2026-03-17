@@ -67,17 +67,17 @@ const FilterSection = ({
       {title}
       <ChevronDown
         size={16}
-        className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+        className={`transition-transform duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${isOpen ? "rotate-180" : ""}`}
       />
     </button>
     <AnimatePresence initial={false}>
       {isOpen && (
         <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="overflow-hidden"
+          initial={{ opacity: 0, scale: 0.98, y: -4 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.98, y: -4 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          className="transform-gpu [backface-visibility:hidden] [transform-origin:top_center]"
         >
           {children}
         </motion.div>
@@ -171,6 +171,8 @@ const TripsContent = () => {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const resultsTopRef = useRef<HTMLDivElement | null>(null);
   const hasMountedFilterScrollRef = useRef(false);
+  const hasSyncedInitialFiltersRef = useRef(false);
+  const [cardsEntryEnabled, setCardsEntryEnabled] = useState(false);
 
   const scrollTripsToTop = () => {
     const prev = document.documentElement.style.scrollBehavior;
@@ -379,8 +381,22 @@ const TripsContent = () => {
   }, [pricePoints, uiPriceRange]);
 
   useLayoutEffect(() => {
+    // Skip first paint sync to avoid a mount-time replace cycle that causes visible card flashing.
+    if (!hasSyncedInitialFiltersRef.current) {
+      hasSyncedInitialFiltersRef.current = true;
+      return;
+    }
+
     dispatch({ type: "replace", value: initialFilterState });
   }, [initialFilterState]);
+
+  useEffect(() => {
+    const raf = window.requestAnimationFrame(() => {
+      setCardsEntryEnabled(true);
+    });
+
+    return () => window.cancelAnimationFrame(raf);
+  }, []);
 
   useEffect(() => {
     const handleResetFiltersRequest = () => {
@@ -859,7 +875,7 @@ const TripsContent = () => {
   const mobileFiltersContent = renderFiltersContent(false);
 
   return (
-    <div className="premium-page trips-page-surface min-h-screen bg-background text-foreground transition-colors duration-500 relative z-0">
+    <div className="premium-page trips-page-surface min-h-screen bg-background text-foreground transition-colors duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] relative z-0">
       <Seo
         title={seoTitle}
         description={seoDescription}
@@ -923,15 +939,16 @@ const TripsContent = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
+                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
                 className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
                 onClick={() => setMobileFiltersOpen(false)}
               />
               <motion.div
-                initial={{ x: "-100%" }}
-                animate={{ x: 0 }}
-                exit={{ x: "-100%" }}
-                transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="premium-panel trips-filter-surface fixed left-3 top-3 bottom-3 w-80 max-w-[85vw] z-50 rounded-[1.75rem] p-4 sm:p-5 lg:hidden flex flex-col"
+                initial={{ x: -24, opacity: 0, scale: 0.98 }}
+                animate={{ x: 0, opacity: 1, scale: 1 }}
+                exit={{ x: -24, opacity: 0, scale: 0.98 }}
+                transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                className="premium-panel trips-filter-surface fixed left-3 top-3 bottom-3 w-80 max-w-[85vw] z-50 rounded-[1.75rem] p-4 sm:p-5 lg:hidden flex flex-col transform-gpu [backface-visibility:hidden]"
               >
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-bold">{t("search.filters")}</h3>
@@ -1011,6 +1028,7 @@ const TripsContent = () => {
                   key={trip.id}
                   trip={trip}
                   index={idx}
+                  animateEntry={cardsEntryEnabled}
                   onClick={setSelectedTrip}
                 />
               ))}
@@ -1064,29 +1082,38 @@ const TripsContent = () => {
 };
 
 interface TripResultCardProps {
+  animateEntry: boolean;
   trip: Trip;
   index: number;
   onClick: (trip: Trip) => void;
 }
 
-const TripResultCard = ({ trip, index, onClick }: TripResultCardProps) => {
+const TripResultCard = ({
+  trip,
+  index,
+  onClick,
+  animateEntry,
+}: TripResultCardProps) => {
   const { t, lang } = useLanguage();
   const localized = getLocalizedTripContent(trip, lang);
 
   return (
     <motion.div
-      initial={false}
-      whileInView={{ opacity: 1 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.4, delay: index * 0.05 }}
+      initial={animateEntry ? { opacity: 0, y: 10, scale: 0.98 } : false}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{
+        duration: 0.38,
+        delay: animateEntry ? index * 0.05 : 0,
+        ease: [0.22, 1, 0.36, 1],
+      }}
       onClick={() => onClick(trip)}
-      className="group premium-panel-soft trips-card-surface cursor-pointer rounded-[1.8rem] overflow-hidden flex flex-col sm:flex-row sm:h-[18rem] border-white/65 hover:border-primary/30 transition-all duration-300"
+      className="group premium-panel-soft trips-card-surface cursor-pointer rounded-[1.8rem] overflow-hidden flex flex-col sm:flex-row sm:h-[18rem] border-white/65 hover:border-primary/30 transform-gpu [backface-visibility:hidden] will-change-transform transition-[transform,opacity,border-color,box-shadow] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[1.01] active:scale-[0.97]"
     >
       <div className="sm:w-64 md:w-80 shrink-0 relative overflow-hidden h-56 sm:h-full">
         <img
           src={trip.image}
           alt={localized.title}
-          className="w-full h-48 sm:h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          className="w-full h-48 sm:h-full object-cover transform-gpu [backface-visibility:hidden] group-hover:scale-[1.04] transition-transform duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
           loading="lazy"
         />
         {trip.isBonus && (
@@ -1099,7 +1126,7 @@ const TripResultCard = ({ trip, index, onClick }: TripResultCardProps) => {
       <div className="flex-1 p-5 md:p-6 flex flex-col justify-between min-h-0">
         <div>
           <p className="label-ui text-primary/80 mb-2">{localized.dateRange}</p>
-          <h3 className="text-xl text-display mb-2 group-hover:text-primary transition-colors leading-tight line-clamp-2 min-h-[3.75rem]">
+          <h3 className="text-xl text-display mb-2 group-hover:text-primary transition-colors duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] leading-tight line-clamp-2 min-h-[3.75rem]">
             {localized.title}
           </h3>
           <p className="premium-subheading text-sm mb-3 line-clamp-2 min-h-[3rem]">

@@ -187,12 +187,12 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
-      className="fixed inset-0 z-[100] bg-background overflow-y-auto"
+      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+      className="fixed inset-0 z-[100] bg-background overflow-y-auto transform-gpu [backface-visibility:hidden]"
     >
       <button
         onClick={onClose}
-        className="fixed top-6 right-6 z-[110] p-3.5 bg-foreground text-background rounded-full hover:opacity-90 transition-opacity"
+        className="fixed top-6 right-6 z-[110] p-3.5 bg-foreground text-background rounded-full hover:opacity-90 transition-[transform,opacity] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu [backface-visibility:hidden] active:scale-[0.97]"
         aria-label={t("common.close")}
       >
         <X size={20} />
@@ -203,7 +203,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
           <motion.img
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             src={trip.image}
             alt={localized.title}
             loading="lazy"
@@ -212,9 +212,13 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
           />
 
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
+            initial={{ opacity: 0, y: 10, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{
+              delay: 0.12,
+              duration: 0.3,
+              ease: [0.22, 1, 0.36, 1],
+            }}
           >
             <div className="flex items-center gap-4 text-foreground-muted text-sm mb-4">
               <span className="flex items-center gap-1.5">
@@ -259,7 +263,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                       className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"
                       transition={{
                         duration: 0.25,
-                        ease: [0.25, 0.1, 0.25, 1],
+                        ease: [0.22, 1, 0.36, 1],
                       }}
                     />
                   )}
@@ -270,10 +274,10 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.25 }}
+                initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
               >
                 {activeTab === "description" && (
                   <p className="text-body-prose text-lg leading-relaxed">
@@ -336,10 +340,14 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
         <div className="lg:col-span-5">
           <div className="sticky top-20">
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="bg-card border border-border p-8 md:p-10 rounded-[2rem]"
+              initial={{ opacity: 0, y: 10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{
+                delay: 0.16,
+                duration: 0.28,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              className="bg-card border border-border p-8 md:p-10 rounded-[2rem] transform-gpu [backface-visibility:hidden]"
               style={{ boxShadow: "var(--shadow-lg)" }}
             >
               <div className="flex justify-between items-start mb-8">
@@ -362,6 +370,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
                   className="text-center py-12"
                 >
                   <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">

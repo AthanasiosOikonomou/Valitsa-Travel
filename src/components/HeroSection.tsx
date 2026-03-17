@@ -23,21 +23,21 @@ const HeroSection = () => {
       <div className="relative z-10 w-full max-w-5xl">
         <div className="mx-auto max-w-4xl px-6 py-10 text-center md:px-12 md:py-14">
           <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+            initial={{ opacity: 0, y: 10, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
             className="label-ui text-white/78 mb-5 drop-shadow-[0_2px_14px_rgba(0,0,0,0.35)]"
           >
             {t("hero.label")}
           </motion.p>
 
           <motion.h1
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 10, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{
-              duration: 0.6,
+              duration: 0.5,
               delay: 0.1,
-              ease: [0.25, 0.1, 0.25, 1],
+              ease: [0.22, 1, 0.36, 1],
             }}
             className="text-hero text-display text-white mb-6 drop-shadow-[0_10px_32px_rgba(0,0,0,0.42)]"
           >
@@ -45,12 +45,12 @@ const HeroSection = () => {
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 10, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{
-              duration: 0.6,
+              duration: 0.5,
               delay: 0.2,
-              ease: [0.25, 0.1, 0.25, 1],
+              ease: [0.22, 1, 0.36, 1],
             }}
             className="premium-subheading text-white/80 text-lg md:text-xl mb-10 max-w-2xl mx-auto drop-shadow-[0_4px_18px_rgba(0,0,0,0.3)]"
           >
@@ -58,12 +58,12 @@ const HeroSection = () => {
           </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 10, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{
-              duration: 0.6,
+              duration: 0.5,
               delay: 0.35,
-              ease: [0.25, 0.1, 0.25, 1],
+              ease: [0.22, 1, 0.36, 1],
             }}
           >
             <Link

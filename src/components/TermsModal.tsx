@@ -134,15 +134,16 @@ const TermsModal = ({ open, onClose }: TermsModalProps) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
           className="fixed inset-0 z-[120] flex items-start justify-center px-4 pb-4 pt-14 sm:pt-16 backdrop-blur-md bg-black/50 overflow-y-auto"
           onClick={onClose}
         >
           <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 20 }}
+            initial={{ opacity: 0, scale: 0.98, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 20 }}
-            transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
-            className="bg-card border border-border rounded-3xl w-full max-w-3xl overflow-hidden"
+            exit={{ opacity: 0, scale: 0.98, y: 12 }}
+            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+            className="bg-card border border-border rounded-3xl w-full max-w-3xl overflow-hidden transform-gpu [backface-visibility:hidden]"
             style={{ boxShadow: "var(--shadow-lg)" }}
             onClick={(event) => event.stopPropagation()}
           >
@@ -165,7 +166,7 @@ const TermsModal = ({ open, onClose }: TermsModalProps) => {
               <h2 className="text-lg md:text-xl font-bold">{modalTitle}</h2>
               <button
                 onClick={onClose}
-                className="p-2 rounded-full hover:bg-muted transition-colors"
+                className="p-2 rounded-full hover:bg-muted transition-[transform,background-color,opacity] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu [backface-visibility:hidden] active:scale-[0.97]"
                 aria-label={closeLabel}
               >
                 <X size={18} />

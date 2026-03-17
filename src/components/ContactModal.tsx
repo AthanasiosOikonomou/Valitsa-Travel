@@ -181,15 +181,16 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
           className="fixed inset-0 z-[120] flex items-start justify-center px-4 pb-4 pt-24 sm:pt-28 md:pt-28 backdrop-blur-md bg-black/50 overflow-y-auto"
           onClick={handleClose}
         >
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, scale: 0.98, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-            className="bg-card border border-border rounded-3xl w-full max-w-lg overflow-hidden my-auto"
+            exit={{ opacity: 0, scale: 0.98, y: 12 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="bg-card border border-border rounded-3xl w-full max-w-lg overflow-hidden my-auto transform-gpu [backface-visibility:hidden]"
             style={{ boxShadow: "var(--shadow-lg)" }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -198,7 +199,7 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
               <h2 className="text-lg font-bold">{t("contact.title")}</h2>
               <button
                 onClick={handleClose}
-                className="p-2 rounded-full hover:bg-muted transition-colors"
+                className="p-2 rounded-full hover:bg-muted transition-[transform,background-color,opacity] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu [backface-visibility:hidden] active:scale-[0.97]"
               >
                 <X size={18} />
               </button>
@@ -210,7 +211,7 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
                   {/* Call Us */}
                   <a
                     href="tel:+302101234567"
-                    className="flex items-center gap-4 p-5 rounded-2xl border border-border hover:border-primary/40 hover:bg-muted/50 transition-all duration-200 group"
+                    className="flex items-center gap-4 p-5 rounded-2xl border border-border hover:border-primary/40 hover:bg-muted/50 transition-[transform,opacity,background-color,border-color] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu [backface-visibility:hidden] will-change-transform hover:scale-[1.01] active:scale-[0.97] group"
                   >
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                       <Phone size={20} className="text-primary" />
@@ -228,7 +229,7 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
                     href="https://wa.me/302101234567"
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-4 p-5 rounded-2xl border border-border hover:border-primary/40 hover:bg-muted/50 transition-all duration-200 group"
+                    className="flex items-center gap-4 p-5 rounded-2xl border border-border hover:border-primary/40 hover:bg-muted/50 transition-[transform,opacity,background-color,border-color] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu [backface-visibility:hidden] will-change-transform hover:scale-[1.01] active:scale-[0.97] group"
                   >
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                       <FaWhatsapp size={20} className="text-primary" />
@@ -246,7 +247,7 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
                   {/* Viber */}
                   <a
                     href="viber://chat?number=%2B302101234567"
-                    className="flex items-center gap-4 p-5 rounded-2xl border border-border hover:border-primary/40 hover:bg-muted/50 transition-all duration-200 group"
+                    className="flex items-center gap-4 p-5 rounded-2xl border border-border hover:border-primary/40 hover:bg-muted/50 transition-[transform,opacity,background-color,border-color] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu [backface-visibility:hidden] will-change-transform hover:scale-[1.01] active:scale-[0.97] group"
                   >
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                       <FaViber size={20} className="text-primary" />
@@ -262,7 +263,7 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
                   {/* Send Message */}
                   <button
                     onClick={() => setView("form")}
-                    className="w-full flex items-center gap-4 p-5 rounded-2xl border border-border hover:border-primary/40 hover:bg-muted/50 transition-all duration-200 group text-left"
+                    className="w-full flex items-center gap-4 p-5 rounded-2xl border border-border hover:border-primary/40 hover:bg-muted/50 transition-[transform,opacity,background-color,border-color] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu [backface-visibility:hidden] will-change-transform hover:scale-[1.01] active:scale-[0.97] group text-left"
                   >
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                       <MessageSquare size={20} className="text-primary" />
@@ -419,14 +420,14 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
                           message: "",
                         });
                       }}
-                      className="px-5 py-3 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-colors"
+                      className="px-5 py-3 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-[transform,background-color,opacity] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu [backface-visibility:hidden] active:scale-[0.97]"
                     >
                       {t("contact.back")}
                     </button>
                     <button
                       type="submit"
                       disabled={isSending}
-                      className="flex-1 flex items-center justify-center gap-2 bg-foreground text-background px-5 py-3 rounded-xl text-sm font-bold hover:opacity-90 transition-opacity"
+                      className="flex-1 flex items-center justify-center gap-2 bg-foreground text-background px-5 py-3 rounded-xl text-sm font-bold hover:opacity-90 transition-[transform,opacity] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu [backface-visibility:hidden] active:scale-[0.97]"
                     >
                       <Send size={16} />
                       {isSending ? t("contact.sending") : t("contact.send")}
@@ -442,8 +443,9 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
 
               {sent && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
                   className="text-center py-8"
                 >
                   <CheckCircle

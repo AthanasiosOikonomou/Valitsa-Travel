@@ -96,12 +96,12 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
     <>
       {/* Main nav */}
       <motion.nav
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-        className="fixed top-2 sm:top-0 left-0 right-0 z-[100] px-2 py-3 sm:px-4 md:px-8 md:py-4"
+        initial={{ y: -14, opacity: 0, scale: 0.98 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+        className="fixed top-2 sm:top-0 left-0 right-0 z-[100] px-2 py-3 sm:px-4 md:px-8 md:py-4 transform-gpu [backface-visibility:hidden]"
       >
-        <div className="premium-panel navbar-shell mx-auto flex w-full max-w-7xl items-center justify-between rounded-[1.75rem] px-3 py-2.5 sm:px-4 md:px-6 md:py-4">
+        <div className="premium-panel navbar-shell mx-auto flex w-full max-w-7xl items-center justify-between rounded-[1.75rem] px-3 py-2.5 sm:px-4 md:px-6 md:py-4 bg-white/70 dark:bg-slate-900/65 backdrop-blur-md transform-gpu [backface-visibility:hidden]">
           <Link to="/" className="shrink-0" aria-label={t("nav.brand")}>
             <img
               src={
@@ -120,7 +120,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
               <button
                 key={cat.key}
                 onClick={() => handleCategoryClick(cat.filter)}
-                className="px-4 py-2.5 rounded-full text-sm font-medium text-foreground-muted hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors duration-200"
+                className="px-4 py-2.5 rounded-full text-sm font-medium text-foreground-muted hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
               >
                 {t(cat.key)}
               </button>
@@ -155,10 +155,10 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
             >
               <div className="flex flex-col gap-1.5">
                 <span
-                  className={`block w-5 h-0.5 bg-foreground transition-transform duration-200 ${menuOpen ? "translate-y-[4px] rotate-45" : ""}`}
+                  className={`block w-5 h-0.5 bg-foreground transition-transform duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${menuOpen ? "translate-y-[4px] rotate-45" : ""}`}
                 />
                 <span
-                  className={`block w-5 h-0.5 bg-foreground transition-transform duration-200 ${menuOpen ? "-translate-y-[4px] -rotate-45" : ""}`}
+                  className={`block w-5 h-0.5 bg-foreground transition-transform duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${menuOpen ? "-translate-y-[4px] -rotate-45" : ""}`}
                 />
               </div>
             </button>
@@ -180,7 +180,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
             onClick={() => setMenuOpen(false)}
             className="fixed inset-0 z-[48] bg-black/30 backdrop-blur-sm lg:hidden"
             aria-hidden="true"
@@ -193,11 +193,11 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
         {menuOpen && (
           <motion.div
             ref={menuRef}
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2 }}
-            className="fixed top-[92px] left-4 right-4 z-[49] premium-panel rounded-[1.6rem] p-4 lg:hidden"
+            initial={{ opacity: 0, y: -8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.98 }}
+            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed top-[92px] left-4 right-4 z-[49] premium-panel rounded-[1.6rem] p-4 lg:hidden transform-gpu [backface-visibility:hidden]"
             style={{ boxShadow: "0 20px 60px -10px rgba(0, 0, 0, 0.7)" }}
           >
             <div className="flex flex-col gap-2">
@@ -205,7 +205,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
                 <button
                   key={cat.key}
                   onClick={() => handleCategoryClick(cat.filter)}
-                  className="px-4 py-3 rounded-2xl text-sm font-medium text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors text-left"
+                  className="px-4 py-3 rounded-2xl text-sm font-medium text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] text-left"
                 >
                   {t(cat.key)}
                 </button>
@@ -215,7 +215,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
                   setContactOpen(true);
                   setMenuOpen(false);
                 }}
-                className="px-4 py-3 rounded-2xl text-sm font-medium text-primary hover:bg-white/70 dark:hover:bg-white/5 transition-colors text-left"
+                className="px-4 py-3 rounded-2xl text-sm font-medium text-primary hover:bg-white/70 dark:hover:bg-white/5 transition-colors duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] text-left"
               >
                 {t("nav.contactBtn")}
               </button>

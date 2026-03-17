@@ -36,6 +36,8 @@
     --ring: 217 91% 60%;
 
     --radius: 0.5rem;
+    --motion-duration-fast: 250ms;
+    --motion-ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
 
     --surface: 0 0% 100% / 0.7;
     --shadow-sm: 0 0 0 1px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -197,6 +199,9 @@
   .valitsa-card {
     @apply rounded-[2rem] overflow-hidden transition-shadow duration-300;
     box-shadow: var(--shadow-md);
+    contain: layout paint;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   .valitsa-card:hover {
@@ -251,12 +256,20 @@
   }
 
   .navbar-shell {
-    background: linear-gradient(180deg, rgb(255, 255, 255), rgb(248, 250, 252));
-    border-color: rgba(255, 255, 255, 0.76);
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.78),
+      rgba(248, 250, 252, 0.7)
+    );
+    border-color: rgba(255, 255, 255, 0.7);
   }
 
   .dark .navbar-shell {
-    background: linear-gradient(180deg, rgb(15, 23, 42), rgb(15, 23, 42));
+    background: linear-gradient(
+      180deg,
+      rgba(15, 23, 42, 0.78),
+      rgba(15, 23, 42, 0.72)
+    );
     border-color: rgba(148, 163, 184, 0.24);
   }
 
@@ -326,6 +339,9 @@
 
   .trips-card-surface {
     border-color: rgba(191, 219, 254, 0.55);
+    contain: layout paint;
+    transform: translateZ(0);
+    backface-visibility: hidden;
     box-shadow:
       0 22px 50px -34px rgba(15, 23, 42, 0.34),
       0 10px 22px -16px rgba(15, 23, 42, 0.2);
@@ -422,16 +438,22 @@
     font-weight: 700;
     letter-spacing: -0.01em;
     box-shadow: 0 22px 40px -22px rgba(15, 23, 42, 0.75);
-    transition:
-      transform 220ms ease,
-      opacity 220ms ease,
-      box-shadow 220ms ease;
+    transition-property: transform, opacity, box-shadow;
+    transition-duration: var(--motion-duration-fast);
+    transition-timing-function: var(--motion-ease-smooth);
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   .premium-button:hover {
-    transform: translateY(-1px);
+    transform: translateY(-1px) scale(1.01) translateZ(0);
     opacity: 0.96;
     box-shadow: 0 28px 45px -20px rgba(15, 23, 42, 0.85);
+  }
+
+  .premium-button:active {
+    transform: scale(0.97) translateZ(0);
   }
 
   .premium-button-light {
@@ -447,16 +469,22 @@
     letter-spacing: -0.01em;
     border: 1px solid rgba(255, 255, 255, 0.7);
     box-shadow: 0 22px 35px -22px rgba(15, 23, 42, 0.45);
-    transition:
-      transform 220ms ease,
-      background-color 220ms ease,
-      box-shadow 220ms ease;
+    transition-property: transform, background-color, box-shadow;
+    transition-duration: var(--motion-duration-fast);
+    transition-timing-function: var(--motion-ease-smooth);
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   .premium-button-light:hover {
-    transform: translateY(-1px);
+    transform: translateY(-1px) scale(1.01) translateZ(0);
     background: rgba(255, 255, 255, 0.98);
     box-shadow: 0 28px 45px -20px rgba(15, 23, 42, 0.55);
+  }
+
+  .premium-button-light:active {
+    transform: scale(0.97) translateZ(0);
   }
 
   .dark .premium-button-light {
@@ -476,16 +504,22 @@
     letter-spacing: -0.01em;
     border: 1px solid rgba(148, 163, 184, 0.24);
     box-shadow: none;
-    transition:
-      transform 220ms ease,
-      background-color 220ms ease,
-      border-color 220ms ease;
+    transition-property: transform, background-color, border-color;
+    transition-duration: var(--motion-duration-fast);
+    transition-timing-function: var(--motion-ease-smooth);
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   .premium-button-navbar:hover {
-    transform: translateY(-1px);
+    transform: translateY(-1px) scale(1.01) translateZ(0);
     background: linear-gradient(180deg, rgb(30, 41, 59), rgb(30, 41, 59));
     border-color: rgba(148, 163, 184, 0.32);
+  }
+
+  .premium-button-navbar:active {
+    transform: scale(0.97) translateZ(0);
   }
 
   .dark .premium-button-navbar {
@@ -508,16 +542,22 @@
     background: rgba(255, 255, 255, 0.52);
     color: hsl(var(--foreground));
     font-weight: 600;
-    transition:
-      border-color 220ms ease,
-      transform 220ms ease,
-      background-color 220ms ease;
+    transition-property: border-color, transform, background-color, opacity;
+    transition-duration: var(--motion-duration-fast);
+    transition-timing-function: var(--motion-ease-smooth);
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   .premium-outline-button:hover {
-    transform: translateY(-1px);
+    transform: translateY(-1px) scale(1.01) translateZ(0);
     border-color: rgba(59, 130, 246, 0.35);
     background: rgba(255, 255, 255, 0.78);
+  }
+
+  .premium-outline-button:active {
+    transform: scale(0.97) translateZ(0);
   }
 
   .dark .premium-outline-button {
