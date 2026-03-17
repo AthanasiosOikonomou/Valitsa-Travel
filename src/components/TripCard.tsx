@@ -79,8 +79,22 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
             </div>
           </div>
 
-          <div className="valitsa-card premium-panel-soft absolute inset-0 border-white/25 bg-black/40 p-5 shadow-xl backdrop-blur-md [backface-visibility:hidden] [transform:rotateY(180deg)]">
-            <div className="flex h-full flex-col items-center justify-center text-center">
+          <div className="valitsa-card premium-panel-soft absolute inset-0 overflow-hidden border-white/25 p-5 shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)]">
+            <ProgressiveImage
+              src={trip.image}
+              alt={localized.title}
+              width={1200}
+              height={1500}
+              sizes="(max-width: 768px) 400px, 800px"
+              responsiveWidths={[320, 400, 640, 800, 960]}
+              loading={index < 4 ? "eager" : "lazy"}
+              fetchPriority={index < 4 ? "high" : "auto"}
+              className="absolute inset-0"
+              imgClassName="scale-110 blur-[9px] brightness-[0.38]"
+            />
+            <div className="absolute inset-0 bg-black/45" />
+
+            <div className="relative z-20 flex h-full flex-col items-center justify-center text-center">
               <Info size={26} className="mb-4 text-white/80" />
               <p className="text-sm leading-relaxed text-white/92">
                 {localized.description}
