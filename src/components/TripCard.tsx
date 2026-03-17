@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Info, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
 import { getLocalizedTripContent, type Trip } from "@/data/mockData";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -24,43 +24,71 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
         delay: index * 0.08,
         ease: [0.22, 1, 0.36, 1],
       }}
-      whileHover={{ y: -4, scale: 1.01 }}
-      className="group cursor-pointer transform-gpu [backface-visibility:hidden] will-change-transform"
+      className="group cursor-pointer"
       onClick={() => onClick(trip)}
     >
-      <div className="valitsa-card premium-panel-soft relative aspect-[4/5] mb-5 border-white/60 transform-gpu [backface-visibility:hidden] [contain:layout]">
-        <ProgressiveImage
-          src={trip.image}
-          alt={localized.title}
-          width={1200}
-          height={1500}
-          sizes="(max-width: 768px) 400px, 800px"
-          responsiveWidths={[320, 400, 640, 800, 960]}
-          loading="lazy"
-          fetchPriority={index < 3 ? "low" : "auto"}
-          className="absolute inset-0"
-          imgClassName="transition-transform duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04]"
-        />
+      <div className="relative mb-5 aspect-[4/5] [perspective:1000px]">
+        <div className="relative h-full w-full transform-gpu transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]">
+          <div className="valitsa-card premium-panel-soft absolute inset-0 border-white/60 [backface-visibility:hidden]">
+            <ProgressiveImage
+              src={trip.image}
+              alt={localized.title}
+              width={1200}
+              height={1500}
+              sizes="(max-width: 768px) 400px, 800px"
+              responsiveWidths={[320, 400, 640, 800, 960]}
+              loading={index < 4 ? "eager" : "lazy"}
+              fetchPriority={index < 4 ? "high" : "auto"}
+              className="absolute inset-0"
+              imgClassName="transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.05]"
+            />
 
-        <div className="absolute top-5 left-5 flex gap-2">
-          <span className="premium-chip px-4 py-1.5 text-xs font-semibold text-white">
-            {trip.price}
-          </span>
-          <span className="premium-chip px-4 py-1.5 text-xs font-semibold text-white">
-            {localized.duration}
-          </span>
-        </div>
+            <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-black/35 to-transparent" />
 
-        <div className="absolute inset-x-6 bottom-5 rounded-[1.35rem] bg-gradient-to-t from-black/70 via-black/52 to-black/30 px-4 py-4 opacity-100 transition-[transform,opacity] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] flex flex-col justify-end backdrop-blur-[2px] shadow-[0_18px_34px_-24px_rgba(0,0,0,0.75)] transform-gpu [backface-visibility:hidden] group-hover:-translate-y-0.5">
-          <p className="label-ui text-white mb-1.5 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-            {localized.location}
-          </p>
-          <h4 className="text-[1.28rem] text-display text-white mb-2.5 leading-tight drop-shadow-[0_3px_10px_rgba(0,0,0,0.88)]">
-            {localized.title}
-          </h4>
-          <button className="premium-button-light w-full py-3.5 rounded-xl text-sm active:scale-[0.97] transition-transform duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
-            {t("grid.viewDetails")} <ArrowRight size={16} />
-          </button>
+            <div className="absolute left-5 top-5 z-20 flex gap-2">
+              <span className="premium-chip px-4 py-1.5 text-xs font-semibold text-white">
+                {trip.price}
+              </span>
+              <span className="premium-chip px-4 py-1.5 text-xs font-semibold text-white">
+                {localized.duration}
+              </span>
+            </div>
+
+            <div className="absolute inset-x-4 bottom-4 z-20 rounded-2xl border border-white/20 bg-black/40 p-4 shadow-xl backdrop-blur-md transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-2">
+              <div className="flex flex-col justify-end gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/85">
+                  {trip.type}
+                </p>
+                <h3 className="text-[1.05rem] font-semibold leading-tight text-white line-clamp-2">
+                  {localized.title}
+                </h3>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-1.5 text-white/92">
+                    <MapPin size={14} />
+                    <span className="text-xs font-medium leading-tight line-clamp-1">
+                      {localized.location}
+                    </span>
+                  </div>
+                  <button className="w-1/3 min-w-[86px] rounded-lg border border-white/70 bg-transparent px-2.5 py-1.5 text-xs font-semibold text-white transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-white/10">
+                    {t("grid.viewDetails")}{" "}
+                    <ArrowRight size={12} className="inline" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="valitsa-card premium-panel-soft absolute inset-0 border-white/25 bg-black/40 p-6 shadow-xl backdrop-blur-md [backface-visibility:hidden] [transform:rotateY(180deg)]">
+            <div className="flex h-full flex-col items-center justify-center text-center">
+              <Info size={28} className="mb-4 text-white/80" />
+              <p className="text-sm leading-relaxed text-white/92">
+                {localized.description}
+              </p>
+              <button className="mt-6 rounded-lg border border-white/65 bg-transparent px-3 py-1.5 text-xs font-semibold text-white/95 transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-white/10">
+                Close Back
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </motion.div>
