@@ -31,7 +31,8 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
       <div className="relative mb-5 aspect-[4/5] [perspective:1000px]">
         <div
           className={`relative h-full w-full transform-gpu transition-all duration-[560ms] ease-[cubic-bezier(0.16,1,0.3,1)] [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)] ${isFlipped ? "[transform:rotateY(180deg)]" : ""}`}
-          onTouchStart={(e) => {
+          onPointerUp={(e) => {
+            if (e.pointerType !== "touch") return;
             e.stopPropagation();
             setIsFlipped((prev) => !prev);
           }}
