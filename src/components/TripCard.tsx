@@ -1,4 +1,4 @@
-import { ArrowRight, Info, MapPin } from "lucide-react";
+import { ArrowRight, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { getLocalizedTripContent, type Trip } from "@/data/mockData";
@@ -15,6 +15,7 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
   const { t, lang } = useLanguage();
   const localized = getLocalizedTripContent(trip, lang);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
 
   return (
     <motion.div
@@ -27,13 +28,24 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
         ease: [0.22, 1, 0.36, 1],
       }}
       className="group cursor-pointer"
+      onMouseEnter={() => {
+        if (!isTouchDevice) {
+          setIsFlipped(true);
+        }
+      }}
+      onMouseLeave={() => {
+        if (!isTouchDevice) {
+          setIsFlipped(false);
+        }
+      }}
     >
       <div className="relative mb-5 aspect-[4/5] [perspective:1000px]">
         <div
-          className={`relative h-full w-full transform-gpu transition-all duration-[560ms] ease-[cubic-bezier(0.16,1,0.3,1)] [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)] ${isFlipped ? "[transform:rotateY(180deg)]" : ""}`}
+          className={`relative h-full w-full transform-gpu transition-all duration-[560ms] ease-[cubic-bezier(0.16,1,0.3,1)] [transform-style:preserve-3d] ${isFlipped ? "[transform:rotateY(180deg)]" : ""}`}
           onPointerUp={(e) => {
             if (e.pointerType !== "touch") return;
             e.stopPropagation();
+            setIsTouchDevice(true);
             setIsFlipped((prev) => !prev);
           }}
         >
@@ -96,7 +108,12 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
             <div className="absolute inset-0 bg-black/45" />
 
             <div className="relative z-20 flex h-full flex-col items-center justify-center text-center">
-              <Info size={26} className="mb-4 text-white/80" />
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-white/70">
+                {t("card.trip")}
+              </p>
+              <h4 className="mb-4 max-w-[90%] text-balance text-xl font-semibold leading-tight tracking-[-0.02em] text-white">
+                {localized.title}
+              </h4>
               <p className="text-sm leading-relaxed text-white/92">
                 {localized.description}
               </p>

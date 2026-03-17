@@ -67,6 +67,7 @@ const translations: Record<Lang, Record<string, string>> = {
     // Trip Card Quick Links
     "card.moreDuration": "More {duration} Trips",
     "card.moreType": "More {type} Trips",
+    "card.trip": "Trip",
 
     // Trip Detail
     "detail.startingFrom": "Starting from",
@@ -229,6 +230,7 @@ const translations: Record<Lang, Record<string, string>> = {
     // Trip Card Quick Links
     "card.moreDuration": "Περισσότερα {duration} Ταξίδια",
     "card.moreType": "Περισσότερα {type} Ταξίδια",
+    "card.trip": "Ταξίδι",
 
     // Trip Detail
     "detail.startingFrom": "Από",
