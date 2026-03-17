@@ -2,6 +2,8 @@ import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Link } from "react-router-dom";
+import { prefetchTripsRoute } from "@/lib/routePrefetch";
+import { optimizeImageUrl } from "@/lib/utils";
 
 const HeroSection = () => {
   const { t } = useLanguage();
@@ -9,8 +11,13 @@ const HeroSection = () => {
   return (
     <section className="relative min-h-[96vh] flex items-center justify-center overflow-hidden px-4 pt-24 pb-12 md:px-8">
       <img
-        src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=2000"
+        src={optimizeImageUrl(
+          "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=2000",
+          2000,
+        )}
         alt={t("hero.alt")}
+        width={2000}
+        height={1200}
         loading="eager"
         fetchpriority="high"
         decoding="async"
@@ -68,6 +75,9 @@ const HeroSection = () => {
           >
             <Link
               to="/trips"
+              onMouseEnter={prefetchTripsRoute}
+              onFocus={prefetchTripsRoute}
+              onTouchStart={prefetchTripsRoute}
               className="premium-button-light px-10 py-5 text-base"
             >
               {t("hero.cta")}

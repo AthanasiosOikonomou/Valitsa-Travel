@@ -5,6 +5,7 @@ import { getLocalizedTripContent, type Trip } from "@/data/mockData";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { sendInquiryEmail } from "@/lib/email";
 import CaptchaField from "@/components/CaptchaField";
+import { optimizeImageUrl } from "@/lib/utils";
 
 interface TripDetailProps {
   trip: Trip;
@@ -51,6 +52,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
     message: "",
   });
   const [submitted, setSubmitted] = useState(false);
+  const [detailImageLoaded, setDetailImageLoaded] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState("");
   const [captchaToken, setCaptchaToken] = useState("");
@@ -200,16 +202,24 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
 
       <div className="max-w-7xl mx-auto px-6 md:px-10 pt-20 pb-24 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
         <div className="lg:col-span-7">
-          <motion.img
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            src={trip.image}
-            alt={localized.title}
-            loading="lazy"
-            decoding="async"
-            className="w-full aspect-[16/10] object-cover rounded-[2rem] mb-10"
-          />
+          <div className="relative w-full aspect-[16/10] rounded-[2rem] mb-10 overflow-hidden">
+            {!detailImageLoaded ? (
+              <div className="absolute inset-0 animate-pulse bg-slate-200/75 dark:bg-slate-800/70" />
+            ) : null}
+            <motion.img
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              src={optimizeImageUrl(trip.image, 1600)}
+              alt={localized.title}
+              width={1600}
+              height={1000}
+              loading="lazy"
+              decoding="async"
+              onLoad={() => setDetailImageLoaded(true)}
+              className={`w-full h-full object-cover ${detailImageLoaded ? "opacity-100" : "opacity-0"}`}
+            />
+          </div>
 
           <motion.div
             initial={{ opacity: 0, y: 10, scale: 0.98 }}

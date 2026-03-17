@@ -182,6 +182,8 @@ const IndexContent = () => {
             }
             alt={t("nav.brand")}
             className="h-8 w-auto"
+            width={200}
+            height={60}
             loading="lazy"
             decoding="async"
           />

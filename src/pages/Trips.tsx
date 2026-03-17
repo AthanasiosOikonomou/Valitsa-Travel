@@ -32,6 +32,7 @@ import {
   type SortOption,
   type TripTypeFilter,
 } from "@/lib/tripFilters";
+import { optimizeImageUrl } from "@/lib/utils";
 
 interface FilterSectionProps {
   id: string;
@@ -1059,6 +1060,10 @@ const TripsContent = () => {
             }
             alt={t("nav.brand")}
             className="h-8 w-auto"
+            width={200}
+            height={60}
+            loading="lazy"
+            decoding="async"
           />
           <div className="flex items-center gap-6">
             <a
@@ -1095,6 +1100,7 @@ const TripResultCard = ({
   animateEntry,
 }: TripResultCardProps) => {
   const { t, lang } = useLanguage();
+  const [imageLoaded, setImageLoaded] = useState(false);
   const localized = getLocalizedTripContent(trip, lang);
 
   return (
@@ -1110,11 +1116,18 @@ const TripResultCard = ({
       className="group premium-panel-soft trips-card-surface cursor-pointer rounded-[1.8rem] overflow-hidden flex flex-col sm:flex-row sm:h-[18rem] border-white/65 hover:border-primary/30 transform-gpu [backface-visibility:hidden] will-change-transform transition-[transform,opacity,border-color,box-shadow] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[1.01] active:scale-[0.97]"
     >
       <div className="sm:w-64 md:w-80 shrink-0 relative overflow-hidden h-56 sm:h-full">
+        {!imageLoaded ? (
+          <div className="absolute inset-0 animate-pulse bg-slate-200/75 dark:bg-slate-800/70" />
+        ) : null}
         <img
-          src={trip.image}
+          src={optimizeImageUrl(trip.image, 1200)}
           alt={localized.title}
-          className="w-full h-48 sm:h-full object-cover transform-gpu [backface-visibility:hidden] group-hover:scale-[1.04] transition-transform duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+          width={1200}
+          height={900}
+          onLoad={() => setImageLoaded(true)}
+          className={`w-full h-48 sm:h-full object-cover transform-gpu [backface-visibility:hidden] group-hover:scale-[1.04] transition-transform duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${imageLoaded ? "opacity-100" : "opacity-0"}`}
           loading="lazy"
+          decoding="async"
         />
         {trip.isBonus && (
           <span className="absolute top-4 left-4 premium-chip px-3 py-1.5 text-xs font-bold text-white">

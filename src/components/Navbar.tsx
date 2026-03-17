@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ContactModal from "@/components/ContactModal";
+import { prefetchTripsRoute } from "@/lib/routePrefetch";
 
 interface NavbarProps {
   darkMode: boolean;
@@ -110,6 +111,8 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
                   : "/branding/navbar/logo-light.svg"
               }
               alt={t("nav.brand")}
+              width={200}
+              height={60}
               className="h-9 w-auto sm:h-11"
             />
           </Link>
@@ -120,6 +123,8 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
               <button
                 key={cat.key}
                 onClick={() => handleCategoryClick(cat.filter)}
+                onMouseEnter={prefetchTripsRoute}
+                onFocus={prefetchTripsRoute}
                 className="px-4 py-2.5 rounded-full text-sm font-medium text-foreground-muted hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
               >
                 {t(cat.key)}

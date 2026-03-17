@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Phone, MessageSquare, Send, CheckCircle } from "lucide-react";
-import { FaViber, FaWhatsapp } from "react-icons/fa";
+import {
+  X,
+  Phone,
+  MessageSquare,
+  Send,
+  CheckCircle,
+  MessageCircle,
+} from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { sendInquiryEmail } from "@/lib/email";
 import CaptchaField from "@/components/CaptchaField";
@@ -232,7 +238,7 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
                     className="flex items-center gap-4 p-5 rounded-2xl border border-border hover:border-primary/40 hover:bg-muted/50 transition-[transform,opacity,background-color,border-color] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu [backface-visibility:hidden] will-change-transform hover:scale-[1.01] active:scale-[0.97] group"
                   >
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <FaWhatsapp size={20} className="text-primary" />
+                      <MessageCircle size={20} className="text-primary" />
                     </div>
                     <div>
                       <p className="font-bold text-sm">
@@ -250,7 +256,7 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
                     className="flex items-center gap-4 p-5 rounded-2xl border border-border hover:border-primary/40 hover:bg-muted/50 transition-[transform,opacity,background-color,border-color] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu [backface-visibility:hidden] will-change-transform hover:scale-[1.01] active:scale-[0.97] group"
                   >
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <FaViber size={20} className="text-primary" />
+                      <MessageSquare size={20} className="text-primary" />
                     </div>
                     <div>
                       <p className="font-bold text-sm">{t("contact.viber")}</p>
