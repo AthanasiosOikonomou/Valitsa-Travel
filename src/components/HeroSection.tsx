@@ -33,7 +33,7 @@ const HeroSection = () => {
             initial={{ opacity: 0, y: 10, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            className="label-ui text-white/78 mb-5 drop-shadow-[0_2px_14px_rgba(0,0,0,0.35)]"
+            className="label-ui text-white mb-5 drop-shadow-[0_2px_14px_rgba(0,0,0,0.35)]"
           >
             {t("hero.label")}
           </motion.p>
