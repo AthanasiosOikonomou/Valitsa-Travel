@@ -56,7 +56,7 @@
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <image:image>
-      <image:loc>https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&q=80&w=1200</image:loc>
+      <image:loc>https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&amp;fit=crop&amp;q=80&amp;w=1200</image:loc>
       <image:title>Amalfi Coast Private Estate</image:title>
     </image:image>
   </url>
@@ -68,7 +68,7 @@
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <image:image>
-      <image:loc>https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&q=80&w=1200</image:loc>
+      <image:loc>https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&amp;fit=crop&amp;q=80&amp;w=1200</image:loc>
       <image:title>Kyoto Zen Sanctuary</image:title>
     </image:image>
   </url>
@@ -80,7 +80,7 @@
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <image:image>
-      <image:loc>https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&q=80&w=1200</image:loc>
+      <image:loc>https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&amp;fit=crop&amp;q=80&amp;w=1200</image:loc>
       <image:title>Alpine Mountain Escape</image:title>
     </image:image>
   </url>
@@ -92,7 +92,7 @@
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <image:image>
-      <image:loc>https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&q=80&w=1200</image:loc>
+      <image:loc>https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&amp;fit=crop&amp;q=80&amp;w=1200</image:loc>
       <image:title>Iceland Northern Lights</image:title>
     </image:image>
   </url>
@@ -104,7 +104,7 @@
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <image:image>
-      <image:loc>https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&q=80&w=1200</image:loc>
+      <image:loc>https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&amp;fit=crop&amp;q=80&amp;w=1200</image:loc>
       <image:title>Tanzania Safari Adventure</image:title>
     </image:image>
   </url>
@@ -116,7 +116,7 @@
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <image:image>
-      <image:loc>https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&q=80&w=1200</image:loc>
+      <image:loc>https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&amp;fit=crop&amp;q=80&amp;w=1200</image:loc>
       <image:title>Patagonia Adventure</image:title>
     </image:image>
   </url>
