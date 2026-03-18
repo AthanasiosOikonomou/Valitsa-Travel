@@ -59,22 +59,10 @@ The engineering intent is clear: deliver a premium experience that is measurable
 
 ## Architecture and Product Surfaces
 
-### System Architecture (placeholder)
+### Live Site URLs
 
-![Architecture Diagram Placeholder](docs/images/architecture-diagram-placeholder.png)
-
-Suggested diagram scope:
-
-- SPA routes and component boundaries.
-- Inquiry API request flow.
-- CAPTCHA verification path.
-- SMTP delivery path.
-
-### UI Screenshots (placeholders)
-
-![Homepage UI Placeholder](docs/images/ui-home-placeholder.png)
-![Trips Archive UI Placeholder](docs/images/ui-trips-placeholder.png)
-![Trip Detail UI Placeholder](docs/images/ui-detail-placeholder.png)
+- Main site: https://valitsatravel.gr/
+- Trips archive: https://valitsatravel.gr/trips
 
 ---
 
