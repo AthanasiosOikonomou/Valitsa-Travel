@@ -2,20 +2,24 @@
   RewriteEngine On
   RewriteBase /
 
-# Keep API routes untouched (handled by backend/proxy)
+# Canonical home URL.
+
+RewriteRule ^index\.html$ / [R=301,L]
+
+# Keep API routes untouched (handled by backend/proxy).
 
 RewriteRule ^api(/|$) - [L]
 
-# If the request is not an existing file or directory, serve the SPA entry
+# Redirect any missing path to the home page.
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule . /index.html [L]
+RewriteRule . / [R=302,L,QSA]
 </IfModule>
 
-# Never cache index.html — it references hashed JS/CSS bundles
+# Never cache index.html; it references hashed JS/CSS bundles
 
-# and must always be fresh so users get the latest build
+# and must always be fresh so users get the latest build.
 
 <Files "index.html">
 <IfModule mod_headers.c>
@@ -25,9 +29,9 @@ Header set Expires "0"
 </IfModule>
 </Files>
 
-# Long-term cache for Vite's hashed assets (JS, CSS, images, fonts)
+# Long-term cache for Vite's hashed assets (JS, CSS, images, fonts).
 
-# Safe because Vite changes the filename hash on every build
+# Safe because Vite changes the filename hash on every build.
 
 <IfModule mod_headers.c>
   <FilesMatch "\.(js|css|woff2?|ttf|eot|svg|png|jpg|jpeg|gif|webp|ico)$">

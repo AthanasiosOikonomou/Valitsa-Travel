@@ -88,7 +88,7 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
                 <h3 className="text-[1.05rem] font-semibold leading-tight text-white line-clamp-2">
                   {localized.title}
                 </h3>
-                <div className="flex items-center gap-1.5 text-white/92">
+                <div className="flex items-center gap-1.5 !text-white">
                   <MapPin size={14} />
                   <span className="text-xs font-medium leading-tight line-clamp-1">
                     {localized.location}
@@ -120,7 +120,7 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
               <h4 className="mb-4 max-w-[90%] text-balance text-xl font-semibold leading-tight tracking-[-0.02em] text-white">
                 {localized.title}
               </h4>
-              <p className="text-sm leading-relaxed text-white/92">
+              <p className="text-sm leading-relaxed !text-white">
                 {localized.description}
               </p>
               <button
