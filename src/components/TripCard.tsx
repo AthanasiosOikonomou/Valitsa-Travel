@@ -66,10 +66,16 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
             <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-black/35 to-transparent" />
 
             <div className="absolute left-5 top-5 z-20 flex gap-2">
-              <span className="premium-chip border-white/45 bg-black/35 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-sm">
+              <span
+                data-nosnippet
+                className="premium-chip border-white/45 bg-black/35 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-sm"
+              >
                 {trip.price}
               </span>
-              <span className="premium-chip border-white/45 bg-black/35 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-sm">
+              <span
+                data-nosnippet
+                className="premium-chip border-white/45 bg-black/35 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-sm"
+              >
                 {localized.duration}
               </span>
             </div>
