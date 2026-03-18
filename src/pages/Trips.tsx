@@ -894,7 +894,7 @@ const TripsContent = () => {
             <p className="label-ui uppercase tracking-[0.18em] text-foreground-muted/80 mb-2">
               {lang === "gr" ? "Αποτελέσματα" : "Results"}
             </p>
-            <p className="text-display text-[1.45rem] md:text-[1.85rem] leading-none text-foreground">
+            <p className="text-[1.45rem] md:text-[1.85rem] leading-none text-foreground">
               <span className="text-primary mr-2">{filtered.length}</span>
               <span className="text-[0.95rem] md:text-[1.05rem] font-semibold text-foreground-muted align-middle">
                 {t("archive.resultsFound")}
@@ -995,7 +995,7 @@ const TripsContent = () => {
                 <p className="label-ui uppercase tracking-[0.18em] text-primary/85 mb-3">
                   {lang === "gr" ? "Καμία Διαθεσιμότητα" : "No Availability"}
                 </p>
-                <h3 className="text-display text-[1.65rem] md:text-[2rem] leading-tight text-foreground mb-4">
+                <h3 className="text-[1.65rem] md:text-[2rem] leading-tight text-foreground mb-4">
                   {noTripsTitle}
                 </h3>
                 <p className="premium-subheading text-[1rem] md:text-[1.05rem] leading-relaxed mb-6 max-w-xl">

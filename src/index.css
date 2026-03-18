@@ -6,6 +6,9 @@
 
 @layer base {
   :root {
+    --font-ui: "Plus Jakarta Sans", system-ui, sans-serif;
+    --font-trip-title: "Playfair Display", "Times New Roman", serif;
+
     --background: 0 0% 100%;
     --foreground: 222 47% 11%;
     --foreground-muted: 215 16% 47%;
@@ -111,7 +114,14 @@
   }
 
   html {
-    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+    font-family: var(--font-ui);
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font-family: var(--font-ui);
   }
 
   body {
@@ -159,7 +169,7 @@
   }
 
   .text-display {
-    font-family: "Playfair Display", "Times New Roman", serif;
+    font-family: var(--font-trip-title);
     text-wrap: balance;
     letter-spacing: -0.045em;
     font-weight: 600;
@@ -182,7 +192,7 @@
   }
 
   .text-editorial-title {
-    font-family: "Playfair Display", "Times New Roman", serif;
+    font-family: var(--font-ui);
     font-size: clamp(1.25rem, 1rem + 1vw, 1.8rem);
     line-height: 1.08;
     letter-spacing: -0.03em;
@@ -573,6 +583,7 @@
   }
 
   .premium-subheading {
+    font-family: var(--font-ui);
     text-wrap: balance;
     line-height: 1.75;
     letter-spacing: -0.012em;
