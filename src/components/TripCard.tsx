@@ -81,16 +81,16 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
             </div>
 
             <div className="absolute inset-x-4 bottom-4 z-20 rounded-2xl border border-white/20 bg-black/40 p-4 shadow-xl backdrop-blur-md transition-all duration-[560ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-2">
-              <div className="flex flex-col justify-end gap-2">
+              <div className="flex flex-col h-full">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/85">
                   {trip.type}
                 </p>
                 <h3 className="text-display text-[1.05rem] font-semibold leading-tight text-white line-clamp-2">
                   {localized.title}
                 </h3>
-                <div className="flex items-center gap-1.5 !text-white">
-                  <MapPin size={14} />
-                  <span className="text-xs font-medium leading-tight line-clamp-1">
+                <div className="mt-5 flex w-full justify-end items-center gap-2 !text-white">
+                  <MapPin size={16} />
+                  <span className="text-sm font-medium leading-tight line-clamp-1">
                     {localized.location}
                   </span>
                 </div>
