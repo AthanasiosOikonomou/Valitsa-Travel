@@ -1,7 +1,7 @@
 {
   "name": "Valitsa Travel - Premium Curated Travel Experiences",
   "short_name": "Valitsa Travel",
-  "description": "Discover handcrafted luxury travel experiences and curated adventures with Valitsa Travel. Private estates, yacht charters, cultural immersion.",
+  "description": "Discover handcrafted luxury travel experiences and curated adventures with Valitsa Travel.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -11,7 +11,7 @@
   "icons": [
     {
       "src": "/branding/favicon/favicon-light.svg",
-      "sizes": "192x192",
+      "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
@@ -27,7 +27,9 @@
     {
       "src": "/branding/navbar/logo-light.svg",
       "sizes": "540x720",
-      "type": "image/svg+xml"
+      "type": "image/svg+xml",
+      "form_factor": "wide",
+      "label": "Valitsa Travel Homepage"
     }
   ],
   "shortcuts": [
@@ -37,10 +39,7 @@
       "description": "Browse all available travel packages",
       "url": "/trips",
       "icons": [
-        {
-          "src": "/branding/favicon/favicon-light.svg",
-          "sizes": "192x192"
-        }
+        { "src": "/branding/favicon/favicon-light.svg", "sizes": "192x192" }
       ]
     },
     {
@@ -49,10 +48,7 @@
       "description": "Get in touch with our team",
       "url": "/?modal=contact",
       "icons": [
-        {
-          "src": "/branding/favicon/favicon-light.svg",
-          "sizes": "192x192"
-        }
+        { "src": "/branding/favicon/favicon-light.svg", "sizes": "192x192" }
       ]
     }
   ],
