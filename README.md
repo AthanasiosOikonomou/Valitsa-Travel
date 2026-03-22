@@ -302,6 +302,13 @@ For substantial changes, include a short design rationale that explains the trad
 
 ## License
 
-This repository currently does not include a dedicated `LICENSE` file.
+## License
 
-Until a license is added, treat all source code and brand assets as proprietary and all rights reserved.
+This project is licensed under an **Educational Use Only License**.
+
+- **You may use, copy, and modify this software only for educational and non-commercial purposes.**
+- **Commercial use or any activity intended for monetary gain is strictly prohibited.**
+- All rights, title, and interest in and to the software remain with **Athanasios Oikonomou**.
+- For commercial licensing, contact Athanasios Oikonomou for explicit written permission.
+
+See the [LICENSE](LICENSE) file for full terms.
