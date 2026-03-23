@@ -14,7 +14,6 @@ import { supabase } from "@/lib/supabaseClient";
 import type { Trip } from "@/types/Trip";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import Navbar from "@/components/Navbar";
 import TripDetail from "@/components/TripDetail";
 import ContactModal from "@/components/ContactModal";
 import Seo from "@/components/Seo";
@@ -910,7 +909,6 @@ const TripsContent = () => {
         lang={lang}
         structuredData={[itemListSchema, breadcrumbSchema]}
       />
-      <Navbar darkMode={darkMode} onToggleDark={toggleDark} />
 
       <div className="pt-36 pb-10 px-6 md:px-10 max-w-7xl mx-auto">
         <div className="premium-panel-soft trips-summary-surface rounded-[1.4rem] px-5 py-4 md:px-6 md:py-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

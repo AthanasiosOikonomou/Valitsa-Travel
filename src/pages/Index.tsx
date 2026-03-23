@@ -3,7 +3,6 @@ import { AnimatePresence } from "framer-motion";
 import type { Trip } from "@/types/Trip";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import FeaturedTrips from "@/components/FeaturedTrips";
 import TripDetail from "@/components/TripDetail";
@@ -157,7 +156,6 @@ const IndexContent = () => {
           faqSchema,
         ]}
       />
-      <Navbar darkMode={darkMode} onToggleDark={toggleDark} />
       <HeroSection />
       <FeaturedTrips onSelectTrip={setSelectedTrip} />
 

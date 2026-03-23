@@ -1,3 +1,9 @@
+import Navbar from "@/components/Navbar";
+import { useTheme } from "@/contexts/ThemeContext";
+function NavbarWrapper() {
+  const { darkMode, toggleDark } = useTheme();
+  return <Navbar darkMode={darkMode} onToggleDark={toggleDark} />;
+}
 import { Suspense, lazy, useEffect, useLayoutEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -52,6 +58,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <NavbarWrapper />
               <Suspense
                 fallback={
                   <div
