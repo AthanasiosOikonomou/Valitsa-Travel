@@ -222,7 +222,7 @@ const TripsContent = () => {
     const prev = document.documentElement.style.scrollBehavior;
     const top = Math.max(
       0,
-      resultsTopRef.current.getBoundingClientRect().top + window.scrollY - 120,
+      resultsTopRef.current.getBoundingClientRect().top + window.scrollY - 280,
     );
 
     document.documentElement.style.scrollBehavior = "auto";
