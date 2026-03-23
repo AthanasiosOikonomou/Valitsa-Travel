@@ -656,3 +656,8 @@
     scroll-behavior: auto !important;
   }
 }
+
+.premium-page,
+.trips-page-surface {
+  overflow: hidden;
+}
