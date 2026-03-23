@@ -23,6 +23,7 @@ const TRIP_LIST_FIELDS = [
   "date_range",
   "departure_city",
   "tags",
+  "description",
 ];
 
 export interface TripFilters {
