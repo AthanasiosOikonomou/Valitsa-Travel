@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
-import type { Trip } from "@/data/mockData";
+import type { Trip } from "@/types/Trip";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import Navbar from "@/components/Navbar";

@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { trips, type Trip } from "@/data/mockData";
+import { useTrips } from "@/hooks/useTrips";
+import type { Trip } from "@/types/Trip";
 import TripCard from "./TripCard";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -9,7 +10,7 @@ interface FeaturedTripsProps {
 
 const FeaturedTrips = ({ onSelectTrip }: FeaturedTripsProps) => {
   const { t } = useLanguage();
-  const featured = trips.filter((trip) => trip.isFeatured);
+  const { trips, loading, error } = useTrips({ featured: true });
 
   return (
     <section className="max-w-7xl mx-auto py-24 px-6 md:px-10">
@@ -25,7 +26,7 @@ const FeaturedTrips = ({ onSelectTrip }: FeaturedTripsProps) => {
         layout
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
       >
-        {featured.map((trip, idx) => (
+        {trips.map((trip, idx) => (
           <TripCard
             key={trip.id}
             trip={trip}

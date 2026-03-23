@@ -1,15 +1,17 @@
-import {
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useReducer,
-  useRef,
-  useState,
-} from "react";
 import { useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Search, SlidersHorizontal, X, ChevronDown } from "lucide-react";
-import { getLocalizedTripContent, trips, type Trip } from "@/data/mockData";
+
+import {
+  useEffect,
+  useState,
+  useMemo,
+  useRef,
+  useReducer,
+  useLayoutEffect,
+} from "react";
+import { supabase } from "@/lib/supabaseClient";
+import type { Trip } from "@/types/Trip";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import Navbar from "@/components/Navbar";
@@ -165,6 +167,7 @@ const TripsContent = () => {
   const [searchParams] = useSearchParams();
   const { darkMode, toggleDark } = useTheme();
   const { t, lang } = useLanguage();
+
   const activeFilter = searchParams.get("filter");
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [termsOpen, setTermsOpen] = useState(false);
@@ -174,6 +177,26 @@ const TripsContent = () => {
   const hasMountedFilterScrollRef = useRef(false);
   const hasSyncedInitialFiltersRef = useRef(false);
   const [cardsEntryEnabled, setCardsEntryEnabled] = useState(false);
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    supabase
+      .from("trips")
+      .select("*")
+      .then(({ data, error }) => {
+        if (error) {
+          setError(error.message);
+          setTrips([]);
+        } else {
+          setTrips(data || []);
+        }
+        setLoading(false);
+      });
+  }, []);
 
   const scrollTripsToTop = () => {
     const prev = document.documentElement.style.scrollBehavior;
@@ -228,13 +251,11 @@ const TripsContent = () => {
     if (activeFilter === "internal") {
       return trips.filter((trip) => trip.country === "Greece");
     }
-
     if (activeFilter === "external") {
       return trips.filter((trip) => trip.country !== "Greece");
     }
-
     return trips;
-  }, [activeFilter]);
+  }, [activeFilter, trips]);
 
   const itemListSchema = {
     "@context": "https://schema.org",
@@ -243,17 +264,16 @@ const TripsContent = () => {
     name: lang === "gr" ? "Λίστα Ταξιδιών" : "Trips List",
     numberOfItems: trips.length,
     itemListElement: trips.slice(0, 10).map((trip, idx) => {
-      const localized = getLocalizedTripContent(trip, lang);
       return {
         "@type": "ListItem",
         position: idx + 1,
-        name: localized.title,
+        name: trip.title,
         url: `https://valitsatravel.gr/trips?trip=${trip.id}`,
         image: trip.image,
-        description: localized.description,
+        description: trip.description,
         priceCurrency: "USD",
-        price: String(trip.priceNum),
-        duration: localized.duration,
+        price: String(trip.price_num ?? ""),
+        duration: trip.duration_text,
       };
     }),
   };
@@ -381,15 +401,14 @@ const TripsContent = () => {
     return [minIndex, maxIndex];
   }, [pricePoints, uiPriceRange]);
 
-  useLayoutEffect(() => {
-    // Skip first paint sync to avoid a mount-time replace cycle that causes visible card flashing.
+  useEffect(() => {
+    // Only replace filter state after both initialFilterState and scopedTrips are up to date
     if (!hasSyncedInitialFiltersRef.current) {
       hasSyncedInitialFiltersRef.current = true;
       return;
     }
-
     dispatch({ type: "replace", value: initialFilterState });
-  }, [initialFilterState]);
+  }, [initialFilterState, scopedTrips]);
 
   useEffect(() => {
     const raf = window.requestAnimationFrame(() => {
@@ -455,10 +474,9 @@ const TripsContent = () => {
     const tripParam = searchParams.get("trip");
     if (!tripParam) return;
 
-    const tripId = Number(tripParam);
-    if (Number.isNaN(tripId)) return;
-
-    const matchedTrip = scopedTrips.find((trip) => trip.id === tripId);
+    const matchedTrip = scopedTrips.find(
+      (trip) => String(trip.id) === String(tripParam),
+    );
     if (matchedTrip) {
       setSelectedTrip(matchedTrip);
     }
@@ -1099,8 +1117,7 @@ const TripResultCard = ({
   onClick,
   animateEntry,
 }: TripResultCardProps) => {
-  const { t, lang } = useLanguage();
-  const localized = getLocalizedTripContent(trip, lang);
+  const { t } = useLanguage();
 
   return (
     <motion.div
@@ -1117,14 +1134,14 @@ const TripResultCard = ({
       <div className="sm:w-64 md:w-80 shrink-0 relative overflow-hidden h-56 sm:h-full">
         <ProgressiveImage
           src={trip.image}
-          alt={localized.title}
+          alt={trip.title}
           width={1200}
           height={900}
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 45vw, 30vw"
           className="h-48 sm:h-full"
           imgClassName="group-hover:scale-[1.04] transition-transform duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
         />
-        {trip.isBonus && (
+        {trip.is_bonus && (
           <span className="absolute top-4 left-4 premium-chip px-3 py-1.5 text-xs font-bold text-white">
             {t("archive.bonus")}
           </span>
@@ -1133,22 +1150,22 @@ const TripResultCard = ({
 
       <div className="flex-1 p-5 md:p-6 flex flex-col justify-between min-h-0">
         <div>
-          <p className="label-ui text-primary/80 mb-2">{localized.dateRange}</p>
+          <p className="label-ui text-primary/80 mb-2">{trip.date_range}</p>
           <h3 className="text-xl text-display mb-2 group-hover:text-primary transition-colors duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] leading-tight line-clamp-2 min-h-[3.75rem]">
-            {localized.title}
+            {trip.title}
           </h3>
           <p className="premium-subheading text-sm mb-3 line-clamp-2 min-h-[3rem]">
-            {localized.description}
+            {trip.description}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 mt-2">
           <div className="flex items-center gap-4 text-sm">
             <span className="font-bold text-primary text-base">
-              {trip.price}
+              {trip.price_text}
             </span>
-            <span className="text-foreground-muted">{localized.duration}</span>
-            {trip.guaranteedDeparture && (
+            <span className="text-foreground-muted">{trip.duration_text}</span>
+            {trip.guaranteed_departure && (
               <span className="premium-outline-button px-3 py-1.5 text-xs">
                 {t("archive.guaranteed")}
               </span>

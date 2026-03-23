@@ -1,7 +1,7 @@
 import { ArrowRight, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { getLocalizedTripContent, type Trip } from "@/data/mockData";
+import type { Trip } from "@/types/Trip";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ProgressiveImage from "@/components/ProgressiveImage";
 
@@ -13,7 +13,7 @@ interface TripCardProps {
 
 const TripCard = ({ trip, index, onClick }: TripCardProps) => {
   const { t, lang } = useLanguage();
-  const localized = getLocalizedTripContent(trip, lang);
+  // Use direct trip fields from Supabase
   const [isFlipped, setIsFlipped] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
 
@@ -52,7 +52,7 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
           <div className="valitsa-card premium-panel-soft absolute inset-0 border-white/60 [backface-visibility:hidden]">
             <ProgressiveImage
               src={trip.image}
-              alt={localized.title}
+              alt={trip.title ?? ""}
               width={1200}
               height={1500}
               sizes="(max-width: 768px) 400px, 800px"
@@ -70,13 +70,13 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
                 data-nosnippet
                 className="premium-chip border-white/45 bg-black/35 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-sm"
               >
-                {trip.price}
+                {trip.price_text}
               </span>
               <span
                 data-nosnippet
                 className="premium-chip border-white/45 bg-black/35 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-sm"
               >
-                {localized.duration}
+                {trip.duration_text}
               </span>
             </div>
 
@@ -86,12 +86,12 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
                   {trip.type}
                 </p>
                 <h3 className="text-display text-[1.05rem] font-semibold leading-tight text-white line-clamp-2">
-                  {localized.title}
+                  {trip.title}
                 </h3>
                 <div className="mt-5 flex w-full justify-end items-center gap-2 !text-white">
                   <MapPin size={16} />
                   <span className="text-sm font-medium leading-tight line-clamp-1">
-                    {localized.location}
+                    {trip.location}
                   </span>
                 </div>
               </div>
@@ -101,7 +101,7 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
           <div className="valitsa-card premium-panel-soft absolute inset-0 overflow-hidden border-white/25 p-5 shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)]">
             <ProgressiveImage
               src={trip.image}
-              alt={localized.title}
+              alt={trip.title ?? ""}
               width={1200}
               height={1500}
               sizes="(max-width: 768px) 400px, 800px"
@@ -118,10 +118,10 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
                 {t("card.trip")}
               </p>
               <h4 className="text-display mb-4 max-w-[90%] text-balance text-xl font-semibold leading-tight tracking-[-0.02em] text-white">
-                {localized.title}
+                {trip.title}
               </h4>
               <p className="text-sm leading-relaxed !text-white">
-                {localized.description}
+                {trip.description}
               </p>
               <button
                 className="mt-7 inline-flex min-w-[136px] items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-white/65 bg-transparent px-4 py-2.5 text-xs font-semibold text-white/95 transition-all duration-[560ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-white/10"

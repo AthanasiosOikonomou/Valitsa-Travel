@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, Clock, Check } from "lucide-react";
-import { getLocalizedTripContent, type Trip } from "@/data/mockData";
+import type { Trip } from "@/types/Trip";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { sendInquiryEmail } from "@/lib/email";
 import CaptchaField from "@/components/CaptchaField";
@@ -43,7 +43,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
   const [activeTab, setActiveTab] = useState<string>("description");
   const { t, lang } = useLanguage();
   const requiresCaptcha = !import.meta.env.DEV;
-  const localized = getLocalizedTripContent(trip, lang);
+  // Use direct trip fields from Supabase
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -144,9 +144,9 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
         captchaToken: requiresCaptcha ? captchaToken : "dev-bypass",
         mobile: formData.mobile,
         message: formData.message,
-        tripTitle: localized.title,
-        tripLocation: localized.location,
-        tripPrice: trip.price,
+        tripTitle: trip.title,
+        tripLocation: trip.location,
+        tripPrice: trip.price_text,
         tripUrl:
           typeof window !== "undefined"
             ? `${window.location.origin}/trips?trip=${trip.id}`
@@ -210,7 +210,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
             >
               <ProgressiveImage
                 src={trip.image}
-                alt={localized.title}
+                alt={trip.title ?? ""}
                 width={1600}
                 height={1000}
                 sizes="(max-width: 1024px) 100vw, 58vw"
@@ -230,19 +230,19 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
           >
             <div className="flex items-center gap-4 text-foreground-muted text-sm mb-4">
               <span className="flex items-center gap-1.5">
-                <MapPin size={14} /> {localized.location}
+                <MapPin size={14} /> {trip.location}
               </span>
               <span className="flex items-center gap-1.5">
-                <Clock size={14} /> {localized.duration}
+                <Clock size={14} /> {trip.duration_text}
               </span>
             </div>
 
             <h2 className="text-4xl md:text-5xl text-display mb-6">
-              {localized.title}
+              {trip.title}
             </h2>
 
             <div className="flex gap-2 flex-wrap mb-10">
-              {localized.tags.map((tag) => (
+              {trip.tags?.map((tag) => (
                 <span
                   key={tag}
                   className="px-4 py-2 bg-muted rounded-full text-sm font-medium"
@@ -289,17 +289,17 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
               >
                 {activeTab === "description" && (
                   <p className="text-body-prose text-lg leading-relaxed">
-                    {localized.description}
+                    {trip.description}
                   </p>
                 )}
                 {activeTab === "program" && (
                   <ul className="space-y-0 pt-2">
-                    {localized.program.map((day, i) => (
+                    {trip.program?.map((item, i) => (
                       <li
                         key={i}
                         className="relative flex gap-5 items-start pb-10 last:pb-0"
                       >
-                        {i < localized.program.length - 1 && (
+                        {i < (trip.program?.length ?? 0) - 1 && (
                           <span
                             aria-hidden="true"
                             className="absolute left-[0.45rem] top-7 bottom-0 border-l border-dashed border-fuchsia-300/80 dark:border-fuchsia-700/60"
@@ -311,11 +311,11 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                         />
                         <div className="flex-1 border-b border-fuchsia-100/80 pb-8 last:border-b-0 dark:border-fuchsia-900/30">
                           <h4 className="text-[0.94rem] md:text-[0.98rem] font-semibold leading-6 tracking-[-0.012em] text-foreground mb-2">
-                            {splitProgramStep(day).title}
+                            {item.title}
                           </h4>
-                          {splitProgramStep(day).detail && (
+                          {item.description && (
                             <p className="text-[0.9rem] leading-7 tracking-[-0.008em] text-foreground-muted">
-                              {splitProgramStep(day).detail}
+                              {item.description}
                             </p>
                           )}
                         </div>
@@ -325,7 +325,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                 )}
                 {activeTab === "included" && (
                   <ul className="space-y-3.5">
-                    {localized.included.map((item, i) => (
+                    {trip.included?.map((item, i) => (
                       <li
                         key={i}
                         className="flex gap-3.5 items-start rounded-[1.15rem] border border-fuchsia-100/70 bg-gradient-to-r from-fuchsia-50/65 via-white to-white px-4 py-3.5 text-[0.92rem] leading-7 tracking-[-0.008em] text-foreground-muted dark:border-fuchsia-900/30 dark:from-fuchsia-950/20 dark:via-card dark:to-card"
@@ -363,10 +363,10 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                   <p className="label-ui text-foreground-muted mb-1">
                     {t("detail.startingFrom")}
                   </p>
-                  <p className="text-3xl font-bold">{trip.price}</p>
+                  <p className="text-3xl font-bold">{trip.price_text}</p>
                 </div>
                 <span className="label-ui text-primary bg-primary/10 px-3 py-1.5 rounded-full">
-                  {localized.duration}
+                  {trip.duration_text}
                 </span>
               </div>
 

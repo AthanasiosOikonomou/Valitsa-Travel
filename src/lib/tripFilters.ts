@@ -1,8 +1,5 @@
-import {
-  getLocalizedTripContent,
-  type Trip,
-  type TripLang,
-} from "@/data/mockData";
+import type { Trip } from "@/types/Trip";
+// Remove TripLang and getLocalizedTripContent, use direct fields
 
 export type SortOption = "recommended" | "priceAsc" | "priceDesc";
 export type TripTypeFilter = "all" | Trip["type"];
@@ -153,26 +150,28 @@ const sortUniqueStrings = (values: string[]) => [...new Set(values)].sort();
 
 export const buildTripFilterMetadata = (trips: Trip[]): TripFilterMetadata => {
   const globalPriceBounds = getRangeBounds(
-    trips.map((trip) => trip.priceNum),
+    trips.map((trip) => trip.price_num ?? 0),
     { min: 0, max: 0 },
   );
 
   return {
     globalPriceBounds,
     continents: sortUniqueStrings(
-      trips.map((trip) => getContinent(trip.country)),
+      trips.map((trip) => getContinent(trip.country ?? "")),
     ),
-    countries: sortCountries([...new Set(trips.map((trip) => trip.country))]),
-    durations: [...new Set(trips.map((trip) => trip.durationDays))].sort(
+    countries: sortCountries([
+      ...new Set(trips.map((trip) => trip.country ?? "")),
+    ]),
+    durations: [...new Set(trips.map((trip) => trip.duration_days ?? 0))].sort(
       (left, right) => left - right,
     ),
-    cities: sortUniqueStrings(trips.map((trip) => trip.departureCity)),
-    categories: sortUniqueStrings(trips.map((trip) => trip.category)),
-    tripTypes: [...new Set(trips.map((trip) => trip.type))],
-    hasBonusTrips: trips.some((trip) => trip.isBonus),
-    hasGuaranteedTrips: trips.some((trip) => trip.guaranteedDeparture),
-    hasAvailableTrips: trips.some((trip) => trip.hasAvailableSeats),
-    hasFeaturedTrips: trips.some((trip) => trip.isFeatured),
+    cities: sortUniqueStrings(trips.map((trip) => trip.departure_city ?? "")),
+    categories: sortUniqueStrings(trips.map((trip) => trip.category ?? "")),
+    tripTypes: [...new Set(trips.map((trip) => trip.type ?? ""))],
+    hasBonusTrips: trips.some((trip) => trip.is_bonus),
+    hasGuaranteedTrips: trips.some((trip) => trip.guaranteed_departure),
+    hasAvailableTrips: trips.some((trip) => trip.has_available_seats),
+    hasFeaturedTrips: trips.some((trip) => trip.is_featured),
   };
 };
 
@@ -253,10 +252,7 @@ export const getCityLabelMap = (trips: Trip[], lang: TripLang) => {
 
   for (const trip of trips) {
     if (!labels.has(trip.departureCity)) {
-      labels.set(
-        trip.departureCity,
-        getLocalizedTripContent(trip, lang).departureCity,
-      );
+      labels.set(trip.departureCity, trip.departureCity);
     }
   }
 
@@ -274,42 +270,42 @@ export const buildAvailableTripFacets = (
     state,
     lang,
     "continent",
-    (trip) => getContinent(trip.country),
+    (trip) => getContinent(trip.country ?? ""),
   );
   const countryCounts = buildFacetCounts(
     trips,
     state,
     lang,
     "country",
-    (trip) => trip.country,
+    (trip) => trip.country ?? "",
   );
   const durationCounts = buildFacetCounts(
     trips,
     state,
     lang,
     "duration",
-    (trip) => trip.durationDays,
+    (trip) => trip.duration_days ?? 0,
   );
   const cityCounts = buildFacetCounts(
     trips,
     state,
     lang,
     "city",
-    (trip) => trip.departureCity,
+    (trip) => trip.departure_city ?? "",
   );
   const categoryCounts = buildFacetCounts(
     trips,
     state,
     lang,
     "category",
-    (trip) => trip.category,
+    (trip) => trip.category ?? "",
   );
   const tripTypeCounts = buildFacetCounts(
     trips,
     state,
     lang,
     "tripType",
-    (trip) => trip.type,
+    (trip) => trip.type ?? "",
   );
 
   const priceBounds = getPriceBoundsForState(
@@ -343,18 +339,22 @@ export const sortTrips = (trips: Trip[], sortBy: SortOption) => {
 
   switch (sortBy) {
     case "priceAsc":
-      sortedTrips.sort((left, right) => left.priceNum - right.priceNum);
+      sortedTrips.sort(
+        (left, right) => (left.price_num ?? 0) - (right.price_num ?? 0),
+      );
       return sortedTrips;
     case "priceDesc":
-      sortedTrips.sort((left, right) => right.priceNum - left.priceNum);
+      sortedTrips.sort(
+        (left, right) => (right.price_num ?? 0) - (left.price_num ?? 0),
+      );
       return sortedTrips;
     case "recommended":
     default:
       sortedTrips.sort((left, right) => {
         const leftScore =
-          Number(Boolean(left.isFeatured)) + Number(Boolean(left.isBonus));
+          Number(Boolean(left.is_featured)) + Number(Boolean(left.is_bonus));
         const rightScore =
-          Number(Boolean(right.isFeatured)) + Number(Boolean(right.isBonus));
+          Number(Boolean(right.is_featured)) + Number(Boolean(right.is_bonus));
         return rightScore - leftScore;
       });
       return sortedTrips;
@@ -370,7 +370,7 @@ export const buildPriceFacetValues = (
 
   for (const trip of trips) {
     if (!matchesTripFilters(trip, state, lang, "price")) continue;
-    prices.add(trip.priceNum);
+    prices.add(trip.price_num ?? 0);
   }
 
   return [...prices].sort((left, right) => left - right);
@@ -495,7 +495,7 @@ const getPriceBoundsForState = (
 
   for (const trip of trips) {
     if (!matchesTripFilters(trip, state, lang, "price")) continue;
-    values.push(trip.priceNum);
+    values.push(trip.price_num ?? 0);
   }
 
   return getRangeBounds(values, fallbackBounds);
@@ -512,21 +512,21 @@ const getSpecialCounts = (
   let featured = 0;
 
   for (const trip of trips) {
-    if (matchesTripFilters(trip, state, lang, "bonus") && trip.isBonus)
+    if (matchesTripFilters(trip, state, lang, "bonus") && trip.is_bonus)
       bonus += 1;
     if (
       matchesTripFilters(trip, state, lang, "guaranteed") &&
-      trip.guaranteedDeparture
+      trip.guaranteed_departure
     ) {
       guaranteed += 1;
     }
     if (
       matchesTripFilters(trip, state, lang, "available") &&
-      trip.hasAvailableSeats
+      trip.has_available_seats
     ) {
       available += 1;
     }
-    if (matchesTripFilters(trip, state, lang, "featured") && trip.isFeatured) {
+    if (matchesTripFilters(trip, state, lang, "featured") && trip.is_featured) {
       featured += 1;
     }
   }
@@ -540,10 +540,9 @@ const matchesTripFilters = (
   lang: TripLang,
   excludedFacet?: FacetKey,
 ) => {
-  const localized = getLocalizedTripContent(trip, lang);
-
   if (state.searchQuery) {
-    const searchable = `${localized.title} ${localized.location}`.toLowerCase();
+    const searchable =
+      `${trip.title ?? ""} ${trip.location ?? ""}`.toLowerCase();
     if (!searchable.includes(state.searchQuery.toLowerCase())) {
       return false;
     }
@@ -551,7 +550,8 @@ const matchesTripFilters = (
 
   if (
     excludedFacet !== "price" &&
-    (trip.priceNum < state.priceRange[0] || trip.priceNum > state.priceRange[1])
+    ((trip.price_num ?? 0) < state.priceRange[0] ||
+      (trip.price_num ?? 0) > state.priceRange[1])
   ) {
     return false;
   }
@@ -559,7 +559,7 @@ const matchesTripFilters = (
   if (
     excludedFacet !== "continent" &&
     state.selectedContinents.length > 0 &&
-    !state.selectedContinents.includes(getContinent(trip.country))
+    !state.selectedContinents.includes(getContinent(trip.country ?? ""))
   ) {
     return false;
   }
@@ -567,7 +567,7 @@ const matchesTripFilters = (
   if (
     excludedFacet !== "country" &&
     state.selectedCountries.length > 0 &&
-    !state.selectedCountries.includes(trip.country)
+    !state.selectedCountries.includes(trip.country ?? "")
   ) {
     return false;
   }
@@ -575,7 +575,7 @@ const matchesTripFilters = (
   if (
     excludedFacet !== "duration" &&
     state.selectedDurations.length > 0 &&
-    !state.selectedDurations.includes(trip.durationDays)
+    !state.selectedDurations.includes(trip.duration_days ?? 0)
   ) {
     return false;
   }
@@ -583,7 +583,7 @@ const matchesTripFilters = (
   if (
     excludedFacet !== "city" &&
     state.selectedCities.length > 0 &&
-    !state.selectedCities.includes(trip.departureCity)
+    !state.selectedCities.includes(trip.departure_city ?? "")
   ) {
     return false;
   }
@@ -591,28 +591,28 @@ const matchesTripFilters = (
   if (
     excludedFacet !== "category" &&
     state.selectedCategories.length > 0 &&
-    !state.selectedCategories.includes(trip.category)
+    !state.selectedCategories.includes(trip.category ?? "")
   ) {
     return false;
   }
 
-  if (excludedFacet !== "bonus" && state.showBonus && !trip.isBonus)
+  if (excludedFacet !== "bonus" && state.showBonus && !trip.is_bonus)
     return false;
   if (
     excludedFacet !== "guaranteed" &&
     state.showGuaranteed &&
-    !trip.guaranteedDeparture
+    !trip.guaranteed_departure
   ) {
     return false;
   }
   if (
     excludedFacet !== "available" &&
     state.showAvailable &&
-    !trip.hasAvailableSeats
+    !trip.has_available_seats
   ) {
     return false;
   }
-  if (excludedFacet !== "featured" && state.showFeatured && !trip.isFeatured) {
+  if (excludedFacet !== "featured" && state.showFeatured && !trip.is_featured) {
     return false;
   }
   if (
