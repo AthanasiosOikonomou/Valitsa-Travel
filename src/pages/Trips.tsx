@@ -181,6 +181,17 @@ const TripsContent = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Show loading spinner only if loading takes longer than 400ms
+  const [showDelayedLoading, setShowDelayedLoading] = useState(false);
+  useEffect(() => {
+    if (!loading) {
+      setShowDelayedLoading(false);
+      return;
+    }
+    const timeout = setTimeout(() => setShowDelayedLoading(true), 400);
+    return () => clearTimeout(timeout);
+  }, [loading]);
+
   useEffect(() => {
     setLoading(true);
     setError(null);
@@ -1002,7 +1013,15 @@ const TripsContent = () => {
         </AnimatePresence>
 
         <div className="flex-1 min-w-0">
-          {filtered.length === 0 ? (
+          {showDelayedLoading ? (
+            <div className="premium-panel-soft trips-card-surface rounded-[2rem] py-14 px-6 md:px-10 border border-border/70 flex items-center justify-center min-h-[300px]">
+              <span className="text-lg text-foreground-muted">
+                {lang === "gr" ? "Φόρτωση..." : "Loading..."}
+              </span>
+            </div>
+          ) : loading ? (
+            <div style={{ minHeight: 300 }} />
+          ) : filtered.length === 0 ? (
             <div className="premium-panel-soft trips-card-surface rounded-[2rem] py-14 px-6 md:px-10 border border-border/70">
               <div className="max-w-2xl">
                 <p className="label-ui uppercase tracking-[0.18em] text-primary/85 mb-3">
