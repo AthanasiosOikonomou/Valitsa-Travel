@@ -483,11 +483,6 @@ const TripsContent = () => {
   }, [scopedTrips, searchParams]);
 
   useEffect(() => {
-    if (areTripFilterStatesEqual(filterState, normalizedFilterState)) return;
-    dispatch({ type: "replace", value: normalizedFilterState });
-  }, [filterState, normalizedFilterState]);
-
-  useEffect(() => {
     if (!hasMountedFilterScrollRef.current) {
       hasMountedFilterScrollRef.current = true;
       return;
