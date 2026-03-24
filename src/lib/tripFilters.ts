@@ -49,6 +49,7 @@ export interface TripFilterState {
   showFeatured: boolean;
   tripType: TripTypeFilter;
   sortBy: SortOption;
+  page: number;
 }
 
 export type TripFilterAction =
@@ -58,6 +59,7 @@ export type TripFilterAction =
   | { type: "setPriceRange"; value: [number, number] }
   | { type: "toggleMulti"; key: MultiSelectKey; value: string | number }
   | { type: "toggleFlag"; key: FlagKey }
+  | { type: "setPage"; value: number }
   | { type: "setTripType"; value: TripTypeFilter }
   | { type: "setSortBy"; value: SortOption };
 
@@ -198,6 +200,7 @@ export const createInitialTripFilterState = (
     showFeatured: false,
     tripType: "all",
     sortBy: "recommended",
+    page: 1,
   };
 
   const priceBounds = getPriceBoundsForState(
@@ -242,6 +245,8 @@ export const tripFilterReducer = (
       return { ...state, tripType: action.value };
     case "setSortBy":
       return { ...state, sortBy: action.value };
+    case "setPage":
+      return { ...state, page: action.value };
     default:
       return state;
   }
@@ -251,8 +256,8 @@ export const getCityLabelMap = (trips: Trip[], lang: TripLang) => {
   const labels = new Map<string, string>();
 
   for (const trip of trips) {
-    if (!labels.has(trip.departureCity)) {
-      labels.set(trip.departureCity, trip.departureCity);
+    if (!labels.has(trip.departure_city)) {
+      labels.set(trip.departure_city, trip.departure_city);
     }
   }
 

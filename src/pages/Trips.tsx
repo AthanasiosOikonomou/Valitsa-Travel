@@ -1,3 +1,10 @@
+// Add global flags for robust scroll detection
+declare global {
+  interface Window {
+    __valitsaPaginationClicked?: boolean;
+    __valitsaFilterSectionChanged?: boolean;
+  }
+}
 import { useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Search, SlidersHorizontal, X, ChevronDown } from "lucide-react";
@@ -215,23 +222,22 @@ const TripsContent = () => {
     document.documentElement.style.scrollBehavior = prev;
   };
 
-  const scrollResultsToTop = () => {
+  // Scroll to results with variable offset
+  const scrollResultsToTop = (offset = -120) => {
     if (!resultsTopRef.current) return;
 
     const prev = document.documentElement.style.scrollBehavior;
     const top = Math.max(
       0,
-      resultsTopRef.current.getBoundingClientRect().top + window.scrollY - 280,
+      resultsTopRef.current.getBoundingClientRect().top +
+        window.scrollY +
+        offset,
     );
 
     document.documentElement.style.scrollBehavior = "auto";
     window.scrollTo({ top });
     document.documentElement.style.scrollBehavior = prev;
   };
-
-  useLayoutEffect(() => {
-    scrollTripsToTop();
-  }, [activeFilter]);
 
   useEffect(() => {
     const handleNavbarTopRequest = () => scrollTripsToTop();
@@ -492,15 +498,46 @@ const TripsContent = () => {
     }
   }, [scopedTrips, searchParams]);
 
+  // Only scroll on explicit user actions: pagination (-280) or filter section (-120)
+  const prevPageRef = useRef(normalizedFilterState.page);
+  const prevFilterRef = useRef({ ...normalizedFilterState });
   useEffect(() => {
     if (!hasMountedFilterScrollRef.current) {
       hasMountedFilterScrollRef.current = true;
+      prevPageRef.current = normalizedFilterState.page;
+      prevFilterRef.current = { ...normalizedFilterState };
       return;
     }
 
     if (mobileFiltersOpen) return;
 
-    scrollResultsToTop();
+    const prevPage = prevPageRef.current;
+    const prevFilter = prevFilterRef.current;
+    const currPage = normalizedFilterState.page;
+
+    // Shallow compare filter state excluding 'page'
+    const filterKeys = Object.keys(normalizedFilterState).filter(
+      (k) => k !== "page",
+    );
+    let filterChanged = false;
+    for (const key of filterKeys) {
+      if (normalizedFilterState[key] !== prevFilter[key]) {
+        filterChanged = true;
+        break;
+      }
+    }
+
+    // Only scroll -280 if the page changed due to a pagination button click
+    if (currPage !== prevPage && window.__valitsaPaginationClicked) {
+      scrollResultsToTop(-280);
+      window.__valitsaPaginationClicked = false;
+    } else if (filterChanged && window.__valitsaFilterSectionChanged) {
+      scrollResultsToTop(-120);
+      window.__valitsaFilterSectionChanged = false;
+    }
+
+    prevPageRef.current = currPage;
+    prevFilterRef.current = { ...normalizedFilterState };
   }, [mobileFiltersOpen, normalizedFilterState]);
 
   const toggleSection = (key: string) =>
@@ -556,9 +593,10 @@ const TripsContent = () => {
           <input
             type="text"
             value={filterState.searchQuery}
-            onChange={(event) =>
-              dispatch({ type: "setSearchQuery", value: event.target.value })
-            }
+            onChange={(event) => {
+              window.__valitsaFilterSectionChanged = true;
+              dispatch({ type: "setSearchQuery", value: event.target.value });
+            }}
             placeholder={t("archive.searchPlaceholder")}
             className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
           />
@@ -581,15 +619,16 @@ const TripsContent = () => {
           step={1}
           disabled={pricePoints.length <= 1}
           value={priceSliderRange}
-          onValueChange={(value) =>
+          onValueChange={(value) => {
+            window.__valitsaFilterSectionChanged = true;
             dispatch({
               type: "setPriceRange",
               value: [
                 pricePoints[value[0]] ?? uiPriceRange[0],
                 pricePoints[value[1]] ?? uiPriceRange[1],
               ] as [number, number],
-            })
-          }
+            });
+          }}
         />
       </FilterSection>
 
@@ -616,9 +655,10 @@ const TripsContent = () => {
               count={0}
               showCount={false}
               disabled={false}
-              onChange={() =>
-                dispatch({ type: "setSortBy", value: value as SortOption })
-              }
+              onChange={() => {
+                window.__valitsaFilterSectionChanged = true;
+                dispatch({ type: "setSortBy", value: value as SortOption });
+              }}
             />
           ))}
         </div>
@@ -644,9 +684,10 @@ const TripsContent = () => {
                 availableFacets.specialCounts.bonus,
                 normalizedFilterState.showBonus,
               )}
-              onChange={() =>
-                dispatch({ type: "toggleFlag", key: "showBonus" })
-              }
+              onChange={() => {
+                window.__valitsaFilterSectionChanged = true;
+                dispatch({ type: "toggleFlag", key: "showBonus" });
+              }}
             />
           )}
           {filterMetadata.hasGuaranteedTrips && (
@@ -659,9 +700,10 @@ const TripsContent = () => {
                 availableFacets.specialCounts.guaranteed,
                 normalizedFilterState.showGuaranteed,
               )}
-              onChange={() =>
-                dispatch({ type: "toggleFlag", key: "showGuaranteed" })
-              }
+              onChange={() => {
+                window.__valitsaFilterSectionChanged = true;
+                dispatch({ type: "toggleFlag", key: "showGuaranteed" });
+              }}
             />
           )}
           {filterMetadata.hasAvailableTrips && (
@@ -674,9 +716,10 @@ const TripsContent = () => {
                 availableFacets.specialCounts.available,
                 normalizedFilterState.showAvailable,
               )}
-              onChange={() =>
-                dispatch({ type: "toggleFlag", key: "showAvailable" })
-              }
+              onChange={() => {
+                window.__valitsaFilterSectionChanged = true;
+                dispatch({ type: "toggleFlag", key: "showAvailable" });
+              }}
             />
           )}
           {filterMetadata.hasFeaturedTrips && (
@@ -689,9 +732,10 @@ const TripsContent = () => {
                 availableFacets.specialCounts.featured,
                 normalizedFilterState.showFeatured,
               )}
-              onChange={() =>
-                dispatch({ type: "toggleFlag", key: "showFeatured" })
-              }
+              onChange={() => {
+                window.__valitsaFilterSectionChanged = true;
+                dispatch({ type: "toggleFlag", key: "showFeatured" });
+              }}
             />
           )}
         </FilterSection>
@@ -716,13 +760,14 @@ const TripsContent = () => {
               checked={checked}
               count={count}
               disabled={isDisabled(count, checked)}
-              onChange={() =>
+              onChange={() => {
+                window.__valitsaFilterSectionChanged = true;
                 dispatch({
                   type: "toggleMulti",
                   key: "selectedContinents",
                   value: continent,
-                })
-              }
+                });
+              }}
             />
           );
         })}
@@ -747,13 +792,14 @@ const TripsContent = () => {
               checked={checked}
               count={count}
               disabled={isDisabled(count, checked)}
-              onChange={() =>
+              onChange={() => {
+                window.__valitsaFilterSectionChanged = true;
                 dispatch({
                   type: "toggleMulti",
                   key: "selectedDurations",
                   value: duration,
-                })
-              }
+                });
+              }}
             />
           );
         })}
@@ -778,13 +824,14 @@ const TripsContent = () => {
               checked={checked}
               count={count}
               disabled={isDisabled(count, checked)}
-              onChange={() =>
+              onChange={() => {
+                window.__valitsaFilterSectionChanged = true;
                 dispatch({
                   type: "toggleMulti",
                   key: "selectedCountries",
                   value: country,
-                })
-              }
+                });
+              }}
             />
           );
         })}
@@ -808,13 +855,14 @@ const TripsContent = () => {
               checked={checked}
               count={count}
               disabled={isDisabled(count, checked)}
-              onChange={() =>
+              onChange={() => {
+                window.__valitsaFilterSectionChanged = true;
                 dispatch({
                   type: "toggleMulti",
                   key: "selectedCities",
                   value: city,
-                })
-              }
+                });
+              }}
             />
           );
         })}
@@ -839,13 +887,14 @@ const TripsContent = () => {
               checked={checked}
               count={count}
               disabled={isDisabled(count, checked)}
-              onChange={() =>
+              onChange={() => {
+                window.__valitsaFilterSectionChanged = true;
                 dispatch({
                   type: "toggleMulti",
                   key: "selectedCategories",
                   value: category,
-                })
-              }
+                });
+              }}
             />
           );
         })}
@@ -873,12 +922,13 @@ const TripsContent = () => {
               checked={checked}
               count={count}
               disabled={type !== "all" && isDisabled(count, checked)}
-              onChange={() =>
+              onChange={() => {
+                window.__valitsaFilterSectionChanged = true;
                 dispatch({
                   type: "setTripType",
                   value: type as TripTypeFilter,
-                })
-              }
+                });
+              }}
             />
           );
         })}
@@ -1053,17 +1103,76 @@ const TripsContent = () => {
               </div>
             </div>
           ) : (
-            <div className="space-y-6">
-              {filtered.map((trip, idx) => (
-                <TripResultCard
-                  key={trip.id}
-                  trip={trip}
-                  index={idx}
-                  animateEntry={cardsEntryEnabled}
-                  onClick={setSelectedTrip}
-                />
-              ))}
-            </div>
+            <>
+              <div className="space-y-6">
+                {filtered
+                  .slice(
+                    (normalizedFilterState.page - 1) * 12,
+                    normalizedFilterState.page * 12,
+                  )
+                  .map((trip, idx) => (
+                    <TripResultCard
+                      key={trip.id}
+                      trip={trip}
+                      index={idx}
+                      animateEntry={cardsEntryEnabled}
+                      onClick={setSelectedTrip}
+                    />
+                  ))}
+              </div>
+              {/* Pagination UI */}
+              {filtered.length > 12 && (
+                <div className="flex justify-center mt-10 gap-2">
+                  <button
+                    className="px-3 py-2 rounded border text-sm font-semibold disabled:opacity-40"
+                    disabled={normalizedFilterState.page === 1}
+                    onClick={() => {
+                      window.__valitsaPaginationClicked = true;
+                      dispatch({
+                        type: "setPage",
+                        value: normalizedFilterState.page - 1,
+                      });
+                    }}
+                  >
+                    {t("archive.prev") || "Previous"}
+                  </button>
+                  {Array.from({
+                    length: Math.ceil(filtered.length / 12),
+                  }).map((_, i) => (
+                    <button
+                      key={i}
+                      className={`px-3 py-2 rounded border text-sm font-semibold ${
+                        normalizedFilterState.page === i + 1
+                          ? "bg-primary text-white border-primary"
+                          : "bg-white text-primary border-border"
+                      }`}
+                      onClick={() => {
+                        window.__valitsaPaginationClicked = true;
+                        dispatch({ type: "setPage", value: i + 1 });
+                      }}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                  <button
+                    className="px-3 py-2 rounded border text-sm font-semibold disabled:opacity-40"
+                    disabled={
+                      normalizedFilterState.page ===
+                      Math.ceil(filtered.length / 12)
+                    }
+                    onClick={() => {
+                      window.__valitsaPaginationClicked = true;
+                      dispatch({
+                        type: "setPage",
+                        value: normalizedFilterState.page + 1,
+                      });
+                    }}
+                  >
+                    {t("archive.next") || "Next"}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
