@@ -525,10 +525,9 @@ const TripsContent = () => {
     }
 
     // Only scroll -280 if the page changed due to a pagination button click
-    if (currPage !== prevPage && window.__valitsaPaginationClicked) {
-      scrollResultsToTop(-280);
-      window.__valitsaPaginationClicked = false;
-    } else if (filterChanged && window.__valitsaFilterSectionChanged) {
+
+    // Only scroll -120 if the filter section changed
+    if (filterChanged && window.__valitsaFilterSectionChanged) {
       scrollResultsToTop(-120);
       window.__valitsaFilterSectionChanged = false;
     }
@@ -1102,73 +1101,17 @@ const TripsContent = () => {
           ) : (
             <>
               <div className="space-y-6">
-                {filtered
-                  .slice(
-                    (normalizedFilterState.page - 1) * 12,
-                    normalizedFilterState.page * 12,
-                  )
-                  .map((trip, idx) => (
-                    <TripResultCard
-                      key={trip.id}
-                      trip={trip}
-                      index={idx}
-                      animateEntry={cardsEntryEnabled}
-                      onClick={setSelectedTrip}
-                    />
-                  ))}
+                {filtered.map((trip, idx) => (
+                  <TripResultCard
+                    key={trip.id}
+                    trip={trip}
+                    index={idx}
+                    animateEntry={cardsEntryEnabled}
+                    onClick={setSelectedTrip}
+                  />
+                ))}
               </div>
-              {/* Pagination UI */}
-              {filtered.length > 12 && (
-                <div className="flex justify-center mt-10 gap-2">
-                  <button
-                    className="px-3 py-2 rounded border text-sm font-semibold disabled:opacity-40"
-                    disabled={normalizedFilterState.page === 1}
-                    onClick={() => {
-                      window.__valitsaPaginationClicked = true;
-                      dispatch({
-                        type: "setPage",
-                        value: normalizedFilterState.page - 1,
-                      });
-                    }}
-                  >
-                    {t("archive.prev") || "Previous"}
-                  </button>
-                  {Array.from({
-                    length: Math.ceil(filtered.length / 12),
-                  }).map((_, i) => (
-                    <button
-                      key={i}
-                      className={`px-3 py-2 rounded border text-sm font-semibold ${
-                        normalizedFilterState.page === i + 1
-                          ? "bg-primary text-white border-primary"
-                          : "bg-white text-primary border-border"
-                      }`}
-                      onClick={() => {
-                        window.__valitsaPaginationClicked = true;
-                        dispatch({ type: "setPage", value: i + 1 });
-                      }}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
-                  <button
-                    className="px-3 py-2 rounded border text-sm font-semibold disabled:opacity-40"
-                    disabled={
-                      normalizedFilterState.page ===
-                      Math.ceil(filtered.length / 12)
-                    }
-                    onClick={() => {
-                      window.__valitsaPaginationClicked = true;
-                      dispatch({
-                        type: "setPage",
-                        value: normalizedFilterState.page + 1,
-                      });
-                    }}
-                  >
-                    {t("archive.next") || "Next"}
-                  </button>
-                </div>
-              )}
+              {/* Pagination removed */}
             </>
           )}
         </div>
