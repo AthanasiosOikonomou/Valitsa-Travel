@@ -226,7 +226,6 @@ const TripsContent = () => {
   const scrollResultsToTop = (offset = -120) => {
     if (!resultsTopRef.current) return;
 
-    const prev = document.documentElement.style.scrollBehavior;
     const top = Math.max(
       0,
       resultsTopRef.current.getBoundingClientRect().top +
@@ -234,9 +233,7 @@ const TripsContent = () => {
         offset,
     );
 
-    document.documentElement.style.scrollBehavior = "auto";
-    window.scrollTo({ top });
-    document.documentElement.style.scrollBehavior = prev;
+    window.scrollTo({ top, behavior: "smooth" });
   };
 
   useEffect(() => {
