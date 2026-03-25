@@ -1,5 +1,7 @@
+
 import type { Trip } from "@/types/Trip";
-// Remove TripLang and getLocalizedTripContent, use direct fields
+
+export type TripLang = "en" | "gr";
 
 export type SortOption = "recommended" | "priceAsc" | "priceDesc";
 export type TripTypeFilter = "all" | Trip["type"];
@@ -122,8 +124,16 @@ const getPresetCountries = (filter: string | null, countries: string[]) => {
   return [];
 };
 
-const getContinent = (country: string) =>
-  countryToContinent[country] ?? "Other";
+
+const getContinent = (country: string) => countryToContinent[country] ?? "Other";
+
+// Helper to get the correct field based on language
+function getTripField(trip: Trip, field: string, lang: TripLang): any {
+  if (lang === "gr" && trip[`${field}_el`] !== undefined) {
+    return trip[`${field}_el`] ?? trip[field];
+  }
+  return trip[field];
+}
 
 const addCount = <T>(map: Map<T, number>, key: T) => {
   map.set(key, (map.get(key) ?? 0) + 1);
@@ -150,7 +160,7 @@ const sortCountries = (countries: string[]) =>
 
 const sortUniqueStrings = (values: string[]) => [...new Set(values)].sort();
 
-export const buildTripFilterMetadata = (trips: Trip[]): TripFilterMetadata => {
+export const buildTripFilterMetadata = (trips: Trip[], lang: TripLang): TripFilterMetadata => {
   const globalPriceBounds = getRangeBounds(
     trips.map((trip) => trip.price_num ?? 0),
     { min: 0, max: 0 },
@@ -159,17 +169,17 @@ export const buildTripFilterMetadata = (trips: Trip[]): TripFilterMetadata => {
   return {
     globalPriceBounds,
     continents: sortUniqueStrings(
-      trips.map((trip) => getContinent(trip.country ?? "")),
+      trips.map((trip) => getContinent(getTripField(trip, "country", lang) ?? "")),
     ),
     countries: sortCountries([
-      ...new Set(trips.map((trip) => trip.country ?? "")),
+      ...new Set(trips.map((trip) => getTripField(trip, "country", lang) ?? "")),
     ]),
     durations: [...new Set(trips.map((trip) => trip.duration_days ?? 0))].sort(
       (left, right) => left - right,
     ),
-    cities: sortUniqueStrings(trips.map((trip) => trip.departure_city ?? "")),
-    categories: sortUniqueStrings(trips.map((trip) => trip.category ?? "")),
-    tripTypes: [...new Set(trips.map((trip) => trip.type ?? ""))],
+    cities: sortUniqueStrings(trips.map((trip) => getTripField(trip, "departure_city", lang) ?? "")),
+    categories: sortUniqueStrings(trips.map((trip) => getTripField(trip, "category", lang) ?? "")),
+    tripTypes: [...new Set(trips.map((trip) => getTripField(trip, "type", lang) ?? ""))],
     hasBonusTrips: trips.some((trip) => trip.is_bonus),
     hasGuaranteedTrips: trips.some((trip) => trip.guaranteed_departure),
     hasAvailableTrips: trips.some((trip) => trip.has_available_seats),
@@ -254,13 +264,12 @@ export const tripFilterReducer = (
 
 export const getCityLabelMap = (trips: Trip[], lang: TripLang) => {
   const labels = new Map<string, string>();
-
   for (const trip of trips) {
-    if (!labels.has(trip.departure_city)) {
-      labels.set(trip.departure_city, trip.departure_city);
+    const city = getTripField(trip, "departure_city", lang);
+    if (!labels.has(city)) {
+      labels.set(city, city);
     }
   }
-
   return labels;
 };
 
@@ -270,19 +279,20 @@ export const buildAvailableTripFacets = (
   lang: TripLang,
   fallbackPriceBounds: RangeBounds,
 ): AvailableTripFacets => {
+
   const continentCounts = buildFacetCounts(
     trips,
     state,
     lang,
     "continent",
-    (trip) => getContinent(trip.country ?? ""),
+    (trip) => getContinent(getTripField(trip, "country", lang) ?? ""),
   );
   const countryCounts = buildFacetCounts(
     trips,
     state,
     lang,
     "country",
-    (trip) => trip.country ?? "",
+    (trip) => getTripField(trip, "country", lang) ?? "",
   );
   const durationCounts = buildFacetCounts(
     trips,
@@ -296,21 +306,21 @@ export const buildAvailableTripFacets = (
     state,
     lang,
     "city",
-    (trip) => trip.departure_city ?? "",
+    (trip) => getTripField(trip, "departure_city", lang) ?? "",
   );
   const categoryCounts = buildFacetCounts(
     trips,
     state,
     lang,
     "category",
-    (trip) => trip.category ?? "",
+    (trip) => getTripField(trip, "category", lang) ?? "",
   );
   const tripTypeCounts = buildFacetCounts(
     trips,
     state,
     lang,
     "tripType",
-    (trip) => trip.type ?? "",
+    (trip) => getTripField(trip, "type", lang) ?? "",
   );
 
   const priceBounds = getPriceBoundsForState(
@@ -545,9 +555,10 @@ const matchesTripFilters = (
   lang: TripLang,
   excludedFacet?: FacetKey,
 ) => {
+  // Search query: use correct language fields
   if (state.searchQuery) {
     const searchable =
-      `${trip.title ?? ""} ${trip.location ?? ""}`.toLowerCase();
+      `${getTripField(trip, "title", lang) ?? ""} ${getTripField(trip, "location", lang) ?? ""}`.toLowerCase();
     if (!searchable.includes(state.searchQuery.toLowerCase())) {
       return false;
     }
@@ -564,7 +575,7 @@ const matchesTripFilters = (
   if (
     excludedFacet !== "continent" &&
     state.selectedContinents.length > 0 &&
-    !state.selectedContinents.includes(getContinent(trip.country ?? ""))
+    !state.selectedContinents.includes(getContinent(getTripField(trip, "country", lang) ?? ""))
   ) {
     return false;
   }
@@ -572,7 +583,7 @@ const matchesTripFilters = (
   if (
     excludedFacet !== "country" &&
     state.selectedCountries.length > 0 &&
-    !state.selectedCountries.includes(trip.country ?? "")
+    !state.selectedCountries.includes(getTripField(trip, "country", lang) ?? "")
   ) {
     return false;
   }
@@ -588,7 +599,7 @@ const matchesTripFilters = (
   if (
     excludedFacet !== "city" &&
     state.selectedCities.length > 0 &&
-    !state.selectedCities.includes(trip.departure_city ?? "")
+    !state.selectedCities.includes(getTripField(trip, "departure_city", lang) ?? "")
   ) {
     return false;
   }
@@ -596,7 +607,7 @@ const matchesTripFilters = (
   if (
     excludedFacet !== "category" &&
     state.selectedCategories.length > 0 &&
-    !state.selectedCategories.includes(trip.category ?? "")
+    !state.selectedCategories.includes(getTripField(trip, "category", lang) ?? "")
   ) {
     return false;
   }
@@ -623,7 +634,7 @@ const matchesTripFilters = (
   if (
     excludedFacet !== "tripType" &&
     state.tripType !== "all" &&
-    trip.type !== state.tripType
+    getTripField(trip, "type", lang) !== state.tripType
   ) {
     return false;
   }

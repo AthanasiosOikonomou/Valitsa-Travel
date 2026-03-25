@@ -17,6 +17,14 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
 
+  // Helper to get the correct field for the current language
+  const getField = (field: string) => {
+    if (lang === "gr" && trip[`${field}_el`] !== undefined) {
+      return trip[`${field}_el`] ?? trip[field];
+    }
+    return trip[field];
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10, scale: 0.98 }}
@@ -52,7 +60,7 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
           <div className="valitsa-card premium-panel-soft absolute inset-0 border-white/60 [backface-visibility:hidden]">
             <ProgressiveImage
               src={trip.image}
-              alt={trip.title ?? ""}
+              alt={getField("title") ?? ""}
               width={1200}
               height={1500}
               sizes="(max-width: 768px) 400px, 800px"
@@ -70,28 +78,28 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
                 data-nosnippet
                 className="premium-chip border-white/45 bg-black/35 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-sm"
               >
-                {trip.price_text}
+                {getField("price_text")}
               </span>
               <span
                 data-nosnippet
                 className="premium-chip border-white/45 bg-black/35 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-sm"
               >
-                {trip.duration_text}
+                {getField("duration_text")}
               </span>
             </div>
 
             <div className="absolute inset-x-4 bottom-4 z-20 rounded-2xl border border-white/20 bg-black/40 p-4 shadow-xl backdrop-blur-md transition-all duration-[560ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-2">
               <div className="flex flex-col h-full">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/85">
-                  {trip.type}
+                  {getField("type")}
                 </p>
                 <h3 className="text-display text-[1.05rem] font-semibold leading-tight text-white line-clamp-2">
-                  {trip.title}
+                  {getField("title")}
                 </h3>
                 <div className="mt-5 flex w-full justify-end items-center gap-2 !text-white">
                   <MapPin size={16} />
                   <span className="text-sm font-medium leading-tight line-clamp-1">
-                    {trip.location}
+                    {getField("location")}
                   </span>
                 </div>
               </div>
@@ -101,7 +109,7 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
           <div className="valitsa-card premium-panel-soft absolute inset-0 overflow-hidden border-white/25 p-5 shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)]">
             <ProgressiveImage
               src={trip.image}
-              alt={trip.title ?? ""}
+              alt={getField("title") ?? ""}
               width={1200}
               height={1500}
               sizes="(max-width: 768px) 400px, 800px"
@@ -118,10 +126,10 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
                 {t("card.trip")}
               </p>
               <h4 className="text-display mb-4 max-w-[90%] text-balance text-xl font-semibold leading-tight tracking-[-0.02em] text-white">
-                {trip.title}
+                {getField("title")}
               </h4>
               <p className="text-sm leading-relaxed !text-white">
-                {trip.description}
+                {getField("description")}
               </p>
               <button
                 className="mt-7 inline-flex min-w-[136px] items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-white/65 bg-transparent px-4 py-2.5 text-xs font-semibold text-white/95 transition-all duration-[560ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-white/10"

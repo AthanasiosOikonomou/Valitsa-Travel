@@ -203,7 +203,23 @@ const TripsContent = () => {
     setError(null);
     supabase
       .from("trips")
-      .select("*")
+      .select(
+        `
+        *,
+        title_en, title_el,
+        location_en, location_el,
+        country_en, country_el,
+        price_text_en, price_text_el,
+        duration_text_en, duration_text_el,
+        type_en, type_el,
+        image_en, image_el,
+        category_en, category_el,
+        transport_en, transport_el,
+        date_range_en, date_range_el,
+        departure_city_en, departure_city_el,
+        description_en, description_el
+      `,
+      )
       .then(({ data, error }) => {
         if (error) {
           setError(error.message);
@@ -270,6 +286,26 @@ const TripsContent = () => {
     return trips;
   }, [activeFilter, trips]);
 
+  // Helper to get the correct field based on language
+  const getField = (trip, field) => {
+    if (
+      lang === "gr" &&
+      trip[`${field}_el`] !== undefined &&
+      trip[`${field}_el`] !== null &&
+      trip[`${field}_el`] !== ""
+    ) {
+      return trip[`${field}_el`];
+    }
+    if (
+      trip[`${field}_en`] !== undefined &&
+      trip[`${field}_en`] !== null &&
+      trip[`${field}_en`] !== ""
+    ) {
+      return trip[`${field}_en`];
+    }
+    return trip[field];
+  };
+
   const itemListSchema = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -280,13 +316,13 @@ const TripsContent = () => {
       return {
         "@type": "ListItem",
         position: idx + 1,
-        name: trip.title,
+        name: getField(trip, "title"),
         url: `https://valitsatravel.gr/trips?trip=${trip.id}`,
-        image: trip.image,
-        description: trip.description,
+        image: getField(trip, "image"),
+        description: getField(trip, "description"),
         priceCurrency: "USD",
         price: String(trip.price_num ?? ""),
-        duration: trip.duration_text,
+        duration: getField(trip, "duration_text"),
       };
     }),
   };
@@ -311,8 +347,8 @@ const TripsContent = () => {
   };
 
   const filterMetadata = useMemo(
-    () => buildTripFilterMetadata(scopedTrips),
-    [scopedTrips],
+    () => buildTripFilterMetadata(scopedTrips, lang),
+    [scopedTrips, lang],
   );
   const initialFilterState = useMemo(
     () =>
@@ -1178,7 +1214,15 @@ const TripResultCard = ({
   onClick,
   animateEntry,
 }: TripResultCardProps) => {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+
+  // Helper to get the correct field for the current language
+  const getField = (field: string) => {
+    if (lang === "gr" && trip[`${field}_el`] !== undefined) {
+      return trip[`${field}_el`] ?? trip[field];
+    }
+    return trip[field];
+  };
 
   return (
     <motion.div
@@ -1195,7 +1239,7 @@ const TripResultCard = ({
       <div className="sm:w-64 md:w-80 shrink-0 relative overflow-hidden h-56 sm:h-full">
         <ProgressiveImage
           src={trip.image}
-          alt={trip.title}
+          alt={getField("title")}
           width={1200}
           height={900}
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 45vw, 30vw"
@@ -1211,21 +1255,25 @@ const TripResultCard = ({
 
       <div className="flex-1 p-5 md:p-6 flex flex-col justify-between min-h-0">
         <div>
-          <p className="label-ui text-primary/80 mb-2">{trip.date_range}</p>
+          <p className="label-ui text-primary/80 mb-2">
+            {getField("date_range")}
+          </p>
           <h3 className="text-xl text-display mb-2 group-hover:text-primary transition-colors duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] leading-tight line-clamp-2 min-h-[3.75rem]">
-            {trip.title}
+            {getField("title")}
           </h3>
           <p className="premium-subheading text-sm mb-3 line-clamp-2 min-h-[3rem]">
-            {trip.description}
+            {getField("description")}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 mt-2">
           <div className="flex items-center gap-4 text-sm">
             <span className="font-bold text-primary text-base">
-              {trip.price_text}
+              {getField("price_text")}
             </span>
-            <span className="text-foreground-muted">{trip.duration_text}</span>
+            <span className="text-foreground-muted">
+              {getField("duration_text")}
+            </span>
             {trip.guaranteed_departure && (
               <span className="premium-outline-button px-3 py-1.5 text-xs">
                 {t("archive.guaranteed")}
