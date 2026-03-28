@@ -135,7 +135,7 @@ const TermsModal = ({ open, onClose }: TermsModalProps) => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed inset-0 z-[120] flex items-start justify-center px-4 pb-4 pt-14 sm:pt-16 backdrop-blur-md bg-black/50 overflow-y-auto"
+          className="fixed inset-0 z-[120] flex items-center justify-center px-4 pb-4 pt-14 sm:pt-16 backdrop-blur-md bg-black/50 overflow-y-auto"
           onClick={onClose}
         >
           <motion.div
@@ -143,7 +143,7 @@ const TermsModal = ({ open, onClose }: TermsModalProps) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, y: 12 }}
             transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-            className="bg-card border border-border rounded-3xl w-full max-w-3xl overflow-hidden transform-gpu [backface-visibility:hidden]"
+            className="bg-card border border-border rounded-3xl w-full max-w-3xl overflow-hidden transform-gpu [backface-visibility:hidden] mt-[-60px]"
             style={{ boxShadow: "var(--shadow-lg)" }}
             onClick={(event) => event.stopPropagation()}
           >

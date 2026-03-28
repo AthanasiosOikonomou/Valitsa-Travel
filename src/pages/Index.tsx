@@ -134,9 +134,19 @@ const IndexContent = () => {
   };
 
   useEffect(() => {
-    document.body.style.overflow = selectedTrip || termsOpen ? "hidden" : "";
+    if (selectedTrip || termsOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    if (termsOpen) {
+      document.body.classList.add("modal-blur-active");
+    } else {
+      document.body.classList.remove("modal-blur-active");
+    }
     return () => {
       document.body.style.overflow = "";
+      document.body.classList.remove("modal-blur-active");
     };
   }, [selectedTrip, termsOpen]);
 

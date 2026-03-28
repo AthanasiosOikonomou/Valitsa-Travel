@@ -1,3 +1,8 @@
+body.modal-blur-active .navbar-shell {
+  filter: blur(8px) brightness(0.92) saturate(0.8);
+  pointer-events: none;
+  transition: filter 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
 @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap");
 
 @tailwind base;

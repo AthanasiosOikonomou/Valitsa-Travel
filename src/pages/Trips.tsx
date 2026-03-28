@@ -178,6 +178,24 @@ const TripsContent = () => {
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [termsOpen, setTermsOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
+
+  // Blur background and navbar when terms modal is open
+  useEffect(() => {
+    if (selectedTrip || termsOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    if (termsOpen) {
+      document.body.classList.add("modal-blur-active");
+    } else {
+      document.body.classList.remove("modal-blur-active");
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.body.classList.remove("modal-blur-active");
+    };
+  }, [selectedTrip, termsOpen]);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const resultsTopRef = useRef<HTMLDivElement | null>(null);
   const hasMountedFilterScrollRef = useRef(false);
