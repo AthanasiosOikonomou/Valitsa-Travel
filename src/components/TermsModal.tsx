@@ -166,7 +166,7 @@ const TermsModal = ({ open, onClose }: TermsModalProps) => {
               <h2 className="text-lg md:text-xl font-bold">{modalTitle}</h2>
               <button
                 onClick={onClose}
-                className="p-2 rounded-full hover:bg-muted transition-[transform,background-color,opacity] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu [backface-visibility:hidden] active:scale-[0.97]"
+                className="p-2 rounded-full hover:bg-muted transition-[transform,background-color,opacity] duration-&lsqb;250ms&rsqb; ease-&lsqb;cubic-bezier(0.22,1,0.36,1)&rsqb; transform-gpu [backface-visibility:hidden] active:scale-[0.97]"
                 aria-label={closeLabel}
               >
                 <X size={18} />
