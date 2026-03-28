@@ -206,18 +206,18 @@ const TripsContent = () => {
       .select(
         `
         *,
-        title_en, title_el,
-        location_en, location_el,
-        country_en, country_el,
-        price_text_en, price_text_el,
-        duration_text_en, duration_text_el,
-        type_en, type_el,
-        image_en, image_el,
-        category_en, category_el,
-        transport_en, transport_el,
-        date_range_en, date_range_el,
-        departure_city_en, departure_city_el,
-        description_en, description_el
+        title, title_el,
+        location, location_el,
+        country, country_el,
+        price_text, price_text_el,
+        duration_text, duration_text_el,
+        type, type_el,
+        image, image_el,
+        category, category_el,
+        transport, transport_el,
+        date_range, date_range_el,
+        departure_city, departure_city_el,
+        description, description_el
       `,
       )
       .then(({ data, error }) => {
@@ -297,11 +297,11 @@ const TripsContent = () => {
       return trip[`${field}_el`];
     }
     if (
-      trip[`${field}_en`] !== undefined &&
-      trip[`${field}_en`] !== null &&
-      trip[`${field}_en`] !== ""
+      trip[`${field}`] !== undefined &&
+      trip[`${field}`] !== null &&
+      trip[`${field}`] !== ""
     ) {
-      return trip[`${field}_en`];
+      return trip[`${field}`];
     }
     return trip[field];
   };
