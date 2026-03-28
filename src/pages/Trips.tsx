@@ -1246,11 +1246,24 @@ const TripResultCard = ({
           className="h-48 sm:h-full"
           imgClassName="group-hover:scale-[1.04] transition-transform duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
         />
-        {trip.is_bonus && (
-          <span className="absolute top-4 left-4 premium-chip px-3 py-1.5 text-xs font-bold text-white">
-            {t("archive.bonus")}
-          </span>
-        )}
+        {/* Tags and bonus chip */}
+        <div className="absolute left-4 top-4 z-20 flex flex-wrap gap-2">
+          {Array.isArray(trip.tags) &&
+            trip.tags.length > 0 &&
+            trip.tags.map((tag) => (
+              <span
+                key={tag}
+                className="premium-chip border-white/45 bg-black/35 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm"
+              >
+                {tag}
+              </span>
+            ))}
+          {trip.is_bonus && (
+            <span className="premium-chip border-white/45 bg-black/35 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm">
+              {t("archive.bonus")}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 p-5 md:p-6 flex flex-col justify-between min-h-0">
