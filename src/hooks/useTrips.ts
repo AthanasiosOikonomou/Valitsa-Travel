@@ -74,7 +74,6 @@ export function useTrips({
         query = query.eq("type", type);
       }
       const { data, error, count } = await query.range(from, to);
-      console.log({ data, error });
       if (ignore) return;
       if (error) {
         setError(error.message);

@@ -3,7 +3,11 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ mode }) => {
+  const prod = mode === "production";
+  return {
+  // Production: esbuild minify + drop (Vite 8 defaults to Oxc minify, which ignores esbuild.drop).
+  esbuild: prod ? { drop: ["console", "debugger"] } : {},
   server: {
     host: "localhost",
     port: 5180,
@@ -18,6 +22,7 @@ export default defineConfig(({ mode }) => ({
     strictPort: false,
   },
   build: {
+    minify: prod ? "esbuild" : "oxc",
     target: "es2020",
     sourcemap: false,
     rollupOptions: {
@@ -52,4 +57,6 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-}));
+  };
+});
+

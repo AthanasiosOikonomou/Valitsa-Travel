@@ -1,18 +1,10 @@
 import { Link, useLocation } from "react-router-dom";
-import { useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import Seo from "@/components/Seo";
 
 const NotFound = () => {
   const location = useLocation();
   const { t, lang } = useLanguage();
-
-  useEffect(() => {
-    console.error(
-      "404 Error: User attempted to access non-existent route:",
-      location.pathname,
-    );
-  }, [location.pathname]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted">
