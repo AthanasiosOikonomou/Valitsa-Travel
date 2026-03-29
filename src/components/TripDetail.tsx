@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, Clock, Check } from "lucide-react";
 import type { Trip } from "@/types/Trip";
@@ -267,7 +268,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
       className="fixed inset-0 z-[120] overflow-hidden overscroll-none transform-gpu [backface-visibility:hidden]"
     >
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-md"
+        className="pointer-events-none absolute inset-0 bg-black/50 backdrop-blur-md"
         aria-hidden
       />
       <div
@@ -275,18 +276,6 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
         role="presentation"
         onClick={onClose}
       >
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onClose();
-        }}
-        className="fixed top-6 right-6 z-[140] p-3.5 bg-foreground text-background rounded-full shadow-lg hover:opacity-90 transition-[transform,opacity] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] [isolation:isolate] active:scale-[0.97]"
-        aria-label={t("common.close")}
-      >
-        <X size={20} />
-      </button>
-
       <motion.div
         initial={{ opacity: 0, scale: 0.98, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -654,6 +643,20 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
         </div>
       </motion.div>
       </div>
+      {typeof document !== "undefined"
+        ? createPortal(
+            <button
+              type="button"
+              onClick={onClose}
+              className="pointer-events-auto fixed right-4 top-4 z-[200] flex h-12 w-12 items-center justify-center rounded-full border border-border/40 bg-foreground text-background shadow-lg transition-[transform,opacity] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:opacity-95 active:scale-[0.97] sm:right-6 sm:top-6"
+              style={{ WebkitTapHighlightColor: "transparent" }}
+              aria-label={t("common.close")}
+            >
+              <X size={20} className="shrink-0 text-background" strokeWidth={2.25} />
+            </button>,
+            document.body,
+          )
+        : null}
     </motion.div>
   );
 };
