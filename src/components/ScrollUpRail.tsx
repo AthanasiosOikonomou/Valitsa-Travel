@@ -4,6 +4,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { ArrowUp } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { instantScrollToTop } from "@/lib/instantScrollToTop";
 
@@ -61,11 +62,10 @@ const ScrollUpRail = () => {
       aria-label={t("common.scrollUpAria")}
       onClick={() => instantScrollToTop()}
       className={[
-        "scroll-up-rail-mask scroll-up-rail-shell-pulse",
-        "fixed right-3 top-1/2 z-[60] flex -translate-y-1/2 flex-col items-center justify-center",
-        "md:right-6",
-        "min-h-[6.5rem] max-h-[38vh] px-2 py-3.5 md:min-h-[7rem] md:px-2.5 md:py-4",
-        "rounded-2xl border border-border/60 bg-background/80 backdrop-blur-md",
+        "scroll-up-rail-shell-pulse",
+        "fixed right-4 top-24 z-[60] flex h-12 w-12 items-center justify-center",
+        "md:right-6 md:top-28",
+        "rounded-full border border-border/60 bg-background/80 backdrop-blur-md",
         "dark:border-white/18 dark:bg-background/75",
         "cursor-pointer select-none transition-opacity duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
         "hover:border-primary/35 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
@@ -74,11 +74,11 @@ const ScrollUpRail = () => {
           : "pointer-events-none opacity-0",
       ].join(" ")}
     >
-      <span
-        className="scroll-up-rail-vertical scroll-up-rail-breathe text-[0.62rem] font-bold uppercase tracking-[0.24em] text-foreground/90 md:text-[0.68rem]"
-      >
-        {t("common.scrollUp")}
-      </span>
+      <ArrowUp
+        className="scroll-up-rail-breathe size-5 shrink-0 text-foreground/90"
+        aria-hidden
+        strokeWidth={2.25}
+      />
     </button>
   );
 };

@@ -690,32 +690,9 @@ body.modal-blur-active .navbar-shell {
 }
 
 /*
- * Scroll-up rail: keep outside @layer so these rules are not overridden by the unlayered
- * `prefers-reduced-motion` * selector (same !important; class beats * on specificity).
- * Subtle ~10s cycle is intentionally slow (calm breath), not a distracting loop.
+ * Scroll-to-top FAB: unlayered so `prefers-reduced-motion` * does not flatten duration
+ * (class + !important beats * on specificity). ~10s cycle = calm breath on icon + shell.
  */
-.scroll-up-rail-vertical {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-}
-
-.scroll-up-rail-mask {
-  mask-image: linear-gradient(
-    to bottom,
-    transparent,
-    black 12%,
-    black 88%,
-    transparent
-  );
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    transparent,
-    black 12%,
-    black 88%,
-    transparent
-  );
-}
-
 .scroll-up-rail-breathe {
   animation-name: scroll-up-rail-breathe;
   animation-duration: 10s !important;
