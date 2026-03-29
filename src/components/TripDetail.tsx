@@ -648,11 +648,15 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
             <button
               type="button"
               onClick={onClose}
-              className="pointer-events-auto fixed right-4 top-4 z-[200] flex h-12 w-12 items-center justify-center rounded-full border border-border/40 bg-foreground text-background shadow-lg transition-[transform,opacity] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:opacity-95 active:scale-[0.97] sm:right-6 sm:top-6"
+              className="pointer-events-auto fixed right-4 top-4 z-[200] flex h-12 w-12 items-center justify-center rounded-full border border-border/40 bg-foreground text-background shadow-lg transition-[transform,opacity,background-color,border-color] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:opacity-95 dark:hover:opacity-100 active:scale-[0.97] dark:bg-muted dark:border-white/20 dark:hover:border-white/30 dark:hover:brightness-110 sm:right-6 sm:top-6"
               style={{ WebkitTapHighlightColor: "transparent" }}
               aria-label={t("common.close")}
             >
-              <X size={20} className="shrink-0 text-background" strokeWidth={2.25} />
+              <X
+                size={20}
+                className="shrink-0 text-background dark:text-red-400/80"
+                strokeWidth={2.25}
+              />
             </button>,
             document.body,
           )
