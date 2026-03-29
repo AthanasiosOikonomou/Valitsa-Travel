@@ -179,20 +179,14 @@ const TripsContent = () => {
   const [termsOpen, setTermsOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
 
-  // Blur background and navbar when terms or trip detail overlay is open
+  // Blur navbar shell when terms or trip detail overlay is open (scroll lock lives in overlays)
   useEffect(() => {
-    if (selectedTrip || termsOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
     if (termsOpen || selectedTrip) {
       document.body.classList.add("modal-blur-active");
     } else {
       document.body.classList.remove("modal-blur-active");
     }
     return () => {
-      document.body.style.overflow = "";
       document.body.classList.remove("modal-blur-active");
     };
   }, [selectedTrip, termsOpen]);
@@ -515,14 +509,6 @@ const TripsContent = () => {
     type: false,
     sort: true,
   });
-
-  useEffect(() => {
-    document.body.style.overflow =
-      selectedTrip || termsOpen || contactOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [contactOpen, selectedTrip, termsOpen]);
 
   useEffect(() => {
     if (!mobileFiltersOpen) return;

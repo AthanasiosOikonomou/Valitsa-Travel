@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useScrollLock } from "@/hooks/useScrollLock";
 import {
   X,
   Phone,
@@ -19,6 +20,7 @@ interface ContactModalProps {
 
 const ContactModal = ({ open, onClose }: ContactModalProps) => {
   const { t } = useLanguage();
+  useScrollLock(open);
   const requiresCaptcha = !import.meta.env.DEV;
   const [view, setView] = useState<"options" | "form">("options");
   const [sent, setSent] = useState(false);
@@ -188,7 +190,7 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed inset-0 z-[120] flex items-start justify-center px-4 pb-4 pt-24 sm:pt-28 md:pt-28 backdrop-blur-md bg-black/50 overflow-y-auto"
+          className="fixed inset-0 z-[120] flex items-start justify-center px-4 pb-4 pt-24 sm:pt-28 md:pt-28 backdrop-blur-md bg-black/50 overflow-hidden overscroll-none"
           onClick={handleClose}
         >
           <motion.div
@@ -196,7 +198,7 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, y: 12 }}
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-            className="bg-card border border-border rounded-3xl w-full max-w-lg overflow-hidden my-auto transform-gpu [backface-visibility:hidden]"
+            className="bg-card border border-border rounded-3xl w-full max-w-lg max-h-[min(85dvh,900px)] overflow-y-auto overscroll-y-contain my-auto transform-gpu [backface-visibility:hidden]"
             style={{ boxShadow: "var(--shadow-lg)" }}
             onClick={(e) => e.stopPropagation()}
           >

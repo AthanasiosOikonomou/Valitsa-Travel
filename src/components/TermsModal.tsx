@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 interface TermsModalProps {
   open: boolean;
@@ -11,6 +12,7 @@ interface TermsModalProps {
 
 const TermsModal = ({ open, onClose }: TermsModalProps) => {
   const { lang } = useLanguage();
+  useScrollLock(open);
   const isGreek = lang === "gr";
 
   const modalTitle = isGreek
@@ -135,7 +137,7 @@ const TermsModal = ({ open, onClose }: TermsModalProps) => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed inset-0 z-[120] flex items-center justify-center px-4 pb-4 pt-14 sm:pt-16 backdrop-blur-md bg-black/50 overflow-y-auto"
+          className="fixed inset-0 z-[120] flex items-center justify-center px-4 pb-4 pt-14 sm:pt-16 backdrop-blur-md bg-black/50 overflow-hidden overscroll-none"
           onClick={onClose}
         >
           <motion.div

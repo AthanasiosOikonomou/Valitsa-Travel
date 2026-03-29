@@ -134,18 +134,12 @@ const IndexContent = () => {
   };
 
   useEffect(() => {
-    if (selectedTrip || termsOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
     if (termsOpen || selectedTrip) {
       document.body.classList.add("modal-blur-active");
     } else {
       document.body.classList.remove("modal-blur-active");
     }
     return () => {
-      document.body.style.overflow = "";
       document.body.classList.remove("modal-blur-active");
     };
   }, [selectedTrip, termsOpen]);

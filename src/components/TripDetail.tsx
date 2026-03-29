@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, Clock, Check } from "lucide-react";
 import type { Trip } from "@/types/Trip";
@@ -6,6 +6,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { sendInquiryEmail } from "@/lib/email";
 import CaptchaField from "@/components/CaptchaField";
 import ProgressiveImage from "@/components/ProgressiveImage";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 interface TripDetailProps {
   trip: Trip;
@@ -76,6 +77,10 @@ const normalizeProgramEntry = (
 const TripDetail = ({ trip, onClose }: TripDetailProps) => {
   const [activeTab, setActiveTab] = useState<string>("description");
   const { t } = useLanguage();
+  useScrollLock(true);
+
+  const panelRef = useRef<HTMLDivElement>(null);
+  const tabsRowRef = useRef<HTMLDivElement>(null);
   const requiresCaptcha = !import.meta.env.DEV;
   // Use direct trip fields from Supabase
   const [formData, setFormData] = useState({
@@ -222,6 +227,39 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
     .map((raw) => normalizeProgramEntry(raw))
     .filter((item) => item.title || item.description);
 
+  const scrollPanelSoTabBorderAtTop = useCallback(() => {
+    const panel = panelRef.current;
+    const tabsRow = tabsRowRef.current;
+    if (!panel || !tabsRow) return;
+    const relBottom =
+      tabsRow.getBoundingClientRect().bottom -
+      panel.getBoundingClientRect().top +
+      panel.scrollTop;
+    const maxScroll = Math.max(0, panel.scrollHeight - panel.clientHeight);
+    const target = Math.min(Math.max(0, relBottom), maxScroll);
+    panel.scrollTo({ top: target, behavior: "smooth" });
+  }, []);
+
+  const skipTabScrollEffectRef = useRef(true);
+  useEffect(() => {
+    if (skipTabScrollEffectRef.current) {
+      skipTabScrollEffectRef.current = false;
+      return;
+    }
+    const TAB_SWITCH_MS = 280;
+    const id = window.setTimeout(() => {
+      requestAnimationFrame(() => {
+        scrollPanelSoTabBorderAtTop();
+        requestAnimationFrame(scrollPanelSoTabBorderAtTop);
+      });
+    }, TAB_SWITCH_MS);
+    return () => window.clearTimeout(id);
+  }, [activeTab, scrollPanelSoTabBorderAtTop]);
+
+  const handleTabClick = (tab: (typeof tabKeys)[number]) => {
+    setActiveTab(tab);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -229,7 +267,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
       role="presentation"
-      className="fixed inset-0 z-[120] flex items-center justify-center px-4 pt-24 pb-6 sm:pt-28 sm:pb-8 backdrop-blur-md bg-black/50 overflow-y-auto transform-gpu [backface-visibility:hidden]"
+      className="fixed inset-0 z-[120] flex items-center justify-center px-4 pt-24 pb-6 sm:pt-28 sm:pb-8 backdrop-blur-md bg-black/50 overflow-hidden overscroll-none transform-gpu [backface-visibility:hidden]"
       onClick={onClose}
     >
       <button
@@ -248,10 +286,14 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
         initial={{ opacity: 0, scale: 0.98, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-        className="relative w-full max-w-7xl max-h-[min(92dvh,calc(100dvh-5.5rem))] overflow-y-auto rounded-[2rem] bg-background border border-border my-auto transform-gpu [backface-visibility:hidden]"
+        className="relative flex min-h-0 w-full max-w-7xl max-h-[min(92dvh,calc(100dvh-5.5rem))] flex-col rounded-[2rem] bg-background border border-border my-auto transform-gpu [backface-visibility:hidden]"
         style={{ boxShadow: "var(--shadow-lg)" }}
         onClick={(e) => e.stopPropagation()}
       >
+        <div
+          ref={panelRef}
+          className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain rounded-[2rem]"
+        >
         <div className="max-w-7xl mx-auto px-6 md:px-10 pt-8 pb-10 md:pb-12 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
           <div className="lg:col-span-7">
             <div className="relative w-full aspect-[16/10] rounded-[2rem] mb-10 overflow-hidden">
@@ -306,11 +348,15 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
               </div>
 
               {/* Tabs */}
-              <div className="flex gap-1 mb-8 border-b border-border">
+              <div
+                ref={tabsRowRef}
+                className="flex gap-1 mb-8 border-b border-border"
+              >
                 {tabKeys.map((tab) => (
                   <button
                     key={tab}
-                    onClick={() => setActiveTab(tab)}
+                    type="button"
+                    onClick={() => handleTabClick(tab)}
                     className={`relative px-5 py-3 text-sm font-semibold transition-colors duration-250 ${
                       activeTab === tab
                         ? "text-foreground"
@@ -599,6 +645,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
               </motion.div>
             </div>
           </div>
+        </div>
         </div>
       </motion.div>
     </motion.div>
