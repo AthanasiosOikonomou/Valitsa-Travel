@@ -41,7 +41,9 @@ const splitProgramStep = (value: string) => {
 
 const strField = (v: unknown) => (typeof v === "string" ? v.trim() : "");
 
-const normalizeProgramEntry = (raw: unknown): { title: string; description: string } => {
+const normalizeProgramEntry = (
+  raw: unknown,
+): { title: string; description: string } => {
   if (raw == null) return { title: "", description: "" };
   if (typeof raw === "string") {
     const { title, detail } = splitProgramStep(raw);
@@ -49,10 +51,7 @@ const normalizeProgramEntry = (raw: unknown): { title: string; description: stri
   }
   if (typeof raw === "object") {
     const o = raw as Record<string, unknown>;
-    let title =
-      strField(o.title) ||
-      strField(o.label) ||
-      strField(o.heading);
+    let title = strField(o.title) || strField(o.label) || strField(o.heading);
     let description =
       strField(o.description) ||
       strField(o.body) ||
@@ -230,7 +229,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
       role="presentation"
-      className="fixed inset-0 z-[120] flex items-center justify-center px-4 pt-20 pb-6 sm:pt-24 sm:pb-8 backdrop-blur-md bg-black/50 overflow-y-auto transform-gpu [backface-visibility:hidden]"
+      className="fixed inset-0 z-[120] flex items-center justify-center px-4 pt-24 pb-6 sm:pt-28 sm:pb-8 backdrop-blur-md bg-black/50 overflow-y-auto transform-gpu [backface-visibility:hidden]"
       onClick={onClose}
     >
       <button
@@ -253,348 +252,354 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
         style={{ boxShadow: "var(--shadow-lg)" }}
         onClick={(e) => e.stopPropagation()}
       >
-      <div className="max-w-7xl mx-auto px-6 md:px-10 pt-8 pb-10 md:pb-12 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
-        <div className="lg:col-span-7">
-          <div className="relative w-full aspect-[16/10] rounded-[2rem] mb-10 overflow-hidden">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-              className="h-full"
-            >
-              <ProgressiveImage
-                src={trip.image}
-                alt={trip.title ?? ""}
-                width={1600}
-                height={1000}
-                sizes="(max-width: 1024px) 100vw, 58vw"
-                className="h-full"
-              />
-            </motion.div>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{
-              delay: 0.12,
-              duration: 0.3,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-          >
-            <div className="flex items-center gap-4 text-foreground-muted text-sm mb-4">
-              <span className="flex items-center gap-1.5">
-                <MapPin size={14} /> {trip.location}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Clock size={14} /> {trip.duration_text}
-              </span>
-            </div>
-
-            <h2 className="text-4xl md:text-5xl text-display mb-6">
-              {trip.title}
-            </h2>
-
-            <div className="flex gap-2 flex-wrap mb-10">
-              {trip.tags?.map((tag) => (
-                <span
-                  key={tag}
-                  className="px-4 py-2 bg-muted rounded-full text-sm font-medium"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-
-            {/* Tabs */}
-            <div className="flex gap-1 mb-8 border-b border-border">
-              {tabKeys.map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`relative px-5 py-3 text-sm font-semibold transition-colors duration-250 ${
-                    activeTab === tab
-                      ? "text-foreground"
-                      : "text-foreground-muted hover:text-foreground"
-                  }`}
-                >
-                  {t(`detail.${tab}`)}
-                  {activeTab === tab && (
-                    <motion.div
-                      layoutId="tab-indicator"
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"
-                      transition={{
-                        duration: 0.25,
-                        ease: [0.22, 1, 0.36, 1],
-                      }}
-                    />
-                  )}
-                </button>
-              ))}
-            </div>
-
-            <AnimatePresence mode="wait">
+        <div className="max-w-7xl mx-auto px-6 md:px-10 pt-8 pb-10 md:pb-12 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
+          <div className="lg:col-span-7">
+            <div className="relative w-full aspect-[16/10] rounded-[2rem] mb-10 overflow-hidden">
               <motion.div
-                key={activeTab}
-                initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -8, scale: 0.98 }}
-                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                className="h-full"
               >
-                {activeTab === "description" && (
-                  <p className="text-body-prose text-lg leading-relaxed">
-                    {trip.description}
-                  </p>
-                )}
-                {activeTab === "program" && (
-                  <ul className="space-y-0 pt-2">
-                    {programItems.map((item, i) => (
-                      <li
-                        key={i}
-                        className="relative flex gap-5 items-start pb-10 last:pb-0"
-                      >
-                        {i < programItems.length - 1 && (
-                          <span
-                            aria-hidden="true"
-                            className="absolute left-[0.45rem] top-7 bottom-0 border-l border-dashed border-fuchsia-300/80 dark:border-fuchsia-700/60"
-                          />
-                        )}
-                        <span
-                          aria-hidden="true"
-                          className="relative z-10 mt-2 flex h-4 w-4 shrink-0 rounded-full bg-gradient-to-br from-fuchsia-500 via-fuchsia-600 to-violet-700 shadow-[0_12px_26px_-16px_rgba(168,85,247,0.9)] ring-4 ring-fuchsia-100 dark:ring-fuchsia-950/50"
-                        />
-                        <div className="flex-1 border-b border-fuchsia-100/80 pb-8 last:border-b-0 dark:border-fuchsia-900/30 min-w-0">
-                          {item.title ? (
-                            <h4 className="text-[0.94rem] md:text-[0.98rem] font-semibold leading-6 tracking-[-0.012em] text-foreground mb-2">
-                              {item.title}
-                            </h4>
-                          ) : null}
-                          {item.description ? (
-                            <p
-                              className={`text-[0.9rem] leading-7 tracking-[-0.008em] text-foreground-muted ${item.title ? "" : "text-foreground font-medium"}`}
-                            >
-                              {item.description}
-                            </p>
-                          ) : null}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {activeTab === "included" && (
-                  <ul className="space-y-3.5">
-                    {trip.included?.map((item, i) => (
-                      <li
-                        key={i}
-                        className="flex gap-3.5 items-start rounded-[1.15rem] border border-fuchsia-100/70 bg-gradient-to-r from-fuchsia-50/65 via-white to-white px-4 py-3.5 text-[0.92rem] leading-7 tracking-[-0.008em] text-foreground-muted dark:border-fuchsia-900/30 dark:from-fuchsia-950/20 dark:via-card dark:to-card"
-                      >
-                        <Check
-                          size={16}
-                          className="text-primary shrink-0 mt-1"
-                        />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                <ProgressiveImage
+                  src={trip.image}
+                  alt={trip.title ?? ""}
+                  width={1600}
+                  height={1000}
+                  sizes="(max-width: 1024px) 100vw, 58vw"
+                  className="h-full"
+                />
               </motion.div>
-            </AnimatePresence>
-          </motion.div>
-        </div>
+            </div>
 
-        {/* Right column — sticky form */}
-        <div className="lg:col-span-5">
-          <div className="lg:sticky lg:top-6">
             <motion.div
               initial={{ opacity: 0, y: 10, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{
-                delay: 0.16,
-                duration: 0.28,
+                delay: 0.12,
+                duration: 0.3,
                 ease: [0.22, 1, 0.36, 1],
               }}
-              className="bg-card border border-border p-8 md:p-10 rounded-[2rem] transform-gpu [backface-visibility:hidden]"
             >
-              <div className="flex justify-between items-start mb-8">
-                <div>
-                  <p className="label-ui text-foreground-muted mb-1">
-                    {t("detail.startingFrom")}
-                  </p>
-                  <p className="text-3xl font-bold">{trip.price_text}</p>
-                </div>
-                <span className="label-ui text-primary bg-primary/10 px-3 py-1.5 rounded-full">
-                  {trip.duration_text}
+              <div className="flex items-center gap-4 text-foreground-muted text-sm mb-4">
+                <span className="flex items-center gap-1.5">
+                  <MapPin size={14} /> {trip.location}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Clock size={14} /> {trip.duration_text}
                 </span>
               </div>
 
-              <h3 className="text-xl font-bold mb-6">
-                {t("detail.expressInterest")}
-              </h3>
+              <h2 className="text-4xl md:text-5xl text-display mb-6">
+                {trip.title}
+              </h2>
 
-              {submitted ? (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                  className="text-center py-12"
-                >
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                    <Check size={28} className="text-primary" />
-                  </div>
-                  <p className="font-semibold text-lg mb-1">
-                    {t("detail.inquirySent")}
-                  </p>
-                  <p className="text-foreground-muted text-sm">
-                    {t("detail.inquiryMsg")}
-                  </p>
-                </motion.div>
-              ) : (
-                <form onSubmit={handleSubmit} noValidate className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <input
-                        ref={firstNameRef}
-                        maxLength={100}
-                        value={formData.firstName}
-                        onChange={(e) => {
-                          updateField("firstName", e.target.value);
-                          if (fieldErrors.firstName)
-                            setFieldErrors((p) => ({ ...p, firstName: "" }));
-                        }}
-                        className={`w-full bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground focus:ring-2 transition-shadow ${
-                          fieldErrors.firstName
-                            ? "ring-2 ring-red-500/50 bg-red-500/5"
-                            : "focus:ring-primary/30"
-                        }`}
-                        placeholder={t("detail.firstName") + " *"}
-                      />
-                      {fieldErrors.firstName && (
-                        <p className="text-xs text-red-500 mt-1">
-                          {fieldErrors.firstName}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <input
-                        ref={lastNameRef}
-                        maxLength={100}
-                        value={formData.lastName}
-                        onChange={(e) => {
-                          updateField("lastName", e.target.value);
-                          if (fieldErrors.lastName)
-                            setFieldErrors((p) => ({ ...p, lastName: "" }));
-                        }}
-                        className={`w-full bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground focus:ring-2 transition-shadow ${
-                          fieldErrors.lastName
-                            ? "ring-2 ring-red-500/50 bg-red-500/5"
-                            : "focus:ring-primary/30"
-                        }`}
-                        placeholder={t("detail.lastName") + " *"}
-                      />
-                      {fieldErrors.lastName && (
-                        <p className="text-xs text-red-500 mt-1">
-                          {fieldErrors.lastName}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <input
-                      ref={emailRef}
-                      inputMode="email"
-                      autoComplete="email"
-                      maxLength={255}
-                      value={formData.email}
-                      onChange={(e) => {
-                        updateField("email", e.target.value);
-                        if (fieldErrors.email)
-                          setFieldErrors((p) => ({ ...p, email: "" }));
-                      }}
-                      className={`w-full bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground focus:ring-2 transition-shadow ${
-                        fieldErrors.email
-                          ? "ring-2 ring-red-500/50 bg-red-500/5"
-                          : "focus:ring-primary/30"
-                      }`}
-                      placeholder={t("detail.email") + " *"}
-                    />
-                    {fieldErrors.email && (
-                      <p className="text-xs text-red-500 mt-1">
-                        {fieldErrors.email}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <input
-                      ref={mobileRef}
-                      inputMode="tel"
-                      maxLength={20}
-                      value={formData.mobile}
-                      onChange={(e) => {
-                        updateField("mobile", e.target.value);
-                        if (fieldErrors.mobile)
-                          setFieldErrors((p) => ({ ...p, mobile: "" }));
-                      }}
-                      className={`w-full bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground focus:ring-2 transition-shadow ${
-                        fieldErrors.mobile
-                          ? "ring-2 ring-red-500/50 bg-red-500/5"
-                          : "focus:ring-primary/30"
-                      }`}
-                      placeholder={t("detail.mobile") + " *"}
-                    />
-                    {fieldErrors.mobile && (
-                      <p className="text-xs text-red-500 mt-1">
-                        {fieldErrors.mobile}
-                      </p>
-                    )}
-                  </div>
-                  <textarea
-                    ref={messageRef}
-                    maxLength={1000}
-                    value={formData.message}
-                    onChange={(e) => {
-                      updateField("message", e.target.value);
-                      if (fieldErrors.message)
-                        setFieldErrors((p) => ({ ...p, message: "" }));
-                    }}
-                    className={`w-full bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground h-28 resize-none focus:ring-2 transition-shadow ${
-                      fieldErrors.message
-                        ? "ring-2 ring-red-500/50 bg-red-500/5"
-                        : "focus:ring-primary/30"
-                    }`}
-                    placeholder={t("detail.message") + " *"}
-                  />
-                  {fieldErrors.message && (
-                    <p className="text-xs text-red-500 mt-1">
-                      {fieldErrors.message}
-                    </p>
-                  )}
-                  {requiresCaptcha ? (
-                    <CaptchaField
-                      onTokenChange={(token) => {
-                        setCaptchaToken(token);
-                        if (captchaError && token) setCaptchaError("");
-                      }}
-                      error={captchaError}
-                    />
-                  ) : null}
-                  <button
-                    type="submit"
-                    disabled={isSending}
-                    className="w-full bg-primary text-primary-foreground py-4 rounded-2xl font-bold text-sm hover:bg-primary/90 transition-colors duration-250 min-h-[56px]"
+              <div className="flex gap-2 flex-wrap mb-10">
+                {trip.tags?.map((tag) => (
+                  <span
+                    key={tag}
+                    className="px-4 py-2 bg-muted rounded-full text-sm font-medium"
                   >
-                    {isSending ? t("detail.sending") : t("detail.sendInquiry")}
+                    {tag}
+                  </span>
+                ))}
+              </div>
+
+              {/* Tabs */}
+              <div className="flex gap-1 mb-8 border-b border-border">
+                {tabKeys.map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`relative px-5 py-3 text-sm font-semibold transition-colors duration-250 ${
+                      activeTab === tab
+                        ? "text-foreground"
+                        : "text-foreground-muted hover:text-foreground"
+                    }`}
+                  >
+                    {t(`detail.${tab}`)}
+                    {activeTab === tab && (
+                      <motion.div
+                        layoutId="tab-indicator"
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"
+                        transition={{
+                          duration: 0.25,
+                          ease: [0.22, 1, 0.36, 1],
+                        }}
+                      />
+                    )}
                   </button>
-                  {error && (
-                    <p className="text-sm text-red-500" role="alert">
-                      {error}
+                ))}
+              </div>
+
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  {activeTab === "description" && (
+                    <p className="text-body-prose text-lg leading-relaxed">
+                      {trip.description}
                     </p>
                   )}
-                </form>
-              )}
+                  {activeTab === "program" && (
+                    <ul className="space-y-0 pt-2">
+                      {programItems.map((item, i) => (
+                        <li
+                          key={i}
+                          className="relative flex gap-5 items-start pb-10 last:pb-0"
+                        >
+                          {i < programItems.length - 1 && (
+                            <span
+                              aria-hidden="true"
+                              className="absolute left-[0.45rem] top-7 bottom-0 border-l border-dashed border-fuchsia-300/80 dark:border-fuchsia-700/60"
+                            />
+                          )}
+                          <span
+                            aria-hidden="true"
+                            className="relative z-10 mt-2 flex h-4 w-4 shrink-0 rounded-full bg-gradient-to-br from-fuchsia-500 via-fuchsia-600 to-violet-700 shadow-[0_12px_26px_-16px_rgba(168,85,247,0.9)] ring-4 ring-fuchsia-100 dark:ring-fuchsia-950/50"
+                          />
+                          <div className="flex-1 border-b border-fuchsia-100/80 pb-8 last:border-b-0 dark:border-fuchsia-900/30 min-w-0">
+                            {item.title ? (
+                              <h4 className="text-[0.94rem] md:text-[0.98rem] font-semibold leading-6 tracking-[-0.012em] text-foreground mb-2">
+                                {item.title}
+                              </h4>
+                            ) : null}
+                            {item.description ? (
+                              <p
+                                className={`text-[0.9rem] leading-7 tracking-[-0.008em] text-foreground-muted ${item.title ? "" : "text-foreground font-medium"}`}
+                              >
+                                {item.description}
+                              </p>
+                            ) : null}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {activeTab === "included" && (
+                    <ul className="space-y-3.5">
+                      {trip.included?.map((item, i) => (
+                        <li
+                          key={i}
+                          className="flex gap-3.5 items-start rounded-[1.15rem] border border-fuchsia-100/70 bg-gradient-to-r from-fuchsia-50/65 via-white to-white px-4 py-3.5 text-[0.92rem] leading-7 tracking-[-0.008em] text-foreground-muted dark:border-fuchsia-900/30 dark:from-fuchsia-950/20 dark:via-card dark:to-card"
+                        >
+                          <Check
+                            size={16}
+                            className="text-primary shrink-0 mt-1"
+                          />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </motion.div>
+              </AnimatePresence>
             </motion.div>
           </div>
+
+          {/* Right column — sticky form */}
+          <div className="lg:col-span-5">
+            <div className="lg:sticky lg:top-6">
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{
+                  delay: 0.16,
+                  duration: 0.28,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+                className="bg-card border border-border p-8 md:p-10 rounded-[2rem] transform-gpu [backface-visibility:hidden]"
+              >
+                <div className="flex justify-between items-start mb-8">
+                  <div>
+                    <p className="label-ui text-foreground-muted mb-1">
+                      {t("detail.startingFrom")}
+                    </p>
+                    <p className="text-3xl font-bold">{trip.price_text}</p>
+                  </div>
+                  <span className="label-ui text-primary bg-primary/10 px-3 py-1.5 rounded-full">
+                    {trip.duration_text}
+                  </span>
+                </div>
+
+                <h3 className="text-xl font-bold mb-6">
+                  {t("detail.expressInterest")}
+                </h3>
+
+                {submitted ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                    className="text-center py-12"
+                  >
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                      <Check size={28} className="text-primary" />
+                    </div>
+                    <p className="font-semibold text-lg mb-1">
+                      {t("detail.inquirySent")}
+                    </p>
+                    <p className="text-foreground-muted text-sm">
+                      {t("detail.inquiryMsg")}
+                    </p>
+                  </motion.div>
+                ) : (
+                  <form
+                    onSubmit={handleSubmit}
+                    noValidate
+                    className="space-y-4"
+                  >
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <input
+                          ref={firstNameRef}
+                          maxLength={100}
+                          value={formData.firstName}
+                          onChange={(e) => {
+                            updateField("firstName", e.target.value);
+                            if (fieldErrors.firstName)
+                              setFieldErrors((p) => ({ ...p, firstName: "" }));
+                          }}
+                          className={`w-full bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground focus:ring-2 transition-shadow ${
+                            fieldErrors.firstName
+                              ? "ring-2 ring-red-500/50 bg-red-500/5"
+                              : "focus:ring-primary/30"
+                          }`}
+                          placeholder={t("detail.firstName") + " *"}
+                        />
+                        {fieldErrors.firstName && (
+                          <p className="text-xs text-red-500 mt-1">
+                            {fieldErrors.firstName}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <input
+                          ref={lastNameRef}
+                          maxLength={100}
+                          value={formData.lastName}
+                          onChange={(e) => {
+                            updateField("lastName", e.target.value);
+                            if (fieldErrors.lastName)
+                              setFieldErrors((p) => ({ ...p, lastName: "" }));
+                          }}
+                          className={`w-full bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground focus:ring-2 transition-shadow ${
+                            fieldErrors.lastName
+                              ? "ring-2 ring-red-500/50 bg-red-500/5"
+                              : "focus:ring-primary/30"
+                          }`}
+                          placeholder={t("detail.lastName") + " *"}
+                        />
+                        {fieldErrors.lastName && (
+                          <p className="text-xs text-red-500 mt-1">
+                            {fieldErrors.lastName}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <input
+                        ref={emailRef}
+                        inputMode="email"
+                        autoComplete="email"
+                        maxLength={255}
+                        value={formData.email}
+                        onChange={(e) => {
+                          updateField("email", e.target.value);
+                          if (fieldErrors.email)
+                            setFieldErrors((p) => ({ ...p, email: "" }));
+                        }}
+                        className={`w-full bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground focus:ring-2 transition-shadow ${
+                          fieldErrors.email
+                            ? "ring-2 ring-red-500/50 bg-red-500/5"
+                            : "focus:ring-primary/30"
+                        }`}
+                        placeholder={t("detail.email") + " *"}
+                      />
+                      {fieldErrors.email && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {fieldErrors.email}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <input
+                        ref={mobileRef}
+                        inputMode="tel"
+                        maxLength={20}
+                        value={formData.mobile}
+                        onChange={(e) => {
+                          updateField("mobile", e.target.value);
+                          if (fieldErrors.mobile)
+                            setFieldErrors((p) => ({ ...p, mobile: "" }));
+                        }}
+                        className={`w-full bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground focus:ring-2 transition-shadow ${
+                          fieldErrors.mobile
+                            ? "ring-2 ring-red-500/50 bg-red-500/5"
+                            : "focus:ring-primary/30"
+                        }`}
+                        placeholder={t("detail.mobile") + " *"}
+                      />
+                      {fieldErrors.mobile && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {fieldErrors.mobile}
+                        </p>
+                      )}
+                    </div>
+                    <textarea
+                      ref={messageRef}
+                      maxLength={1000}
+                      value={formData.message}
+                      onChange={(e) => {
+                        updateField("message", e.target.value);
+                        if (fieldErrors.message)
+                          setFieldErrors((p) => ({ ...p, message: "" }));
+                      }}
+                      className={`w-full bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground h-28 resize-none focus:ring-2 transition-shadow ${
+                        fieldErrors.message
+                          ? "ring-2 ring-red-500/50 bg-red-500/5"
+                          : "focus:ring-primary/30"
+                      }`}
+                      placeholder={t("detail.message") + " *"}
+                    />
+                    {fieldErrors.message && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {fieldErrors.message}
+                      </p>
+                    )}
+                    {requiresCaptcha ? (
+                      <CaptchaField
+                        onTokenChange={(token) => {
+                          setCaptchaToken(token);
+                          if (captchaError && token) setCaptchaError("");
+                        }}
+                        error={captchaError}
+                      />
+                    ) : null}
+                    <button
+                      type="submit"
+                      disabled={isSending}
+                      className="w-full bg-primary text-primary-foreground py-4 rounded-2xl font-bold text-sm hover:bg-primary/90 transition-colors duration-250 min-h-[56px]"
+                    >
+                      {isSending
+                        ? t("detail.sending")
+                        : t("detail.sendInquiry")}
+                    </button>
+                    {error && (
+                      <p className="text-sm text-red-500" role="alert">
+                        {error}
+                      </p>
+                    )}
+                  </form>
+                )}
+              </motion.div>
+            </div>
+          </div>
         </div>
-      </div>
       </motion.div>
     </motion.div>
   );
