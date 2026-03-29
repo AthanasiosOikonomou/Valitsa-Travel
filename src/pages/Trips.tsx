@@ -5,7 +5,7 @@ declare global {
     __valitsaFilterSectionChanged?: boolean;
   }
 }
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Search, SlidersHorizontal, X, ChevronDown } from "lucide-react";
 
@@ -171,6 +171,7 @@ const FacetOption = ({
 
 const TripsContent = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { darkMode, toggleDark } = useTheme();
   const { t, lang } = useLanguage();
 
@@ -615,7 +616,13 @@ const TripsContent = () => {
     lang === "gr" ? "για να μιλήσουμε." : "to talk with us.";
 
   const resetFilters = () => {
-    dispatch({ type: "replace", value: initialFilterState });
+    setSelectedTrip(null);
+    setMobileFiltersOpen(false);
+    navigate("/trips", { replace: true });
+    dispatch({
+      type: "replace",
+      value: createInitialTripFilterState(scopedTrips, filterMetadata, null),
+    });
   };
 
   const renderFiltersContent = (showResetButton: boolean) => (
