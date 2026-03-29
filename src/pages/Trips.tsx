@@ -169,6 +169,8 @@ const FacetOption = ({
   </label>
 );
 
+const EMPTY_STATE_DEBOUNCE_MS = 280;
+
 const TripsContent = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -199,6 +201,7 @@ const TripsContent = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showEmptyResults, setShowEmptyResults] = useState(false);
 
   // Show loading spinner only if loading takes longer than 400ms
   const [showDelayedLoading, setShowDelayedLoading] = useState(false);
@@ -422,6 +425,17 @@ const TripsContent = () => {
     [lang, normalizedFilterState, scopedTrips],
   );
 
+  useEffect(() => {
+    if (loading || filtered.length > 0) {
+      setShowEmptyResults(false);
+      return;
+    }
+    const id = window.setTimeout(() => {
+      setShowEmptyResults(true);
+    }, EMPTY_STATE_DEBOUNCE_MS);
+    return () => window.clearTimeout(id);
+  }, [loading, filtered.length]);
+
   const cityLabels = useMemo(
     () => getCityLabelMap(scopedTrips, lang),
     [lang, scopedTrips],
@@ -463,8 +477,9 @@ const TripsContent = () => {
     return [minIndex, maxIndex];
   }, [pricePoints, uiPriceRange]);
 
-  useEffect(() => {
-    // Only replace filter state after both initialFilterState and scopedTrips are up to date
+  // Before paint: avoid one frame where filterState still uses empty-dataset seed (e.g. price [0,0])
+  // so every trip fails the price check and the empty state flashes.
+  useLayoutEffect(() => {
     if (!hasSyncedInitialFiltersRef.current) {
       hasSyncedInitialFiltersRef.current = true;
       return;
@@ -1111,6 +1126,8 @@ const TripsContent = () => {
               </span>
             </div>
           ) : loading ? (
+            <div style={{ minHeight: 300 }} />
+          ) : filtered.length === 0 && !showEmptyResults ? (
             <div style={{ minHeight: 300 }} />
           ) : filtered.length === 0 ? (
             <div className="premium-panel-soft trips-card-surface rounded-[2rem] py-14 px-6 md:px-10 border border-border/70">
