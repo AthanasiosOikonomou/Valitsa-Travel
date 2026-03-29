@@ -12,6 +12,7 @@ import {
 import { useLanguage } from "@/contexts/LanguageContext";
 import { sendInquiryEmail } from "@/lib/email";
 import CaptchaField from "@/components/CaptchaField";
+import ModalScrollUpButton from "@/components/ModalScrollUpButton";
 
 interface ContactModalProps {
   open: boolean;
@@ -43,6 +44,7 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
     message: "",
   });
 
+  const bodyScrollRef = useRef<HTMLDivElement>(null);
   const firstNameRef = useRef<HTMLInputElement>(null);
   const lastNameRef = useRef<HTMLInputElement>(null);
   const mobileRef = useRef<HTMLInputElement>(null);
@@ -198,11 +200,11 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, y: 12 }}
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-            className="surface-elevated bg-card rounded-3xl w-full max-w-lg max-h-[min(85dvh,900px)] overflow-y-auto overscroll-y-contain my-auto transform-gpu [backface-visibility:hidden] shadow-lg"
+            className="surface-elevated bg-card rounded-3xl w-full max-w-lg max-h-[min(85dvh,900px)] flex flex-col overflow-hidden overscroll-y-contain my-auto transform-gpu [backface-visibility:hidden] shadow-lg"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-border">
+            <div className="flex shrink-0 items-center justify-between p-6 border-b border-border">
               <h2 className="text-lg font-bold">{t("contact.title")}</h2>
               <button
                 onClick={handleClose}
@@ -212,6 +214,11 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
               </button>
             </div>
 
+            <div className="relative min-h-0 flex-1">
+              <div
+                ref={bodyScrollRef}
+                className="h-full min-h-0 overflow-y-auto overscroll-y-contain"
+              >
             <div className="p-6">
               {view === "options" && !sent && (
                 <div className="space-y-4">
@@ -457,6 +464,9 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
                   </p>
                 </motion.div>
               )}
+            </div>
+              </div>
+              <ModalScrollUpButton scrollContainerRef={bodyScrollRef} />
             </div>
           </motion.div>
         </motion.div>

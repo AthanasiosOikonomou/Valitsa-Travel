@@ -7,6 +7,7 @@ import { sendInquiryEmail } from "@/lib/email";
 import CaptchaField from "@/components/CaptchaField";
 import ProgressiveImage from "@/components/ProgressiveImage";
 import { useScrollLock } from "@/hooks/useScrollLock";
+import ModalScrollUpButton from "@/components/ModalScrollUpButton";
 
 interface TripDetailProps {
   trip: Trip;
@@ -282,10 +283,11 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
         className="surface-elevated relative flex min-h-0 w-full max-w-7xl max-h-[min(92dvh,calc(100dvh-5.5rem))] flex-col rounded-[2rem] bg-background shadow-lg my-auto transform-gpu [backface-visibility:hidden]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div
-          ref={panelRef}
-          className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain rounded-[2rem]"
-        >
+        <div className="relative flex min-h-0 flex-1 flex-col">
+          <div
+            ref={panelRef}
+            className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain rounded-[2rem]"
+          >
         <div className="max-w-7xl mx-auto px-6 md:px-10 pt-8 pb-10 md:pb-12 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
           <div className="min-w-0 lg:col-span-7">
             <div className="relative w-full aspect-[16/10] rounded-[2rem] mb-10 overflow-hidden">
@@ -628,6 +630,8 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
             </div>
           </div>
         </div>
+          </div>
+          <ModalScrollUpButton scrollContainerRef={panelRef} />
         </div>
       </motion.div>
       </div>

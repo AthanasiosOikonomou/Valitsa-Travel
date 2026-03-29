@@ -12,3 +12,9 @@ export function instantScrollToTop() {
 export function smoothScrollToTop() {
   window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
 }
+
+/** Smooth scroll a scrollable container (e.g. modal body) to top. */
+export function smoothScrollElementToTop(el: HTMLElement | null | undefined) {
+  if (!el) return;
+  el.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+}

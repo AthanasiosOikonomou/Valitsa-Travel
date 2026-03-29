@@ -1,9 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useScrollLock } from "@/hooks/useScrollLock";
+import ModalScrollUpButton from "@/components/ModalScrollUpButton";
 
 interface TermsModalProps {
   open: boolean;
@@ -12,6 +13,7 @@ interface TermsModalProps {
 
 const TermsModal = ({ open, onClose }: TermsModalProps) => {
   const { lang } = useLanguage();
+  const scrollRef = useRef<HTMLDivElement>(null);
   useScrollLock(open);
   const isGreek = lang === "gr";
 
@@ -174,7 +176,11 @@ const TermsModal = ({ open, onClose }: TermsModalProps) => {
               </button>
             </div>
 
-            <div className="p-6 md:p-7 max-h-[62vh] overflow-y-auto space-y-6 text-sm md:text-[0.95rem] leading-relaxed text-foreground-muted">
+            <div className="relative max-h-[62vh]">
+              <div
+                ref={scrollRef}
+                className="max-h-[62vh] overflow-y-auto overscroll-y-contain p-6 md:p-7 space-y-6 text-sm md:text-[0.95rem] leading-relaxed text-foreground-muted"
+              >
               <section className="space-y-2">
                 <h3 className="font-bold text-foreground">
                   {sectionTitles.introduction}
@@ -246,6 +252,8 @@ const TermsModal = ({ open, onClose }: TermsModalProps) => {
                 </h3>
                 <p>{copy.disputes}</p>
               </section>
+              </div>
+              <ModalScrollUpButton scrollContainerRef={scrollRef} />
             </div>
           </motion.div>
         </motion.div>
