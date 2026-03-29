@@ -355,14 +355,14 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
               {/* Tabs */}
               <div
                 ref={tabsRowRef}
-                className="flex flex-wrap gap-x-1 gap-y-1 mb-8 border-b border-border"
+                className="mb-8 flex w-full min-w-0 flex-nowrap items-end justify-between border-b border-border px-2 sm:px-4"
               >
                 {tabKeys.map((tab) => (
                   <button
                     key={tab}
                     type="button"
                     onClick={() => handleTabClick(tab)}
-                    className={`relative min-h-[2.75rem] min-w-0 flex-1 basis-0 px-2 py-2.5 text-center text-xs font-semibold leading-snug transition-colors duration-250 [overflow-wrap:anywhere] sm:flex-none sm:basis-auto sm:px-5 sm:py-3 sm:text-sm ${
+                    className={`relative shrink-0 whitespace-nowrap px-1 py-2.5 text-center text-xs font-semibold transition-colors duration-250 sm:px-3 sm:py-3 sm:text-sm md:px-4 ${
                       activeTab === tab
                         ? "text-foreground"
                         : "text-foreground-muted hover:text-foreground"
