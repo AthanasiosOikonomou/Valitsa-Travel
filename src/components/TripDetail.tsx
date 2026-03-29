@@ -279,8 +279,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
         initial={{ opacity: 0, scale: 0.98, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-        className="relative flex min-h-0 w-full max-w-7xl max-h-[min(92dvh,calc(100dvh-5.5rem))] flex-col rounded-[2rem] bg-background border border-border my-auto transform-gpu [backface-visibility:hidden]"
-        style={{ boxShadow: "var(--shadow-lg)" }}
+        className="surface-elevated relative flex min-h-0 w-full max-w-7xl max-h-[min(92dvh,calc(100dvh-5.5rem))] flex-col rounded-[2rem] bg-background shadow-lg my-auto transform-gpu [backface-visibility:hidden]"
         onClick={(e) => e.stopPropagation()}
       >
         <div
@@ -451,7 +450,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                   duration: 0.28,
                   ease: [0.22, 1, 0.36, 1],
                 }}
-                className="bg-card border border-border p-8 md:p-10 rounded-[2rem] transform-gpu [backface-visibility:hidden]"
+                className="surface-elevated bg-card p-8 md:p-10 rounded-[2rem] shadow-md transform-gpu [backface-visibility:hidden]"
               >
                 <div className="flex justify-between items-start mb-8">
                   <div>
@@ -503,10 +502,8 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                             if (fieldErrors.firstName)
                               setFieldErrors((p) => ({ ...p, firstName: "" }));
                           }}
-                          className={`w-full bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground focus:ring-2 transition-shadow ${
-                            fieldErrors.firstName
-                              ? "ring-2 ring-red-500/50 bg-red-500/5"
-                              : "focus:ring-primary/30"
+                          className={`input-elevated w-full bg-muted p-4 rounded-2xl text-sm placeholder:text-muted-foreground ${
+                            fieldErrors.firstName ? "input-elevated--invalid" : ""
                           }`}
                           placeholder={t("detail.firstName") + " *"}
                         />
@@ -526,10 +523,8 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                             if (fieldErrors.lastName)
                               setFieldErrors((p) => ({ ...p, lastName: "" }));
                           }}
-                          className={`w-full bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground focus:ring-2 transition-shadow ${
-                            fieldErrors.lastName
-                              ? "ring-2 ring-red-500/50 bg-red-500/5"
-                              : "focus:ring-primary/30"
+                          className={`input-elevated w-full bg-muted p-4 rounded-2xl text-sm placeholder:text-muted-foreground ${
+                            fieldErrors.lastName ? "input-elevated--invalid" : ""
                           }`}
                           placeholder={t("detail.lastName") + " *"}
                         />
@@ -552,10 +547,8 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                           if (fieldErrors.email)
                             setFieldErrors((p) => ({ ...p, email: "" }));
                         }}
-                        className={`w-full bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground focus:ring-2 transition-shadow ${
-                          fieldErrors.email
-                            ? "ring-2 ring-red-500/50 bg-red-500/5"
-                            : "focus:ring-primary/30"
+                        className={`input-elevated w-full bg-muted p-4 rounded-2xl text-sm placeholder:text-muted-foreground ${
+                          fieldErrors.email ? "input-elevated--invalid" : ""
                         }`}
                         placeholder={t("detail.email") + " *"}
                       />
@@ -576,10 +569,8 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                           if (fieldErrors.mobile)
                             setFieldErrors((p) => ({ ...p, mobile: "" }));
                         }}
-                        className={`w-full bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground focus:ring-2 transition-shadow ${
-                          fieldErrors.mobile
-                            ? "ring-2 ring-red-500/50 bg-red-500/5"
-                            : "focus:ring-primary/30"
+                        className={`input-elevated w-full bg-muted p-4 rounded-2xl text-sm placeholder:text-muted-foreground ${
+                          fieldErrors.mobile ? "input-elevated--invalid" : ""
                         }`}
                         placeholder={t("detail.mobile") + " *"}
                       />
@@ -598,10 +589,8 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                         if (fieldErrors.message)
                           setFieldErrors((p) => ({ ...p, message: "" }));
                       }}
-                      className={`w-full bg-muted p-4 rounded-2xl outline-none text-sm placeholder:text-muted-foreground h-28 resize-none focus:ring-2 transition-shadow ${
-                        fieldErrors.message
-                          ? "ring-2 ring-red-500/50 bg-red-500/5"
-                          : "focus:ring-primary/30"
+                      className={`input-elevated w-full bg-muted p-4 rounded-2xl text-sm placeholder:text-muted-foreground h-28 resize-none ${
+                        fieldErrors.message ? "input-elevated--invalid" : ""
                       }`}
                       placeholder={t("detail.message") + " *"}
                     />
@@ -622,7 +611,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                     <button
                       type="submit"
                       disabled={isSending}
-                      className="w-full bg-primary text-primary-foreground py-4 rounded-2xl font-bold text-sm hover:bg-primary/90 transition-colors duration-250 min-h-[56px]"
+                      className="btn-elev-primary w-full bg-primary text-primary-foreground py-4 rounded-2xl font-bold text-sm hover:bg-primary/90 min-h-[56px]"
                     >
                       {isSending
                         ? t("detail.sending")
@@ -645,7 +634,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
       <button
         type="button"
         onClick={onClose}
-        className="pointer-events-auto fixed right-4 top-4 z-[200] flex h-12 w-12 items-center justify-center rounded-full border border-border/40 bg-foreground text-background shadow-lg transition-[transform,opacity,background-color,border-color] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:opacity-95 dark:hover:opacity-100 active:scale-[0.97] dark:bg-muted dark:border-white/20 dark:hover:border-white/30 dark:hover:brightness-110 sm:right-6 sm:top-6"
+        className="pointer-events-auto fixed right-4 top-4 z-[200] flex h-12 w-12 items-center justify-center rounded-full border-0 bg-foreground text-background shadow-lg transition-[transform,opacity,background-color,box-shadow] duration-elev ease-material hover:opacity-95 hover:shadow-elev3 dark:hover:opacity-100 active:scale-[0.97] dark:bg-muted dark:hover:brightness-110 sm:right-6 sm:top-6"
         style={{ WebkitTapHighlightColor: "transparent" }}
         aria-label={t("common.close")}
       >

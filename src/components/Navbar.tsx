@@ -222,7 +222,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
             transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
             className="fixed top-[92px] left-4 right-4 z-[49] premium-panel rounded-[1.6rem] p-4 lg:hidden transform-gpu [backface-visibility:hidden]"
-            style={{ boxShadow: "0 20px 60px -10px rgba(0, 0, 0, 0.7)" }}
+            style={{ boxShadow: "var(--shadow-elev-3)" }}
           >
             <div className="flex flex-col gap-2">
               {navCategories.map((cat) => (

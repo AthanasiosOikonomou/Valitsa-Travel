@@ -656,7 +656,7 @@ const TripsContent = () => {
               dispatch({ type: "setSearchQuery", value: event.target.value });
             }}
             placeholder={t("archive.searchPlaceholder")}
-            className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+            className="input-elevated w-full pl-10 pr-4 py-3 rounded-xl bg-background text-sm"
           />
         </div>
       </div>
@@ -1096,7 +1096,7 @@ const TripsContent = () => {
                 </div>
 
                 <div className="absolute inset-x-4 bottom-4 sm:inset-x-5">
-                  <div className="rounded-[1.35rem] border border-white/65 bg-white/88 p-3 shadow-[0_18px_36px_-18px_rgba(15,23,42,0.38)] backdrop-blur-xl dark:border-slate-700/70 dark:bg-slate-950/86 dark:shadow-[0_18px_36px_-18px_rgba(0,0,0,0.62)]">
+                  <div className="rounded-[1.35rem] border-0 bg-white/88 p-3 shadow-elev2 backdrop-blur-xl dark:bg-slate-950/86 dark:shadow-elev2">
                     <div className="flex items-center gap-3">
                       <button
                         onClick={resetFilters}
@@ -1120,7 +1120,7 @@ const TripsContent = () => {
 
         <div className="flex-1 min-w-0">
           {showDelayedLoading ? (
-            <div className="premium-panel-soft trips-card-surface rounded-[2rem] py-14 px-6 md:px-10 border border-border/70 flex items-center justify-center min-h-[300px]">
+            <div className="premium-panel-soft trips-card-surface rounded-[2rem] py-14 px-6 md:px-10 flex items-center justify-center min-h-[300px]">
               <span className="text-lg text-foreground-muted">
                 {lang === "gr" ? "Φόρτωση..." : "Loading..."}
               </span>
@@ -1130,7 +1130,7 @@ const TripsContent = () => {
           ) : filtered.length === 0 && !showEmptyResults ? (
             <div style={{ minHeight: 300 }} />
           ) : filtered.length === 0 ? (
-            <div className="premium-panel-soft trips-card-surface rounded-[2rem] py-14 px-6 md:px-10 border border-border/70">
+            <div className="premium-panel-soft trips-card-surface rounded-[2rem] py-14 px-6 md:px-10">
               <div className="max-w-2xl">
                 <p className="label-ui uppercase tracking-[0.18em] text-primary/85 mb-3">
                   {lang === "gr" ? "Καμία Διαθεσιμότητα" : "No Availability"}
@@ -1262,7 +1262,7 @@ const TripResultCard = ({
         ease: [0.22, 1, 0.36, 1],
       }}
       onClick={() => onClick(trip)}
-      className="group premium-panel-soft trips-card-surface cursor-pointer rounded-[1.8rem] overflow-hidden flex flex-col sm:flex-row sm:h-[18rem] border-white/65 hover:border-primary/30 transform-gpu [backface-visibility:hidden] will-change-transform transition-[transform,opacity,border-color,box-shadow] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[1.01] active:scale-[0.97]"
+      className="group premium-panel-soft trips-card-surface cursor-pointer rounded-[1.8rem] overflow-hidden flex flex-col sm:flex-row sm:h-[18rem] transform-gpu [backface-visibility:hidden] will-change-transform transition-[transform,opacity,box-shadow] duration-elev ease-material hover:shadow-elev3 hover:scale-[1.01] active:scale-[0.97]"
     >
       <div className="sm:w-64 md:w-80 shrink-0 relative overflow-hidden h-56 sm:h-full">
         <ProgressiveImage

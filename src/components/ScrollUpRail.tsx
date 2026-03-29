@@ -65,10 +65,10 @@ const ScrollUpRail = () => {
         "scroll-up-rail-shell-pulse",
         "fixed bottom-6 right-4 z-[60] flex h-14 w-14 items-center justify-center",
         "md:bottom-8 md:right-6",
-        "rounded-full border border-border/60 bg-background/80 backdrop-blur-md",
-        "dark:border-white/18 dark:bg-background/75",
-        "cursor-pointer select-none transition-opacity duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
-        "hover:border-primary/35 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+        "rounded-full border-0 bg-background/80 backdrop-blur-md shadow-elev1",
+        "dark:bg-background/75",
+        "cursor-pointer select-none transition-[opacity,box-shadow] duration-elev ease-material",
+        "hover:text-foreground focus-visible:outline-none focus-visible:shadow-lg",
         visible
           ? "pointer-events-auto opacity-100"
           : "pointer-events-none opacity-0",

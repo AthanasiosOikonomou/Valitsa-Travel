@@ -79,6 +79,22 @@ export default {
         "3xl": "1.5rem",
         "4xl": "2rem",
       },
+      boxShadow: {
+        sm: "var(--shadow-sm)",
+        DEFAULT: "var(--shadow-md)",
+        md: "var(--shadow-md)",
+        lg: "var(--shadow-lg)",
+        elev1: "var(--shadow-elev-1)",
+        elev2: "var(--shadow-elev-2)",
+        elev3: "var(--shadow-elev-3)",
+        "input-inset": "var(--input-shadow-inset)",
+      },
+      transitionTimingFunction: {
+        material: "var(--motion-ease-material)",
+      },
+      transitionDuration: {
+        elev: "var(--motion-duration-elev)",
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },
