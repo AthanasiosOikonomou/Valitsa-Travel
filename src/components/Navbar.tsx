@@ -22,6 +22,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
   const { lang, setLang, t } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
+  const contactOwnedBlurRef = useRef(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuToggleRef = useRef<HTMLButtonElement>(null);
   const { pathname, search } = useLocation();
@@ -65,6 +66,24 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [menuOpen, contactOpen]);
+
+  useEffect(() => {
+    if (!contactOpen) return;
+
+    if (!document.body.classList.contains("modal-blur-active")) {
+      document.body.classList.add("modal-blur-active");
+      contactOwnedBlurRef.current = true;
+    } else {
+      contactOwnedBlurRef.current = false;
+    }
+
+    return () => {
+      if (contactOwnedBlurRef.current) {
+        document.body.classList.remove("modal-blur-active");
+        contactOwnedBlurRef.current = false;
+      }
+    };
+  }, [contactOpen]);
 
   useEffect(() => {
     if (!menuOpen) return;

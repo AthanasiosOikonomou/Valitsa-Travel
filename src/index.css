@@ -624,6 +624,32 @@ body.modal-blur-active .navbar-shell {
   }
 }
 
+@keyframes scroll-up-rail-breathe {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes scroll-up-rail-shell {
+  0%,
+  100% {
+    box-shadow: 0 2px 16px -8px hsl(var(--foreground) / 0.12);
+    border-color: hsl(var(--border) / 0.55);
+  }
+  50% {
+    box-shadow:
+      0 0 40px -4px hsl(var(--primary) / 0.65),
+      0 14px 32px -14px hsl(var(--primary) / 0.52);
+    border-color: hsl(var(--primary) / 0.68);
+  }
+}
+
 /* Performance tuning for phones: keep look/feel but reduce GPU-heavy effects. */
 @media (max-width: 768px) {
   .premium-page::before {
@@ -661,6 +687,48 @@ body.modal-blur-active .navbar-shell {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/*
+ * Scroll-up rail: keep outside @layer so these rules are not overridden by the unlayered
+ * `prefers-reduced-motion` * selector (same !important; class beats * on specificity).
+ * Subtle ~10s cycle is intentionally slow (calm breath), not a distracting loop.
+ */
+.scroll-up-rail-vertical {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+.scroll-up-rail-mask {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    black 12%,
+    black 88%,
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    black 12%,
+    black 88%,
+    transparent
+  );
+}
+
+.scroll-up-rail-breathe {
+  animation-name: scroll-up-rail-breathe;
+  animation-duration: 10s !important;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite !important;
+  transform-origin: center center;
+}
+
+.scroll-up-rail-shell-pulse {
+  animation-name: scroll-up-rail-shell;
+  animation-duration: 10s !important;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite !important;
 }
 
 .premium-page,

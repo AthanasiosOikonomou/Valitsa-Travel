@@ -24,6 +24,8 @@ const translations: Record<Lang, Record<string, string>> = {
 
     // Common
     "common.close": "Close",
+    "common.scrollUp": "Scroll up",
+    "common.scrollUpAria": "Scroll to top",
 
     // Contact Modal
     "contact.title": "Contact Us",
@@ -186,6 +188,8 @@ const translations: Record<Lang, Record<string, string>> = {
 
     // Common
     "common.close": "Κλείσιμο",
+    "common.scrollUp": "Επιστροφή στην κορυφή",
+    "common.scrollUpAria": "Κύλιση στην κορυφή",
 
     // Contact Modal
     "contact.title": "Επικοινωνία",

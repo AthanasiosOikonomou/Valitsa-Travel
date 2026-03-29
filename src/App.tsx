@@ -19,19 +19,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { instantScrollToTop } from "@/lib/instantScrollToTop";
+import ScrollUpRail from "@/components/ScrollUpRail";
 
 const Index = lazy(() => import("./pages/Index.tsx"));
 const Trips = lazy(() => import("./pages/Trips.tsx"));
 
 const queryClient = new QueryClient();
-
-const instantScrollToTop = () => {
-  // Temporarily disable smooth-scroll so the jump is instant
-  const prev = document.documentElement.style.scrollBehavior;
-  document.documentElement.style.scrollBehavior = "auto";
-  window.scrollTo(0, 0);
-  document.documentElement.style.scrollBehavior = prev;
-};
 
 const ScrollToTop = () => {
   const { key } = useLocation();
@@ -59,6 +53,7 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <NavbarWrapper />
+              <ScrollUpRail />
               <Suspense
                 fallback={
                   <div
