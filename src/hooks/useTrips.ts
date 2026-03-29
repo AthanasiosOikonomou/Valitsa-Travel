@@ -24,6 +24,8 @@ const TRIP_LIST_FIELDS = [
   "departure_city",
   "tags",
   "description",
+  "program",
+  "included",
 ];
 
 export interface TripFilters {

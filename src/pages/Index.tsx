@@ -139,7 +139,7 @@ const IndexContent = () => {
     } else {
       document.body.style.overflow = "";
     }
-    if (termsOpen) {
+    if (termsOpen || selectedTrip) {
       document.body.classList.add("modal-blur-active");
     } else {
       document.body.classList.remove("modal-blur-active");

@@ -39,9 +39,44 @@ const splitProgramStep = (value: string) => {
   };
 };
 
+const strField = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+
+const normalizeProgramEntry = (raw: unknown): { title: string; description: string } => {
+  if (raw == null) return { title: "", description: "" };
+  if (typeof raw === "string") {
+    const { title, detail } = splitProgramStep(raw);
+    return { title, description: detail };
+  }
+  if (typeof raw === "object") {
+    const o = raw as Record<string, unknown>;
+    let title =
+      strField(o.title) ||
+      strField(o.label) ||
+      strField(o.heading);
+    let description =
+      strField(o.description) ||
+      strField(o.body) ||
+      strField(o.text) ||
+      strField(o.content) ||
+      strField(o.detail);
+    const step = strField(o.step);
+    if (!title && !description && step) {
+      const { title: t0, detail } = splitProgramStep(step);
+      return { title: t0, description: detail };
+    }
+    if (!title && description) {
+      const { title: t0, detail } = splitProgramStep(description);
+      return { title: t0, description: detail };
+    }
+    return { title, description };
+  }
+  const { title, detail } = splitProgramStep(String(raw));
+  return { title, description: detail };
+};
+
 const TripDetail = ({ trip, onClose }: TripDetailProps) => {
   const [activeTab, setActiveTab] = useState<string>("description");
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
   const requiresCaptcha = !import.meta.env.DEV;
   // Use direct trip fields from Supabase
   const [formData, setFormData] = useState({
@@ -183,23 +218,42 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
   const updateField = (field: string, value: string) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
 
+  const programRows = Array.isArray(trip.program) ? trip.program : [];
+  const programItems = programRows
+    .map((raw) => normalizeProgramEntry(raw))
+    .filter((item) => item.title || item.description);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed inset-0 z-[100] bg-background overflow-y-auto transform-gpu [backface-visibility:hidden]"
+      role="presentation"
+      className="fixed inset-0 z-[120] flex items-center justify-center px-4 pt-20 pb-6 sm:pt-24 sm:pb-8 backdrop-blur-md bg-black/50 overflow-y-auto transform-gpu [backface-visibility:hidden]"
+      onClick={onClose}
     >
       <button
-        onClick={onClose}
-        className="fixed top-6 right-6 z-[110] p-3.5 bg-foreground text-background rounded-full hover:opacity-90 transition-[transform,opacity] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu [backface-visibility:hidden] active:scale-[0.97]"
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+        className="fixed top-6 right-6 z-[130] p-3.5 bg-foreground text-background rounded-full hover:opacity-90 transition-[transform,opacity] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu [backface-visibility:hidden] active:scale-[0.97]"
         aria-label={t("common.close")}
       >
         <X size={20} />
       </button>
 
-      <div className="max-w-7xl mx-auto px-6 md:px-10 pt-20 pb-24 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.98, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+        className="relative w-full max-w-7xl max-h-[min(92dvh,calc(100dvh-5.5rem))] overflow-y-auto rounded-[2rem] bg-background border border-border my-auto transform-gpu [backface-visibility:hidden]"
+        style={{ boxShadow: "var(--shadow-lg)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+      <div className="max-w-7xl mx-auto px-6 md:px-10 pt-8 pb-10 md:pb-12 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
         <div className="lg:col-span-7">
           <div className="relative w-full aspect-[16/10] rounded-[2rem] mb-10 overflow-hidden">
             <motion.div
@@ -294,12 +348,12 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                 )}
                 {activeTab === "program" && (
                   <ul className="space-y-0 pt-2">
-                    {trip.program?.map((item, i) => (
+                    {programItems.map((item, i) => (
                       <li
                         key={i}
                         className="relative flex gap-5 items-start pb-10 last:pb-0"
                       >
-                        {i < (trip.program?.length ?? 0) - 1 && (
+                        {i < programItems.length - 1 && (
                           <span
                             aria-hidden="true"
                             className="absolute left-[0.45rem] top-7 bottom-0 border-l border-dashed border-fuchsia-300/80 dark:border-fuchsia-700/60"
@@ -309,15 +363,19 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                           aria-hidden="true"
                           className="relative z-10 mt-2 flex h-4 w-4 shrink-0 rounded-full bg-gradient-to-br from-fuchsia-500 via-fuchsia-600 to-violet-700 shadow-[0_12px_26px_-16px_rgba(168,85,247,0.9)] ring-4 ring-fuchsia-100 dark:ring-fuchsia-950/50"
                         />
-                        <div className="flex-1 border-b border-fuchsia-100/80 pb-8 last:border-b-0 dark:border-fuchsia-900/30">
-                          <h4 className="text-[0.94rem] md:text-[0.98rem] font-semibold leading-6 tracking-[-0.012em] text-foreground mb-2">
-                            {item.title}
-                          </h4>
-                          {item.description && (
-                            <p className="text-[0.9rem] leading-7 tracking-[-0.008em] text-foreground-muted">
+                        <div className="flex-1 border-b border-fuchsia-100/80 pb-8 last:border-b-0 dark:border-fuchsia-900/30 min-w-0">
+                          {item.title ? (
+                            <h4 className="text-[0.94rem] md:text-[0.98rem] font-semibold leading-6 tracking-[-0.012em] text-foreground mb-2">
+                              {item.title}
+                            </h4>
+                          ) : null}
+                          {item.description ? (
+                            <p
+                              className={`text-[0.9rem] leading-7 tracking-[-0.008em] text-foreground-muted ${item.title ? "" : "text-foreground font-medium"}`}
+                            >
                               {item.description}
                             </p>
-                          )}
+                          ) : null}
                         </div>
                       </li>
                     ))}
@@ -346,7 +404,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
 
         {/* Right column — sticky form */}
         <div className="lg:col-span-5">
-          <div className="sticky top-20">
+          <div className="lg:sticky lg:top-6">
             <motion.div
               initial={{ opacity: 0, y: 10, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -356,7 +414,6 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                 ease: [0.22, 1, 0.36, 1],
               }}
               className="bg-card border border-border p-8 md:p-10 rounded-[2rem] transform-gpu [backface-visibility:hidden]"
-              style={{ boxShadow: "var(--shadow-lg)" }}
             >
               <div className="flex justify-between items-start mb-8">
                 <div>
@@ -538,6 +595,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
           </div>
         </div>
       </div>
+      </motion.div>
     </motion.div>
   );
 };

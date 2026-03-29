@@ -179,14 +179,14 @@ const TripsContent = () => {
   const [termsOpen, setTermsOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
 
-  // Blur background and navbar when terms modal is open
+  // Blur background and navbar when terms or trip detail overlay is open
   useEffect(() => {
     if (selectedTrip || termsOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
     }
-    if (termsOpen) {
+    if (termsOpen || selectedTrip) {
       document.body.classList.add("modal-blur-active");
     } else {
       document.body.classList.remove("modal-blur-active");
