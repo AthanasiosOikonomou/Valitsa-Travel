@@ -227,16 +227,16 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
     .map((raw) => normalizeProgramEntry(raw))
     .filter((item) => item.title || item.description);
 
-  const scrollPanelSoTabBorderAtTop = useCallback(() => {
+  const scrollPanelSoTabsInView = useCallback(() => {
     const panel = panelRef.current;
     const tabsRow = tabsRowRef.current;
     if (!panel || !tabsRow) return;
-    const relBottom =
-      tabsRow.getBoundingClientRect().bottom -
+    const relTop =
+      tabsRow.getBoundingClientRect().top -
       panel.getBoundingClientRect().top +
       panel.scrollTop;
     const maxScroll = Math.max(0, panel.scrollHeight - panel.clientHeight);
-    const target = Math.min(Math.max(0, relBottom), maxScroll);
+    const target = Math.min(Math.max(0, relTop - 8), maxScroll);
     panel.scrollTo({ top: target, behavior: "smooth" });
   }, []);
 
@@ -248,13 +248,10 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
     }
     const TAB_SWITCH_MS = 280;
     const id = window.setTimeout(() => {
-      requestAnimationFrame(() => {
-        scrollPanelSoTabBorderAtTop();
-        requestAnimationFrame(scrollPanelSoTabBorderAtTop);
-      });
+      requestAnimationFrame(scrollPanelSoTabsInView);
     }, TAB_SWITCH_MS);
     return () => window.clearTimeout(id);
-  }, [activeTab, scrollPanelSoTabBorderAtTop]);
+  }, [activeTab, scrollPanelSoTabsInView]);
 
   const handleTabClick = (tab: (typeof tabKeys)[number]) => {
     setActiveTab(tab);
@@ -267,16 +264,24 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
       role="presentation"
-      className="fixed inset-0 z-[120] flex items-center justify-center px-4 pt-24 pb-6 sm:pt-28 sm:pb-8 backdrop-blur-md bg-black/50 overflow-hidden overscroll-none transform-gpu [backface-visibility:hidden]"
-      onClick={onClose}
+      className="fixed inset-0 z-[120] overflow-hidden overscroll-none transform-gpu [backface-visibility:hidden]"
     >
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-md"
+        aria-hidden
+      />
+      <div
+        className="relative z-10 flex h-full min-h-0 w-full items-center justify-center px-4 pt-24 pb-6 sm:pt-28 sm:pb-8"
+        role="presentation"
+        onClick={onClose}
+      >
       <button
         type="button"
         onClick={(e) => {
           e.stopPropagation();
           onClose();
         }}
-        className="fixed top-6 right-6 z-[130] p-3.5 bg-foreground text-background rounded-full hover:opacity-90 transition-[transform,opacity] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu [backface-visibility:hidden] active:scale-[0.97]"
+        className="fixed top-6 right-6 z-[140] p-3.5 bg-foreground text-background rounded-full shadow-lg hover:opacity-90 transition-[transform,opacity] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] [isolation:isolate] active:scale-[0.97]"
         aria-label={t("common.close")}
       >
         <X size={20} />
@@ -295,7 +300,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
           className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain rounded-[2rem]"
         >
         <div className="max-w-7xl mx-auto px-6 md:px-10 pt-8 pb-10 md:pb-12 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
-          <div className="lg:col-span-7">
+          <div className="min-w-0 lg:col-span-7">
             <div className="relative w-full aspect-[16/10] rounded-[2rem] mb-10 overflow-hidden">
               <motion.div
                 initial={{ opacity: 0, scale: 0.98 }}
@@ -350,14 +355,14 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
               {/* Tabs */}
               <div
                 ref={tabsRowRef}
-                className="flex gap-1 mb-8 border-b border-border"
+                className="flex flex-wrap gap-x-1 gap-y-1 mb-8 border-b border-border"
               >
                 {tabKeys.map((tab) => (
                   <button
                     key={tab}
                     type="button"
                     onClick={() => handleTabClick(tab)}
-                    className={`relative px-5 py-3 text-sm font-semibold transition-colors duration-250 ${
+                    className={`relative min-h-[2.75rem] min-w-0 flex-1 basis-0 px-2 py-2.5 text-center text-xs font-semibold leading-snug transition-colors duration-250 [overflow-wrap:anywhere] sm:flex-none sm:basis-auto sm:px-5 sm:py-3 sm:text-sm ${
                       activeTab === tab
                         ? "text-foreground"
                         : "text-foreground-muted hover:text-foreground"
@@ -648,6 +653,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
         </div>
         </div>
       </motion.div>
+      </div>
     </motion.div>
   );
 };
