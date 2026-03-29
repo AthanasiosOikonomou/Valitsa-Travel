@@ -63,8 +63,8 @@ const ScrollUpRail = () => {
       onClick={() => instantScrollToTop()}
       className={[
         "scroll-up-rail-shell-pulse",
-        "fixed right-4 top-24 z-[60] flex h-12 w-12 items-center justify-center",
-        "md:right-6 md:top-28",
+        "fixed bottom-6 right-4 z-[60] flex h-14 w-14 items-center justify-center",
+        "md:bottom-8 md:right-6",
         "rounded-full border border-border/60 bg-background/80 backdrop-blur-md",
         "dark:border-white/18 dark:bg-background/75",
         "cursor-pointer select-none transition-opacity duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
@@ -75,9 +75,9 @@ const ScrollUpRail = () => {
       ].join(" ")}
     >
       <ArrowUp
-        className="scroll-up-rail-breathe size-5 shrink-0 text-foreground/90"
+        className="scroll-up-rail-breathe size-6 shrink-0 text-foreground/90"
         aria-hidden
-        strokeWidth={2.25}
+        strokeWidth={2.4}
       />
     </button>
   );
