@@ -6,7 +6,7 @@ import {
 } from "react";
 import { ArrowUp } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { instantScrollToTop } from "@/lib/instantScrollToTop";
+import { smoothScrollToTop } from "@/lib/instantScrollToTop";
 
 const SCROLL_THRESHOLD = 200;
 const MODAL_BLUR_CLASS = "modal-blur-active";
@@ -60,7 +60,7 @@ const ScrollUpRail = () => {
     <button
       type="button"
       aria-label={t("common.scrollUpAria")}
-      onClick={() => instantScrollToTop()}
+      onClick={() => smoothScrollToTop()}
       className={[
         "scroll-up-rail-shell-pulse",
         "fixed bottom-6 right-4 z-[60] flex h-14 w-14 items-center justify-center",
