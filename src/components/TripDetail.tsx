@@ -272,15 +272,16 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
         aria-hidden
       />
       <div
-        className="relative z-10 flex h-full min-h-0 w-full items-center justify-center px-4 pt-24 pb-6 sm:pt-28 sm:pb-8"
+        className="relative z-10 flex h-full min-h-0 w-full flex-col px-4 pt-24 pb-6 sm:pt-28 sm:pb-8"
         role="presentation"
         onClick={onClose}
       >
+        <div className="flex min-h-0 flex-1 items-center justify-center">
       <motion.div
         initial={{ opacity: 0, scale: 0.98, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-        className="surface-elevated relative flex min-h-0 w-full max-w-7xl max-h-[min(92dvh,calc(100dvh-5.5rem))] flex-col rounded-[2rem] bg-background shadow-lg my-auto transform-gpu [backface-visibility:hidden]"
+        className="surface-elevated relative flex max-h-full min-h-0 w-full max-w-7xl flex-col overflow-hidden rounded-[2rem] bg-background shadow-lg transform-gpu [backface-visibility:hidden]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative flex min-h-0 flex-1 flex-col">
@@ -634,6 +635,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
           <ModalScrollUpButton scrollContainerRef={panelRef} />
         </div>
       </motion.div>
+        </div>
       </div>
       <button
         type="button"
