@@ -208,7 +208,7 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
               <h2 className="text-lg font-bold">{t("contact.title")}</h2>
               <button
                 onClick={handleClose}
-                className="p-2 rounded-full hover:bg-muted transition-[transform,background-color,opacity] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu [backface-visibility:hidden] active:scale-[0.97]"
+                className="p-2 rounded-full hover:bg-muted transition-[transform,background-color,opacity] [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] transform-gpu [backface-visibility:hidden] active:scale-[0.97]"
               >
                 <X size={18} />
               </button>

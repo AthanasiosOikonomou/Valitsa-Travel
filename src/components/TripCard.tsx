@@ -49,7 +49,7 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
     >
       <div className="relative mb-5 aspect-[4/5] [perspective:1000px]">
         <div
-          className={`relative h-full w-full transform-gpu transition-all duration-[560ms] ease-[cubic-bezier(0.16,1,0.3,1)] [transform-style:preserve-3d] ${isFlipped ? "[transform:rotateY(180deg)]" : ""}`}
+          className={`relative h-full w-full transform-gpu transition-all [transition-duration:560ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] [transform-style:preserve-3d] ${isFlipped ? "[transform:rotateY(180deg)]" : ""}`}
           onPointerUp={(e) => {
             if (e.pointerType !== "touch") return;
             e.stopPropagation();
@@ -68,7 +68,7 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
               loading={index < 4 ? "eager" : "lazy"}
               fetchPriority={index < 4 ? "high" : "auto"}
               className="absolute inset-0"
-              imgClassName="transition-all duration-[560ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.05]"
+              imgClassName="transition-all [transition-duration:560ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.05]"
             />
 
             <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-black/35 to-transparent" />
@@ -88,7 +88,7 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
               </span>
             </div>
 
-            <div className="absolute inset-x-4 bottom-4 z-20 rounded-2xl border border-white/20 bg-black/40 p-4 shadow-xl backdrop-blur-md transition-all duration-[560ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-2">
+            <div className="absolute inset-x-4 bottom-4 z-20 rounded-2xl border border-white/20 bg-black/40 p-4 shadow-xl backdrop-blur-md transition-all [transition-duration:560ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-2">
               <div className="flex flex-col h-full">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/85">
                   {getField("type")}
@@ -132,7 +132,7 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
                 {getField("description")}
               </p>
               <button
-                className="mt-7 inline-flex min-w-[136px] items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-white/65 bg-transparent px-4 py-2.5 text-xs font-semibold text-white/95 transition-all duration-[560ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-white/10"
+                className="mt-7 inline-flex min-w-[136px] items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-white/65 bg-transparent px-4 py-2.5 text-xs font-semibold text-white/95 transition-all [transition-duration:560ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:bg-white/10"
                 onClick={(e) => {
                   e.stopPropagation();
                   onClick(trip);

@@ -146,7 +146,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
                   onClick={() => handleCategoryClick(cat.filter)}
                   onMouseEnter={prefetchTripsRoute}
                   onFocus={prefetchTripsRoute}
-                  className="px-4 py-2.5 rounded-full text-sm font-medium text-foreground-muted hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+                  className="px-4 py-2.5 rounded-full text-sm font-medium text-foreground-muted hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]"
                 >
                   {t(cat.key)}
                 </button>
@@ -182,10 +182,10 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
             >
               <div className="flex flex-col gap-1.5">
                 <span
-                  className={`block w-5 h-0.5 bg-foreground transition-transform duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${menuOpen ? "translate-y-[4px] rotate-45" : ""}`}
+                  className={`block w-5 h-0.5 bg-foreground transition-transform [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] ${menuOpen ? "translate-y-[4px] rotate-45" : ""}`}
                 />
                 <span
-                  className={`block w-5 h-0.5 bg-foreground transition-transform duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${menuOpen ? "-translate-y-[4px] -rotate-45" : ""}`}
+                  className={`block w-5 h-0.5 bg-foreground transition-transform [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] ${menuOpen ? "-translate-y-[4px] -rotate-45" : ""}`}
                 />
               </div>
             </button>
@@ -233,7 +233,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
                     <button
                       key={cat.key}
                       onClick={() => handleCategoryClick(cat.filter)}
-                      className="px-4 py-3 rounded-2xl text-sm font-medium text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] text-left"
+                      className="px-4 py-3 rounded-2xl text-sm font-medium text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] text-left"
                     >
                       {t(cat.key)}
                     </button>
@@ -244,7 +244,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
                   setContactOpen(true);
                   setMenuOpen(false);
                 }}
-                className="px-4 py-3 rounded-2xl text-sm font-medium text-primary hover:bg-white/70 dark:hover:bg-white/5 transition-colors duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] text-left"
+                className="px-4 py-3 rounded-2xl text-sm font-medium text-primary hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] text-left"
               >
                 {t("nav.contactBtn")}
               </button>

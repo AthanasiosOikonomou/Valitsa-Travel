@@ -77,7 +77,7 @@ const FilterSection = ({
       {title}
       <ChevronDown
         size={16}
-        className={`transition-transform duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${isOpen ? "rotate-180" : ""}`}
+        className={`transition-transform [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] ${isOpen ? "rotate-180" : ""}`}
       />
     </button>
     <AnimatePresence initial={false}>
@@ -1008,7 +1008,7 @@ const TripsContent = () => {
   const mobileFiltersContent = renderFiltersContent(false);
 
   return (
-    <div className="premium-page trips-page-surface min-h-screen bg-background text-foreground transition-colors duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] relative z-0">
+    <div className="premium-page trips-page-surface min-h-screen bg-background text-foreground transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] relative z-0">
       <Seo
         title={seoTitle}
         description={seoDescription}
@@ -1273,7 +1273,7 @@ const TripResultCard = ({
           height={900}
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 45vw, 30vw"
           className="h-48 sm:h-full"
-          imgClassName="group-hover:scale-[1.04] transition-transform duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+          imgClassName="group-hover:scale-[1.04] transition-transform [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]"
         />
         {/* Tags and bonus chip */}
         <div className="absolute left-4 top-4 z-20 flex flex-wrap gap-2">
@@ -1300,7 +1300,7 @@ const TripResultCard = ({
           <p className="label-ui text-primary/80 mb-2">
             {getField("date_range")}
           </p>
-          <h3 className="text-xl text-display mb-2 group-hover:text-primary transition-colors duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] leading-tight line-clamp-2 min-h-[3.75rem]">
+          <h3 className="text-xl text-display mb-2 group-hover:text-primary transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] leading-tight line-clamp-2 min-h-[3.75rem]">
             {getField("title")}
           </h3>
           <p className="premium-subheading text-sm mb-3 line-clamp-2 min-h-[3rem]">
@@ -1343,7 +1343,7 @@ const TripsDisabledPlaceholder = () => {
   }, [navigate, searchParams]);
 
   return (
-    <div className="premium-page trips-page-surface min-h-screen bg-background text-foreground transition-colors duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
+    <div className="premium-page trips-page-surface min-h-screen bg-background text-foreground transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]">
       <Seo
         title={t("trips.disabledSeoTitle")}
         description={t("trips.disabledSeoDescription")}
