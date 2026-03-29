@@ -243,6 +243,7 @@ Create `.env` from `.env.example` in the repository root:
 VITE_MAIL_API_URL=http://localhost:8787/api/send-inquiry
 VITE_TURNSTILE_SITE_KEY=your_turnstile_site_key
 # VITE_RECAPTCHA_SITE_KEY=your_recaptcha_site_key
+# VITE_SHOW_TRIPS=false hides trips UI site-wide (omit or true for normal behavior)
 ```
 
 ### 3) Configure backend environment

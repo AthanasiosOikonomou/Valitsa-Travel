@@ -118,6 +118,14 @@ const translations: Record<Lang, Record<string, string>> = {
     "archive.bonus": "Extra Perk",
     "archive.noResults": "No trips match your filters.",
 
+    "trips.disabledSeoTitle": "Valitsa Travel",
+    "trips.disabledSeoDescription":
+      "Contact us for travel planning and inquiries.",
+    "trips.disabledHeading": "Trips unavailable",
+    "trips.disabledBody":
+      "Our trip listings are not shown at the moment. Use the contact button in the menu and we will assist you.",
+    "trips.disabledHomeLink": "Back to home",
+
     // Trip Types
     "tripType.Exotic": "Exotic",
     "tripType.Road Trip": "Road Trip",
@@ -282,6 +290,14 @@ const translations: Record<Lang, Record<string, string>> = {
     "archive.guaranteed": "Εξασφαλισμένη",
     "archive.bonus": "Extra Παροχή",
     "archive.noResults": "Δεν βρέθηκαν ταξίδια με αυτά τα φίλτρα.",
+
+    "trips.disabledSeoTitle": "Valitsa Travel",
+    "trips.disabledSeoDescription":
+      "Επικοινωνήστε μαζί μας για οργάνωση ταξιδιών και ερωτήσεις.",
+    "trips.disabledHeading": "Τα ταξίδια δεν είναι διαθέσιμα",
+    "trips.disabledBody":
+      "Η λίστα ταξιδιών δεν εμφανίζεται αυτή τη στιγμή. Χρησιμοποιήστε το κουμπί επικοινωνίας στο μενού και θα σας βοηθήσουμε.",
+    "trips.disabledHomeLink": "Επιστροφή στην αρχική",
 
     // Trip Types
     "tripType.Exotic": "Εξωτικό",

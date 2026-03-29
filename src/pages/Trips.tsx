@@ -5,7 +5,7 @@ declare global {
     __valitsaFilterSectionChanged?: boolean;
   }
 }
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Search, SlidersHorizontal, X, ChevronDown } from "lucide-react";
 
@@ -41,6 +41,7 @@ import {
   type TripTypeFilter,
 } from "@/lib/tripFilters";
 import ProgressiveImage from "@/components/ProgressiveImage";
+import { showTrips } from "@/lib/showTrips";
 
 interface FilterSectionProps {
   id: string;
@@ -1330,8 +1331,52 @@ const TripResultCard = ({
   );
 };
 
+const TripsDisabledPlaceholder = () => {
+  const { t, lang } = useLanguage();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.toString()) {
+      navigate("/trips", { replace: true });
+    }
+  }, [navigate, searchParams]);
+
+  return (
+    <div className="premium-page trips-page-surface min-h-screen bg-background text-foreground transition-colors duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
+      <Seo
+        title={t("trips.disabledSeoTitle")}
+        description={t("trips.disabledSeoDescription")}
+        path="/trips"
+        image="/branding/navbar/logo-light.svg"
+        lang={lang}
+        noindex
+      />
+      <div className="pt-36 pb-10 px-6 md:px-10 max-w-7xl mx-auto">
+        <div className="premium-panel-soft trips-summary-surface rounded-[1.4rem] px-5 py-8 md:px-8 md:py-10 max-w-2xl">
+          <h1 className="text-2xl md:text-3xl text-display mb-4">
+            {t("trips.disabledHeading")}
+          </h1>
+          <p className="text-foreground-muted mb-8 leading-relaxed">
+            {t("trips.disabledBody")}
+          </p>
+          <Link
+            to="/"
+            className="premium-outline-button inline-flex text-sm"
+          >
+            {t("trips.disabledHomeLink")}
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const TripsPage = () => {
   const [searchParams] = useSearchParams();
+  if (!showTrips) {
+    return <TripsDisabledPlaceholder />;
+  }
   const activeFilter = searchParams.get("filter") ?? "all";
   return <TripsContent key={activeFilter} />;
 };

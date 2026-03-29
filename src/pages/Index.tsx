@@ -8,6 +8,7 @@ import FeaturedTrips from "@/components/FeaturedTrips";
 import TripDetail from "@/components/TripDetail";
 import Seo from "@/components/Seo";
 import TermsModal from "@/components/TermsModal";
+import { showTrips } from "@/lib/showTrips";
 
 const IndexContent = () => {
   const { darkMode, toggleDark } = useTheme();
@@ -161,15 +162,17 @@ const IndexContent = () => {
         ]}
       />
       <HeroSection />
-      <FeaturedTrips onSelectTrip={setSelectedTrip} />
+      {showTrips ? (
+        <FeaturedTrips onSelectTrip={setSelectedTrip} />
+      ) : null}
 
       <AnimatePresence>
-        {selectedTrip && (
+        {showTrips && selectedTrip ? (
           <TripDetail
             trip={selectedTrip}
             onClose={() => setSelectedTrip(null)}
           />
-        )}
+        ) : null}
       </AnimatePresence>
 
       <TermsModal open={termsOpen} onClose={() => setTermsOpen(false)} />

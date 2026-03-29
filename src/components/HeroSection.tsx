@@ -4,6 +4,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Link } from "react-router-dom";
 import { prefetchTripsRoute } from "@/lib/routePrefetch";
 import ProgressiveImage from "@/components/ProgressiveImage";
+import { showTrips } from "@/lib/showTrips";
 
 const HeroSection = () => {
   const { t } = useLanguage();
@@ -51,39 +52,43 @@ const HeroSection = () => {
             {t("hero.title")}
           </motion.h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 10, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{
-              duration: 0.5,
-              delay: 0.2,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-            className="premium-subheading text-white/80 text-lg md:text-xl mb-10 max-w-2xl mx-auto drop-shadow-[0_4px_18px_rgba(0,0,0,0.3)]"
-          >
-            {t("hero.subtitle")}
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{
-              duration: 0.5,
-              delay: 0.35,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-          >
-            <Link
-              to="/trips"
-              onMouseEnter={prefetchTripsRoute}
-              onFocus={prefetchTripsRoute}
-              onTouchStart={prefetchTripsRoute}
-              className="premium-button-light px-10 py-5 text-base"
+          {showTrips ? (
+            <motion.p
+              initial={{ opacity: 0, y: 10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{
+                duration: 0.5,
+                delay: 0.2,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              className="premium-subheading text-white/80 text-lg md:text-xl mb-10 max-w-2xl mx-auto drop-shadow-[0_4px_18px_rgba(0,0,0,0.3)]"
             >
-              {t("hero.cta")}
-              <ArrowRight size={20} />
-            </Link>
-          </motion.div>
+              {t("hero.subtitle")}
+            </motion.p>
+          ) : null}
+
+          {showTrips ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{
+                duration: 0.5,
+                delay: 0.35,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+            >
+              <Link
+                to="/trips"
+                onMouseEnter={prefetchTripsRoute}
+                onFocus={prefetchTripsRoute}
+                onTouchStart={prefetchTripsRoute}
+                className="premium-button-light px-10 py-5 text-base"
+              >
+                {t("hero.cta")}
+                <ArrowRight size={20} />
+              </Link>
+            </motion.div>
+          ) : null}
         </div>
       </div>
     </section>

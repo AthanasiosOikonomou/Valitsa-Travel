@@ -5,6 +5,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ContactModal from "@/components/ContactModal";
 import { prefetchTripsRoute } from "@/lib/routePrefetch";
+import { showTrips } from "@/lib/showTrips";
 
 interface NavbarProps {
   darkMode: boolean;
@@ -137,19 +138,21 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
           </Link>
 
           {/* Desktop categories */}
-          <div className="hidden lg:flex items-center gap-1">
-            {navCategories.map((cat) => (
-              <button
-                key={cat.key}
-                onClick={() => handleCategoryClick(cat.filter)}
-                onMouseEnter={prefetchTripsRoute}
-                onFocus={prefetchTripsRoute}
-                className="px-4 py-2.5 rounded-full text-sm font-medium text-foreground-muted hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
-              >
-                {t(cat.key)}
-              </button>
-            ))}
-          </div>
+          {showTrips ? (
+            <div className="hidden lg:flex items-center gap-1">
+              {navCategories.map((cat) => (
+                <button
+                  key={cat.key}
+                  onClick={() => handleCategoryClick(cat.filter)}
+                  onMouseEnter={prefetchTripsRoute}
+                  onFocus={prefetchTripsRoute}
+                  className="px-4 py-2.5 rounded-full text-sm font-medium text-foreground-muted hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+                >
+                  {t(cat.key)}
+                </button>
+              ))}
+            </div>
+          ) : null}
 
           <div className="flex shrink-0 gap-1.5 sm:gap-2 items-center">
             <button
@@ -225,15 +228,17 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
             style={{ boxShadow: "var(--shadow-elev-3)" }}
           >
             <div className="flex flex-col gap-2">
-              {navCategories.map((cat) => (
-                <button
-                  key={cat.key}
-                  onClick={() => handleCategoryClick(cat.filter)}
-                  className="px-4 py-3 rounded-2xl text-sm font-medium text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] text-left"
-                >
-                  {t(cat.key)}
-                </button>
-              ))}
+              {showTrips
+                ? navCategories.map((cat) => (
+                    <button
+                      key={cat.key}
+                      onClick={() => handleCategoryClick(cat.filter)}
+                      className="px-4 py-3 rounded-2xl text-sm font-medium text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] text-left"
+                    >
+                      {t(cat.key)}
+                    </button>
+                  ))
+                : null}
               <button
                 onClick={() => {
                   setContactOpen(true);
