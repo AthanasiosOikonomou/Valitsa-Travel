@@ -9,13 +9,17 @@ import nodemailer from "nodemailer";
 import path from "path";
 import { fileURLToPath } from "url";
 import { z } from "zod";
+import { createClient } from "@supabase/supabase-js";
 
-dotenv.config({ path: "server/.env" });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Root .env first (Vite / shared secrets), then server/.env overrides — cwd-independent paths.
+dotenv.config({ path: path.join(__dirname, "../.env") });
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 const app = express();
 const port = Number(process.env.API_PORT || 8787);
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const isProduction = process.env.NODE_ENV === "production";
 const requireCaptcha = isProduction;
 
@@ -147,6 +151,7 @@ const inquirySchema = z.object({
     .default(""),
   message: z.string().trim().min(10).max(2000),
   source: z.enum(["contact-modal", "trip-detail"]),
+  trip_id: z.string().uuid().nullable().optional(),
   trip_title: z.string().trim().max(180).optional().default(""),
   trip_location: z.string().trim().max(180).optional().default(""),
   trip_price: z.string().trim().max(60).optional().default(""),
@@ -247,6 +252,45 @@ const required = {
 
 // MAIL_CC is optional
 const mailCc = process.env.MAIL_CC || "";
+const supabaseUrl = process.env.VITE_SUPABASE_URL || "";
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const supabaseAdmin =
+  supabaseUrl && supabaseServiceKey
+    ? createClient(supabaseUrl, supabaseServiceKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      })
+    : null;
+
+const inquiriesDbEnabled = Boolean(supabaseAdmin);
+
+const persistInquiry = async ({
+  trip_id,
+  from_name,
+  from_email,
+  phone,
+  message,
+}) => {
+  if (!supabaseAdmin) {
+    console.warn(
+      "[inquiries] Supabase not configured — set VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env or server/.env. Email is still sent; the row is not saved.",
+    );
+    return;
+  }
+
+  const { error } = await supabaseAdmin.from("inquiries").insert({
+    trip_id: trip_id ?? null,
+    name: from_name.trim(),
+    email: from_email.trim().toLowerCase(),
+    phone: phone?.trim() ? phone.trim() : null,
+    message: message.trim(),
+  });
+
+  if (error) {
+    console.error("[inquiries] Supabase insert failed:", error);
+    throw new Error("Could not save your inquiry. Please try again.");
+  }
+};
+
 const mailLogoUrl = process.env.MAIL_LOGO_URL || "";
 const localLogoPath = path.resolve(
   __dirname,
@@ -269,7 +313,7 @@ const transporter = !hasMissingConfig
   : null;
 
 app.get(["/api/health", "/health"], (_req, res) => {
-  res.json({ ok: true });
+  res.json({ ok: true, inquiries_db: inquiriesDbEnabled });
 });
 
 app.post(inquiryRoutes, async (req, res) => {
@@ -308,6 +352,7 @@ app.post(inquiryRoutes, async (req, res) => {
     phone,
     message,
     source,
+    trip_id,
     trip_title,
     trip_location,
     trip_price,
@@ -322,6 +367,30 @@ app.post(inquiryRoutes, async (req, res) => {
       res.status(400).json({ error: "CAPTCHA verification failed." });
       return;
     }
+  }
+
+  const effectiveTripId = source === "trip-detail" ? (trip_id ?? null) : null;
+
+  if (source === "trip-detail" && !effectiveTripId) {
+    res.status(400).json({
+      error: "Trip reference is required for trip inquiries.",
+    });
+    return;
+  }
+
+  try {
+    await persistInquiry({
+      trip_id: effectiveTripId,
+      from_name,
+      from_email,
+      phone,
+      message,
+    });
+  } catch (err) {
+    const messageText =
+      err instanceof Error ? err.message : "Could not save inquiry.";
+    res.status(500).json({ error: messageText });
+    return;
   }
 
   const isTripInquiry = source === "trip-detail";
@@ -468,4 +537,9 @@ app.post(inquiryRoutes, async (req, res) => {
 
 app.listen(port, () => {
   console.log(`Mail API running on http://localhost:${port}`);
+  console.log(
+    inquiriesDbEnabled
+      ? "[inquiries] Supabase persistence enabled (public.inquiries)."
+      : "[inquiries] Supabase persistence OFF — inquiries are email-only until URL + service role key are set.",
+  );
 });

@@ -6,12 +6,12 @@ import {
   Phone,
   MessageSquare,
   Send,
-  CheckCircle,
   MessageCircle,
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { sendInquiryEmail } from "@/lib/email";
+import { createInquiry } from "@/lib/inquiries";
 import CaptchaField from "@/components/CaptchaField";
+import { toast } from "sonner";
 import ModalScrollUpButton from "@/components/ModalScrollUpButton";
 
 interface ContactModalProps {
@@ -24,7 +24,6 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
   useScrollLock(open);
   const requiresCaptcha = !import.meta.env.DEV;
   const [view, setView] = useState<"options" | "form">("options");
-  const [sent, setSent] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState("");
   const [captchaToken, setCaptchaToken] = useState("");
@@ -87,7 +86,6 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
     onClose();
     setTimeout(() => {
       setView("options");
-      setSent(false);
       setIsSending(false);
       setError("");
       setCaptchaToken("");
@@ -136,7 +134,7 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
     setIsSending(true);
 
     try {
-      await sendInquiryEmail({
+      await createInquiry({
         source: "contact-modal",
         firstName: form.firstName,
         lastName: form.lastName,
@@ -144,9 +142,9 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
         captchaToken: requiresCaptcha ? captchaToken : "dev-bypass",
         mobile: form.mobile,
         message: form.message,
+        tripId: null,
       });
 
-      setSent(true);
       setForm({
         firstName: "",
         lastName: "",
@@ -154,8 +152,12 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
         email: "",
         message: "",
       });
+      toast.success(t("contact.sent"), { description: t("contact.sentDesc") });
+      handleClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("contact.sendFailed"));
+      const msg = err instanceof Error ? err.message : t("contact.sendFailed");
+      setError(msg);
+      toast.error(t("contact.sendFailed"), { description: msg });
     } finally {
       setIsSending(false);
     }
@@ -173,16 +175,6 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open, handleClose]);
-
-  useEffect(() => {
-    if (!open || !sent) return;
-
-    const timer = window.setTimeout(() => {
-      handleClose();
-    }, 5000);
-
-    return () => window.clearTimeout(timer);
-  }, [open, sent, handleClose]);
 
   return (
     <AnimatePresence>
@@ -220,7 +212,7 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
                 className="h-full min-h-0 overflow-y-auto overscroll-y-contain"
               >
             <div className="p-6">
-              {view === "options" && !sent && (
+              {view === "options" && (
                 <div className="space-y-4">
                   {/* Call Us */}
                   <a
@@ -294,7 +286,7 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
                 </div>
               )}
 
-              {view === "form" && !sent && (
+              {view === "form" && (
                 <form onSubmit={handleSubmit} noValidate className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -431,7 +423,8 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
                     <button
                       type="submit"
                       disabled={isSending}
-                      className="btn-elev-inverse flex-1 flex items-center justify-center gap-2 bg-foreground text-background px-5 py-3 rounded-xl text-sm font-bold hover:opacity-90 transform-gpu [backface-visibility:hidden]"
+                      aria-busy={isSending}
+                      className="btn-elev-inverse flex-1 flex items-center justify-center gap-2 bg-foreground text-background px-5 py-3 rounded-xl text-sm font-bold hover:opacity-90 transform-gpu [backface-visibility:hidden] disabled:opacity-60 disabled:pointer-events-none"
                     >
                       <Send size={16} />
                       {isSending ? t("contact.sending") : t("contact.send")}
@@ -445,25 +438,6 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
                 </form>
               )}
 
-              {sent && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                  className="text-center py-8"
-                >
-                  <CheckCircle
-                    size={48}
-                    className="text-primary mx-auto mb-4"
-                  />
-                  <h3 className="text-lg font-bold mb-2">
-                    {t("contact.sent")}
-                  </h3>
-                  <p className="text-foreground-muted text-sm">
-                    {t("contact.sentDesc")}
-                  </p>
-                </motion.div>
-              )}
             </div>
               </div>
               <ModalScrollUpButton scrollContainerRef={bodyScrollRef} />

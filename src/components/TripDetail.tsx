@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, Clock, Check } from "lucide-react";
 import type { Trip } from "@/types/Trip";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { sendInquiryEmail } from "@/lib/email";
+import { createInquiry } from "@/lib/inquiries";
+import { toast } from "sonner";
 import CaptchaField from "@/components/CaptchaField";
 import ProgressiveImage from "@/components/ProgressiveImage";
 import { useScrollLock } from "@/hooks/useScrollLock";
@@ -138,7 +139,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
     setIsSending(true);
 
     try {
-      await sendInquiryEmail({
+      await createInquiry({
         source: "trip-detail",
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -146,6 +147,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
         captchaToken: requiresCaptcha ? captchaToken : "dev-bypass",
         mobile: formData.mobile,
         message: formData.message,
+        tripId: trip.id,
         tripTitle: getDetailField("title"),
         tripLocation: getDetailField("location"),
         tripPrice: formatTripPrice(trip.price_num, lang),
@@ -164,8 +166,12 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
         message: "",
       });
       setCaptchaToken("");
+      toast.success(t("contact.sent"), { description: t("contact.sentDesc") });
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("detail.sendFailed"));
+      const msg =
+        err instanceof Error ? err.message : t("detail.sendFailed");
+      setError(msg);
+      toast.error(t("detail.sendFailed"), { description: msg });
     } finally {
       setIsSending(false);
     }
@@ -560,7 +566,8 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                     <button
                       type="submit"
                       disabled={isSending}
-                      className="btn-elev-primary w-full bg-primary text-primary-foreground py-4 rounded-2xl font-bold text-sm hover:bg-primary/90 min-h-[56px]"
+                      aria-busy={isSending}
+                      className="btn-elev-primary w-full bg-primary text-primary-foreground py-4 rounded-2xl font-bold text-sm hover:bg-primary/90 min-h-[56px] disabled:opacity-60 disabled:pointer-events-none"
                     >
                       {isSending
                         ? t("detail.sending")
