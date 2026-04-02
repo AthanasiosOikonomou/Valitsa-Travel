@@ -13,6 +13,10 @@ import {
   pickLocalizedProgram,
   pickLocalizedStringList,
 } from "@/lib/tripLocaleArrays";
+import {
+  ItineraryTimeline,
+  toItineraryItem,
+} from "@/components/ItineraryTimeline";
 
 interface TripDetailProps {
   trip: Trip;
@@ -20,65 +24,6 @@ interface TripDetailProps {
 }
 
 const tabKeys = ["description", "program", "included"] as const;
-
-const formatProgramStep = (value: string) =>
-  value.replace(/^((Day|Days|Ημέρα|Ημέρες)\s*\d+(?:[–-]\d+)?\s*[—:-]\s*)/i, "");
-
-const splitProgramStep = (value: string) => {
-  const richParts = value.split(/\s*\|\|\s*/);
-  if (richParts.length > 1) {
-    return {
-      title: richParts[0].trim(),
-      detail: richParts.slice(1).join(" ").trim(),
-    };
-  }
-
-  const cleaned = formatProgramStep(value).trim();
-  const parts = cleaned.split(/,\s+|·\s+|•\s+/);
-
-  if (parts.length <= 1) {
-    return { title: cleaned, detail: "" };
-  }
-
-  return {
-    title: parts[0],
-    detail: parts.slice(1).join(", "),
-  };
-};
-
-const strField = (v: unknown) => (typeof v === "string" ? v.trim() : "");
-
-const normalizeProgramEntry = (
-  raw: unknown,
-): { title: string; description: string } => {
-  if (raw == null) return { title: "", description: "" };
-  if (typeof raw === "string") {
-    const { title, detail } = splitProgramStep(raw);
-    return { title, description: detail };
-  }
-  if (typeof raw === "object") {
-    const o = raw as Record<string, unknown>;
-    let title = strField(o.title) || strField(o.label) || strField(o.heading);
-    let description =
-      strField(o.description) ||
-      strField(o.body) ||
-      strField(o.text) ||
-      strField(o.content) ||
-      strField(o.detail);
-    const step = strField(o.step);
-    if (!title && !description && step) {
-      const { title: t0, detail } = splitProgramStep(step);
-      return { title: t0, description: detail };
-    }
-    if (!title && description) {
-      const { title: t0, detail } = splitProgramStep(description);
-      return { title: t0, description: detail };
-    }
-    return { title, description };
-  }
-  const { title, detail } = splitProgramStep(String(raw));
-  return { title, description: detail };
-};
 
 const TripDetail = ({ trip, onClose }: TripDetailProps) => {
   const [activeTab, setActiveTab] = useState<string>("description");
@@ -255,7 +200,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
   );
 
   const programItems = programSource
-    .map((raw) => normalizeProgramEntry(raw))
+    .map((raw) => toItineraryItem(raw))
     .filter((item) => item.title || item.description);
 
   const scrollPanelSoTabsInView = useCallback(() => {
@@ -418,39 +363,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                     </p>
                   )}
                   {activeTab === "program" && (
-                    <ul className="space-y-0 pt-2">
-                      {programItems.map((item, i) => (
-                        <li
-                          key={i}
-                          className="relative flex gap-5 items-start pb-10 last:pb-0"
-                        >
-                          {i < programItems.length - 1 && (
-                            <span
-                              aria-hidden="true"
-                              className="absolute left-[0.45rem] top-7 bottom-0 border-l border-dashed border-fuchsia-300/80 dark:border-fuchsia-700/60"
-                            />
-                          )}
-                          <span
-                            aria-hidden="true"
-                            className="relative z-10 mt-2 flex h-4 w-4 shrink-0 rounded-full bg-gradient-to-br from-fuchsia-500 via-fuchsia-600 to-violet-700 shadow-[0_12px_26px_-16px_rgba(168,85,247,0.9)] ring-4 ring-fuchsia-100 dark:ring-fuchsia-950/50"
-                          />
-                          <div className="flex-1 border-b border-fuchsia-100/80 pb-8 last:border-b-0 dark:border-fuchsia-900/30 min-w-0">
-                            {item.title ? (
-                              <h4 className="text-[0.94rem] md:text-[0.98rem] font-semibold leading-6 tracking-[-0.012em] text-foreground mb-2">
-                                {item.title}
-                              </h4>
-                            ) : null}
-                            {item.description ? (
-                              <p
-                                className={`text-[0.9rem] leading-7 tracking-[-0.008em] text-foreground-muted ${item.title ? "" : "text-foreground font-medium"}`}
-                              >
-                                {item.description}
-                              </p>
-                            ) : null}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
+                    <ItineraryTimeline items={programItems} />
                   )}
                   {activeTab === "included" && (
                     <ul className="space-y-3.5">
