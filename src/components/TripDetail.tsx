@@ -8,6 +8,11 @@ import CaptchaField from "@/components/CaptchaField";
 import ProgressiveImage from "@/components/ProgressiveImage";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import ModalScrollUpButton from "@/components/ModalScrollUpButton";
+import { formatTripDuration, formatTripPrice } from "@/lib/tripDisplay";
+import {
+  pickLocalizedProgram,
+  pickLocalizedStringList,
+} from "@/lib/tripLocaleArrays";
 
 interface TripDetailProps {
   trip: Trip;
@@ -77,7 +82,19 @@ const normalizeProgramEntry = (
 
 const TripDetail = ({ trip, onClose }: TripDetailProps) => {
   const [activeTab, setActiveTab] = useState<string>("description");
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+
+  const getDetailField = (field: string) => {
+    if (
+      lang === "gr" &&
+      trip[`${field}_el` as keyof Trip] !== undefined &&
+      trip[`${field}_el` as keyof Trip] !== null &&
+      trip[`${field}_el` as keyof Trip] !== ""
+    ) {
+      return trip[`${field}_el` as keyof Trip] as string;
+    }
+    return trip[field as keyof Trip] as string;
+  };
   useScrollLock(true);
 
   const panelRef = useRef<HTMLDivElement>(null);
@@ -184,9 +201,9 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
         captchaToken: requiresCaptcha ? captchaToken : "dev-bypass",
         mobile: formData.mobile,
         message: formData.message,
-        tripTitle: trip.title,
-        tripLocation: trip.location,
-        tripPrice: trip.price_text,
+        tripTitle: getDetailField("title"),
+        tripLocation: getDetailField("location"),
+        tripPrice: formatTripPrice(trip.price_num, lang),
         tripUrl:
           typeof window !== "undefined"
             ? `${window.location.origin}/trips?trip=${trip.id}`
@@ -223,8 +240,21 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
   const updateField = (field: string, value: string) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
 
-  const programRows = Array.isArray(trip.program) ? trip.program : [];
-  const programItems = programRows
+  const programSource = pickLocalizedProgram(
+    lang,
+    trip.program_el,
+    trip.program,
+  );
+
+  const displayTags = pickLocalizedStringList(lang, trip.tags_el, trip.tags);
+
+  const displayIncluded = pickLocalizedStringList(
+    lang,
+    trip.included_el,
+    trip.included,
+  );
+
+  const programItems = programSource
     .map((raw) => normalizeProgramEntry(raw))
     .filter((item) => item.title || item.description);
 
@@ -300,7 +330,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
               >
                 <ProgressiveImage
                   src={trip.image}
-                  alt={trip.title ?? ""}
+                  alt={getDetailField("title") ?? ""}
                   width={1600}
                   height={1000}
                   sizes="(max-width: 1024px) 100vw, 58vw"
@@ -320,19 +350,20 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
             >
               <div className="flex items-center gap-4 text-foreground-muted text-sm mb-4">
                 <span className="flex items-center gap-1.5">
-                  <MapPin size={14} /> {trip.location}
+                  <MapPin size={14} /> {getDetailField("location")}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <Clock size={14} /> {trip.duration_text}
+                  <Clock size={14} />{" "}
+                  {formatTripDuration(trip.duration_days, lang)}
                 </span>
               </div>
 
               <h2 className="text-4xl md:text-5xl text-display mb-6">
-                {trip.title}
+                {getDetailField("title")}
               </h2>
 
               <div className="flex gap-2 flex-wrap mb-10">
-                {trip.tags?.map((tag) => (
+                {displayTags.map((tag) => (
                   <span
                     key={tag}
                     className="px-4 py-2 bg-muted rounded-full text-sm font-medium"
@@ -375,7 +406,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
 
               <AnimatePresence mode="wait">
                 <motion.div
-                  key={activeTab}
+                  key={`${activeTab}-${lang}`}
                   initial={{ opacity: 0, y: 8, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -8, scale: 0.98 }}
@@ -383,7 +414,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                 >
                   {activeTab === "description" && (
                     <p className="text-body-prose text-lg leading-relaxed">
-                      {trip.description}
+                      {getDetailField("description")}
                     </p>
                   )}
                   {activeTab === "program" && (
@@ -423,7 +454,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                   )}
                   {activeTab === "included" && (
                     <ul className="space-y-3.5">
-                      {trip.included?.map((item, i) => (
+                      {displayIncluded.map((item, i) => (
                         <li
                           key={i}
                           className="flex gap-3.5 items-start rounded-[1.15rem] border border-fuchsia-100/70 bg-gradient-to-r from-fuchsia-50/65 via-white to-white px-4 py-3.5 text-[0.92rem] leading-7 tracking-[-0.008em] text-foreground-muted dark:border-fuchsia-900/30 dark:from-fuchsia-950/20 dark:via-card dark:to-card"
@@ -460,10 +491,12 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                     <p className="label-ui text-foreground-muted mb-1">
                       {t("detail.startingFrom")}
                     </p>
-                    <p className="text-3xl font-bold">{trip.price_text}</p>
+                    <p className="text-3xl font-bold">
+                      {formatTripPrice(trip.price_num, lang)}
+                    </p>
                   </div>
                   <span className="label-ui text-primary bg-primary/10 px-3 py-1.5 rounded-full">
-                    {trip.duration_text}
+                    {formatTripDuration(trip.duration_days, lang)}
                   </span>
                 </div>
 

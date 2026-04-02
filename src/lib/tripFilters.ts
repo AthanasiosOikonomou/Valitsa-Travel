@@ -13,11 +13,7 @@ type MultiSelectKey =
   | "selectedCities"
   | "selectedCategories";
 
-type FlagKey =
-  | "showBonus"
-  | "showGuaranteed"
-  | "showAvailable"
-  | "showFeatured";
+type FlagKey = "showFeatured";
 
 type FacetKey =
   | "continent"
@@ -26,9 +22,6 @@ type FacetKey =
   | "city"
   | "category"
   | "tripType"
-  | "bonus"
-  | "guaranteed"
-  | "available"
   | "featured"
   | "price";
 
@@ -45,9 +38,6 @@ export interface TripFilterState {
   selectedDurations: number[];
   selectedCities: string[];
   selectedCategories: string[];
-  showBonus: boolean;
-  showGuaranteed: boolean;
-  showAvailable: boolean;
   showFeatured: boolean;
   tripType: TripTypeFilter;
   sortBy: SortOption;
@@ -73,9 +63,6 @@ export interface TripFilterMetadata {
   cities: string[];
   categories: string[];
   tripTypes: Trip["type"][];
-  hasBonusTrips: boolean;
-  hasGuaranteedTrips: boolean;
-  hasAvailableTrips: boolean;
   hasFeaturedTrips: boolean;
 }
 
@@ -88,9 +75,6 @@ export interface AvailableTripFacets {
   categoryCounts: Map<string, number>;
   tripTypeCounts: Map<Trip["type"], number>;
   specialCounts: {
-    bonus: number;
-    guaranteed: number;
-    available: number;
     featured: number;
   };
 }
@@ -129,10 +113,11 @@ const getContinent = (country: string) => countryToContinent[country] ?? "Other"
 
 // Helper to get the correct field based on language
 function getTripField(trip: Trip, field: string, lang: TripLang): any {
-  if (lang === "gr" && trip[`${field}_el`] !== undefined) {
-    return trip[`${field}_el`] ?? trip[field];
+  if (lang === "gr" && trip[`${field}_el` as keyof Trip] !== undefined) {
+    const el = trip[`${field}_el` as keyof Trip];
+    return el ?? trip[field as keyof Trip];
   }
-  return trip[field];
+  return trip[field as keyof Trip];
 }
 
 const addCount = <T>(map: Map<T, number>, key: T) => {
@@ -180,9 +165,6 @@ export const buildTripFilterMetadata = (trips: Trip[], lang: TripLang): TripFilt
     cities: sortUniqueStrings(trips.map((trip) => getTripField(trip, "departure_city", lang) ?? "")),
     categories: sortUniqueStrings(trips.map((trip) => getTripField(trip, "category", lang) ?? "")),
     tripTypes: [...new Set(trips.map((trip) => getTripField(trip, "type", lang) ?? ""))],
-    hasBonusTrips: trips.some((trip) => trip.is_bonus),
-    hasGuaranteedTrips: trips.some((trip) => trip.guaranteed_departure),
-    hasAvailableTrips: trips.some((trip) => trip.has_available_seats),
     hasFeaturedTrips: trips.some((trip) => trip.is_featured),
   };
 };
@@ -204,9 +186,6 @@ export const createInitialTripFilterState = (
     selectedDurations: preset?.selectedDurations ?? [],
     selectedCities: [],
     selectedCategories: preset?.selectedCategories ?? [],
-    showBonus: false,
-    showGuaranteed: false,
-    showAvailable: false,
     showFeatured: false,
     tripType: "all",
     sortBy: "recommended",
@@ -349,6 +328,12 @@ export const buildFilteredTrips = (
   lang: TripLang,
 ) => trips.filter((trip) => matchesTripFilters(trip, state, lang));
 
+const tripCreatedTime = (trip: Trip) => {
+  if (!trip.created_at) return 0;
+  const t = new Date(trip.created_at).getTime();
+  return Number.isNaN(t) ? 0 : t;
+};
+
 export const sortTrips = (trips: Trip[], sortBy: SortOption) => {
   const sortedTrips = [...trips];
 
@@ -366,11 +351,12 @@ export const sortTrips = (trips: Trip[], sortBy: SortOption) => {
     case "recommended":
     default:
       sortedTrips.sort((left, right) => {
-        const leftScore =
-          Number(Boolean(left.is_featured)) + Number(Boolean(left.is_bonus));
-        const rightScore =
-          Number(Boolean(right.is_featured)) + Number(Boolean(right.is_bonus));
-        return rightScore - leftScore;
+        const leftFeatured = Number(Boolean(left.is_featured));
+        const rightFeatured = Number(Boolean(right.is_featured));
+        if (rightFeatured !== leftFeatured) {
+          return rightFeatured - leftFeatured;
+        }
+        return tripCreatedTime(right) - tripCreatedTime(left);
       });
       return sortedTrips;
   }
@@ -424,18 +410,6 @@ export const sanitizeTripFilterState = (
     selectedCategories: state.selectedCategories.filter((value) =>
       availableFacets.categoryCounts.has(value),
     ),
-    showBonus:
-      state.showBonus &&
-      metadata.hasBonusTrips &&
-      availableFacets.specialCounts.bonus > 0,
-    showGuaranteed:
-      state.showGuaranteed &&
-      metadata.hasGuaranteedTrips &&
-      availableFacets.specialCounts.guaranteed > 0,
-    showAvailable:
-      state.showAvailable &&
-      metadata.hasAvailableTrips &&
-      availableFacets.specialCounts.available > 0,
     showFeatured:
       state.showFeatured &&
       metadata.hasFeaturedTrips &&
@@ -460,9 +434,6 @@ export const areTripFilterStatesEqual = (
   arraysEqual(left.selectedDurations, right.selectedDurations) &&
   arraysEqual(left.selectedCities, right.selectedCities) &&
   arraysEqual(left.selectedCategories, right.selectedCategories) &&
-  left.showBonus === right.showBonus &&
-  left.showGuaranteed === right.showGuaranteed &&
-  left.showAvailable === right.showAvailable &&
   left.showFeatured === right.showFeatured &&
   left.tripType === right.tripType &&
   left.sortBy === right.sortBy;
@@ -521,32 +492,15 @@ const getSpecialCounts = (
   state: TripFilterState,
   lang: TripLang,
 ) => {
-  let bonus = 0;
-  let guaranteed = 0;
-  let available = 0;
   let featured = 0;
 
   for (const trip of trips) {
-    if (matchesTripFilters(trip, state, lang, "bonus") && trip.is_bonus)
-      bonus += 1;
-    if (
-      matchesTripFilters(trip, state, lang, "guaranteed") &&
-      trip.guaranteed_departure
-    ) {
-      guaranteed += 1;
-    }
-    if (
-      matchesTripFilters(trip, state, lang, "available") &&
-      trip.has_available_seats
-    ) {
-      available += 1;
-    }
     if (matchesTripFilters(trip, state, lang, "featured") && trip.is_featured) {
       featured += 1;
     }
   }
 
-  return { bonus, guaranteed, available, featured };
+  return { featured };
 };
 
 const matchesTripFilters = (
@@ -612,22 +566,6 @@ const matchesTripFilters = (
     return false;
   }
 
-  if (excludedFacet !== "bonus" && state.showBonus && !trip.is_bonus)
-    return false;
-  if (
-    excludedFacet !== "guaranteed" &&
-    state.showGuaranteed &&
-    !trip.guaranteed_departure
-  ) {
-    return false;
-  }
-  if (
-    excludedFacet !== "available" &&
-    state.showAvailable &&
-    !trip.has_available_seats
-  ) {
-    return false;
-  }
   if (excludedFacet !== "featured" && state.showFeatured && !trip.is_featured) {
     return false;
   }

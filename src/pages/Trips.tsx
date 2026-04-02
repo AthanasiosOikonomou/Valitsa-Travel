@@ -42,6 +42,11 @@ import {
 } from "@/lib/tripFilters";
 import ProgressiveImage from "@/components/ProgressiveImage";
 import { showTrips } from "@/lib/showTrips";
+import {
+  formatTripDuration,
+  formatTripPrice,
+} from "@/lib/tripDisplay";
+import { pickLocalizedStringList } from "@/lib/tripLocaleArrays";
 
 interface FilterSectionProps {
   id: string;
@@ -218,25 +223,7 @@ const TripsContent = () => {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    supabase
-      .from("trips")
-      .select(
-        `
-        *,
-        title, title_el,
-        location, location_el,
-        country, country_el,
-        price_text, price_text_el,
-        duration_text, duration_text_el,
-        type, type_el,
-        image, image_el,
-        category, category_el,
-        transport, transport_el,
-        date_range, date_range_el,
-        departure_city, departure_city_el,
-        description, description_el
-      `,
-      )
+    supabase.from("trips").select("*")
       .then(({ data, error }) => {
         if (error) {
           setError(error.message);
@@ -335,11 +322,11 @@ const TripsContent = () => {
         position: idx + 1,
         name: getField(trip, "title"),
         url: `https://valitsatravel.gr/trips?trip=${trip.id}`,
-        image: getField(trip, "image"),
+        image: trip.image ?? undefined,
         description: getField(trip, "description"),
-        priceCurrency: "USD",
+        priceCurrency: "EUR",
         price: String(trip.price_num ?? ""),
-        duration: getField(trip, "duration_text"),
+        duration: formatTripDuration(trip.duration_days, lang),
       };
     }),
   };
@@ -723,80 +710,27 @@ const TripsContent = () => {
         </div>
       </FilterSection>
 
-      {(filterMetadata.hasBonusTrips ||
-        filterMetadata.hasGuaranteedTrips ||
-        filterMetadata.hasAvailableTrips ||
-        filterMetadata.hasFeaturedTrips) && (
+      {filterMetadata.hasFeaturedTrips && (
         <FilterSection
           id="special"
           title={t("archive.specialFilters")}
           isOpen={openSections.special}
           onToggle={toggleSection}
         >
-          {filterMetadata.hasBonusTrips && (
-            <FacetOption
-              type="checkbox"
-              label={t("archive.bonusTrips")}
-              checked={normalizedFilterState.showBonus}
-              count={availableFacets.specialCounts.bonus}
-              disabled={isDisabled(
-                availableFacets.specialCounts.bonus,
-                normalizedFilterState.showBonus,
-              )}
-              onChange={() => {
-                window.__valitsaFilterSectionChanged = true;
-                dispatch({ type: "toggleFlag", key: "showBonus" });
-              }}
-            />
-          )}
-          {filterMetadata.hasGuaranteedTrips && (
-            <FacetOption
-              type="checkbox"
-              label={t("archive.guaranteedDepartures")}
-              checked={normalizedFilterState.showGuaranteed}
-              count={availableFacets.specialCounts.guaranteed}
-              disabled={isDisabled(
-                availableFacets.specialCounts.guaranteed,
-                normalizedFilterState.showGuaranteed,
-              )}
-              onChange={() => {
-                window.__valitsaFilterSectionChanged = true;
-                dispatch({ type: "toggleFlag", key: "showGuaranteed" });
-              }}
-            />
-          )}
-          {filterMetadata.hasAvailableTrips && (
-            <FacetOption
-              type="checkbox"
-              label={t("archive.availableSeats")}
-              checked={normalizedFilterState.showAvailable}
-              count={availableFacets.specialCounts.available}
-              disabled={isDisabled(
-                availableFacets.specialCounts.available,
-                normalizedFilterState.showAvailable,
-              )}
-              onChange={() => {
-                window.__valitsaFilterSectionChanged = true;
-                dispatch({ type: "toggleFlag", key: "showAvailable" });
-              }}
-            />
-          )}
-          {filterMetadata.hasFeaturedTrips && (
-            <FacetOption
-              type="checkbox"
-              label={t("archive.featuredPicks")}
-              checked={normalizedFilterState.showFeatured}
-              count={availableFacets.specialCounts.featured}
-              disabled={isDisabled(
-                availableFacets.specialCounts.featured,
-                normalizedFilterState.showFeatured,
-              )}
-              onChange={() => {
-                window.__valitsaFilterSectionChanged = true;
-                dispatch({ type: "toggleFlag", key: "showFeatured" });
-              }}
-            />
-          )}
+          <FacetOption
+            type="checkbox"
+            label={t("archive.featuredPicks")}
+            checked={normalizedFilterState.showFeatured}
+            count={availableFacets.specialCounts.featured}
+            disabled={isDisabled(
+              availableFacets.specialCounts.featured,
+              normalizedFilterState.showFeatured,
+            )}
+            onChange={() => {
+              window.__valitsaFilterSectionChanged = true;
+              dispatch({ type: "toggleFlag", key: "showFeatured" });
+            }}
+          />
         </FilterSection>
       )}
 
@@ -1253,6 +1187,8 @@ const TripResultCard = ({
     return trip[field];
   };
 
+  const displayTags = pickLocalizedStringList(lang, trip.tags_el, trip.tags);
+
   return (
     <motion.div
       initial={animateEntry ? { opacity: 0, y: 10, scale: 0.98 } : false}
@@ -1277,9 +1213,8 @@ const TripResultCard = ({
         />
         {/* Tags and bonus chip */}
         <div className="absolute left-4 top-4 z-20 flex flex-wrap gap-2">
-          {Array.isArray(trip.tags) &&
-            trip.tags.length > 0 &&
-            trip.tags.map((tag) => (
+          {displayTags.length > 0 &&
+            displayTags.map((tag) => (
               <span
                 key={tag}
                 className="premium-chip border-white/45 bg-black/35 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm"
@@ -1287,11 +1222,6 @@ const TripResultCard = ({
                 {tag}
               </span>
             ))}
-          {trip.is_bonus && (
-            <span className="premium-chip border-white/45 bg-black/35 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm">
-              {t("archive.bonus")}
-            </span>
-          )}
         </div>
       </div>
 
@@ -1311,16 +1241,11 @@ const TripResultCard = ({
         <div className="flex flex-wrap items-center justify-between gap-3 mt-2">
           <div className="flex items-center gap-4 text-sm">
             <span className="font-bold text-primary text-base">
-              {getField("price_text")}
+              {formatTripPrice(trip.price_num, lang)}
             </span>
             <span className="text-foreground-muted">
-              {getField("duration_text")}
+              {formatTripDuration(trip.duration_days, lang)}
             </span>
-            {trip.guaranteed_departure && (
-              <span className="premium-outline-button px-3 py-1.5 text-xs">
-                {t("archive.guaranteed")}
-              </span>
-            )}
           </div>
           <span className="premium-outline-button text-sm">
             {t("archive.more")} →

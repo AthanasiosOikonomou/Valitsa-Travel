@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Trip } from "@/types/Trip";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ProgressiveImage from "@/components/ProgressiveImage";
+import { formatTripDuration, formatTripPrice } from "@/lib/tripDisplay";
 
 interface TripCardProps {
   trip: Trip;
@@ -78,13 +79,13 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
                 data-nosnippet
                 className="premium-chip border-white/45 bg-black/35 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-sm"
               >
-                {getField("price_text")}
+                {formatTripPrice(trip.price_num, lang)}
               </span>
               <span
                 data-nosnippet
                 className="premium-chip border-white/45 bg-black/35 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-sm"
               >
-                {getField("duration_text")}
+                {formatTripDuration(trip.duration_days, lang)}
               </span>
             </div>
 
