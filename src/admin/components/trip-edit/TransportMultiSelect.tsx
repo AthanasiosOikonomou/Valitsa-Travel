@@ -85,6 +85,7 @@ export const TransportMultiSelect = forwardRef<HTMLButtonElement, Props>(functio
                 key={slug}
                 className="flex cursor-pointer select-none items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-900 outline-none data-[highlighted]:bg-slate-100 dark:text-zinc-100 dark:data-[highlighted]:bg-zinc-800"
                 checked={checked}
+                onSelect={(e) => e.preventDefault()}
                 onCheckedChange={() => onChange(toggleSlug(value, slug))}
               >
                 <span
