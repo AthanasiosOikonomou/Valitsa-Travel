@@ -52,9 +52,18 @@ export function parseTransportCsv(csv: string): TransportModeSlug[] {
   return out;
 }
 
-export function mergeTransportSlugsFromColumns(transportEl: string, transport: string): TransportModeSlug[] {
-  const a = parseTransportCsv(transportEl);
-  const b = parseTransportCsv(transport);
+function transportUnknownToCsv(value: unknown): string {
+  if (value == null) return "";
+  if (Array.isArray(value)) {
+    return value.map((x) => String(x).trim()).filter(Boolean).join(", ");
+  }
+  return String(value).trim();
+}
+
+/** Merge DB `transport` / `transport_el` (legacy CSV string or PostgreSQL text[]). */
+export function mergeTransportSlugsFromColumns(transportEl: unknown, transport: unknown): TransportModeSlug[] {
+  const a = parseTransportCsv(transportUnknownToCsv(transportEl));
+  const b = parseTransportCsv(transportUnknownToCsv(transport));
   const seen = new Set<TransportModeSlug>();
   const out: TransportModeSlug[] = [];
   for (const slug of [...a, ...b]) {
@@ -71,4 +80,9 @@ export function slugsToCsvEl(slugs: TransportModeSlug[]): string {
 
 export function slugsToCsvEn(slugs: TransportModeSlug[]): string {
   return slugs.map((s) => LABELS_EN[s]).join(", ");
+}
+
+/** Labels per slug for PostgreSQL `text[]` columns (send real JS arrays to Supabase). */
+export function slugsToLabelArray(slugs: TransportModeSlug[], lang: "en" | "gr"): string[] {
+  return slugs.map((s) => transportLabelForSlug(s, lang));
 }

@@ -12,12 +12,10 @@ const TRIP_LIST_FIELDS = [
   "country",
   "price_num",
   "duration_days",
-  "type",
-  "type_el",
   "image",
-  "category",
   "transport",
   "is_featured",
+  "status",
   "date_range",
   "departure_city",
   "tags",
@@ -35,8 +33,6 @@ export interface TripFilters {
   pageSize?: number;
   featured?: boolean;
   country?: string;
-  category?: string;
-  type?: string;
 }
 
 export function useTrips({
@@ -44,8 +40,6 @@ export function useTrips({
   pageSize = 12,
   featured,
   country,
-  category,
-  type,
 }: TripFilters = {}) {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,18 +56,13 @@ export function useTrips({
       let query = supabase
         .from("trips")
         .select(TRIP_LIST_FIELDS.join(","), { count: "exact" })
+        .or("status.eq.active,status.is.null")
         .order("created_at", { ascending: false });
       if (featured !== undefined) {
         query = query.eq("is_featured", featured);
       }
       if (country) {
         query = query.eq("country", country);
-      }
-      if (category) {
-        query = query.eq("category", category);
-      }
-      if (type) {
-        query = query.eq("type", type);
       }
       const { data, error, count } = await query.range(from, to);
       if (ignore) return;
@@ -109,12 +98,12 @@ export function useTrips({
     return () => {
       ignore = true;
     };
-  }, [page, pageSize, featured, country, category, type]);
+  }, [page, pageSize, featured, country]);
 
   useEffect(() => {
     const cleanup = fetchTrips();
     return cleanup;
-  }, [fetchTrips, featured, country, category, type]);
+  }, [fetchTrips, featured, country]);
 
   return { trips, loading, error, hasMore };
 }

@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Controller, useForm, type FieldErrors } from "react-hook-form";
+import { Controller, useForm, useWatch, type FieldErrors } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabaseClient";
-import { putTrip } from "@/lib/adminApi";
+import { postTrip, putTrip } from "@/lib/adminApi";
 import { isHtmlEmpty } from "@/lib/isHtmlEmpty";
 import {
   formStepsToDbPayload,
@@ -14,11 +14,7 @@ import {
   stringListDbToForm,
   type ProgramFormStep,
 } from "@/lib/tripAdminForm";
-import {
-  mergeTransportSlugsFromColumns,
-  slugsToCsvEl,
-  slugsToCsvEn,
-} from "@/lib/tripTransportModes";
+import { mergeTransportSlugsFromColumns, slugsToLabelArray } from "@/lib/tripTransportModes";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,10 +26,23 @@ import { TripImageDropzone } from "@/admin/components/TripImageDropzone";
 import { ProgramTimelineEditor } from "@/admin/components/trip-edit/ProgramTimelineEditor";
 import { StringArrayField } from "@/admin/components/trip-edit/StringArrayField";
 import { TransportMultiSelect } from "@/admin/components/trip-edit/TransportMultiSelect";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 function asHtml(v: unknown): string {
   return typeof v === "string" ? v : "";
+}
+
+function coercePayloadNumber(n: number | null | undefined): number | null {
+  if (n === null || n === undefined) return null;
+  const x = Number(n);
+  return Number.isFinite(x) ? x : null;
+}
+
+function coercePayloadInt(n: number | null | undefined): number | null {
+  if (n === null || n === undefined) return null;
+  const x = Math.trunc(Number(n));
+  return Number.isFinite(x) ? x : null;
 }
 
 const transportModeEnum = z.enum(["bus", "plane", "ship", "train"]);
@@ -47,45 +56,60 @@ function buildTripFormSchema(t: (key: string) => string) {
     title: z.string(),
     description: z.string(),
   });
-  return z.object({
-    title_el: z.string().trim().min(1, fieldReq),
-    location_el: z.string().trim().min(1, fieldReq),
-    country_el: z.string().trim().min(1, fieldReq),
-    type_el: z.string().trim().min(1, fieldReq),
-    category_el: z.string().trim().min(1, fieldReq),
-    transport_mode_slugs: z.array(transportModeEnum).min(1, fieldReq),
-    date_range_el: z.string().trim().min(1, fieldReq),
-    departure_city_el: z.string().trim().min(1, fieldReq),
-    description_el: z.string().refine((h) => !isHtmlEmpty(h), { message: richReq }),
-    program_el: z
-      .array(programStepSchema)
-      .min(1, t("admin.tripProgramMinDay"))
-      .refine(
-        (steps) => steps.some((s) => s.title.trim().length > 0 || s.description.trim().length > 0),
-        { message: t("admin.tripProgramNeedsContent") },
-      ),
-    included_el: z
-      .array(z.string())
-      .min(1, fieldReq)
-      .refine((arr) => arr.some((s) => s.trim().length > 0), { message: t("admin.tripIncludedMin") }),
-    tags_el: z.array(z.string()),
+  return z
+    .object({
+      title_el: z.string().trim().min(1, fieldReq),
+      location_el: z.string().trim().min(1, fieldReq),
+      country_el: z.string().trim().min(1, fieldReq),
+      transport_mode_slugs: z.array(transportModeEnum).min(1, fieldReq),
+      date_range_el: z.string().trim().min(1, fieldReq),
+      departure_city_el: z.string().trim().min(1, fieldReq),
+      description_el: z.string().refine((h) => !isHtmlEmpty(h), { message: richReq }),
+      program_el: z
+        .array(programStepSchema)
+        .min(1, t("admin.tripProgramMinDay"))
+        .refine(
+          (steps) => steps.some((s) => s.title.trim().length > 0 || s.description.trim().length > 0),
+          { message: t("admin.tripProgramNeedsContent") },
+        ),
+      included_el: z
+        .array(z.string())
+        .min(1, fieldReq)
+        .refine((arr) => arr.some((s) => s.trim().length > 0), { message: t("admin.tripIncludedMin") }),
+      tags_el: z.array(z.string()),
 
-    title: z.string(),
-    description: z.string(),
-    location: z.string(),
-    country: z.string(),
-    type: z.string(),
-    category: z.string(),
-    date_range: z.string(),
-    departure_city: z.string(),
-    program: z.array(programStepSchema),
-    included: z.array(z.string()),
-    tags: z.array(z.string()),
+      hasEnglish: z.boolean(),
+      status: z.enum(["active", "inactive"]),
 
-    image: z.string().nullable(),
-    price_num: z.number().nullable(),
-    duration_days: z.number().int().nullable(),
-  });
+      title: z.string(),
+      description: z.string(),
+      location: z.string(),
+      country: z.string(),
+      date_range: z.string(),
+      departure_city: z.string(),
+      program: z.array(programStepSchema),
+      included: z.array(z.string()),
+      tags: z.array(z.string()),
+
+      image: z.string().nullable(),
+      price_num: z.number().nullable(),
+      duration_days: z.number().int().nullable(),
+    })
+    .superRefine((data, ctx) => {
+      if (!data.hasEnglish) return;
+      if (!data.title.trim()) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: fieldReq, path: ["title"] });
+      }
+      if (isHtmlEmpty(data.description)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: richReq, path: ["description"] });
+      }
+      if (!data.location.trim()) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: fieldReq, path: ["location"] });
+      }
+      if (!data.country.trim()) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: fieldReq, path: ["country"] });
+      }
+    });
 }
 
 export type TripFormValues = z.infer<ReturnType<typeof buildTripFormSchema>>;
@@ -94,8 +118,6 @@ const GREEK_FIELD_ORDER = [
   "title_el",
   "location_el",
   "country_el",
-  "type_el",
-  "category_el",
   "transport_mode_slugs",
   "date_range_el",
   "departure_city_el",
@@ -104,14 +126,96 @@ const GREEK_FIELD_ORDER = [
   "included_el",
 ] as const satisfies readonly (keyof TripFormValues)[];
 
+const ENGLISH_FIELD_ORDER = [
+  "title",
+  "location",
+  "country",
+  "date_range",
+  "departure_city",
+  "description",
+  "program",
+  "included",
+] as const satisfies readonly (keyof TripFormValues)[];
+
+export const ADMIN_TRIP_CREATE_ID = "new";
+
 type Props = { tripId: string; open: boolean; onClose: () => void };
+
+function buildTripPayload(values: TripFormValues) {
+  const tagsEl = values.tags_el.map((s) => s.trim()).filter(Boolean);
+  const slugs = values.transport_mode_slugs;
+  const titleEl = values.title_el.trim();
+  const base = {
+    title_el: titleEl,
+    location_el: values.location_el.trim(),
+    country_el: values.country_el.trim(),
+    transport: slugsToLabelArray(slugs, "en"),
+    transport_el: slugsToLabelArray(slugs, "gr"),
+    date_range_el: values.date_range_el.trim(),
+    departure_city_el: values.departure_city_el.trim(),
+    description_el: values.description_el || null,
+    program_el: formStepsToDbPayload(values.program_el),
+    included_el: values.included_el.map((s) => s.trim()).filter(Boolean),
+    tags_el: tagsEl,
+    price_num: coercePayloadNumber(values.price_num),
+    duration_days: coercePayloadInt(values.duration_days),
+    image: values.image,
+    status: values.status,
+  };
+
+  if (!values.hasEnglish) {
+    return {
+      ...base,
+      title: titleEl || null,
+      location: null,
+      country: null,
+      date_range: null,
+      departure_city: null,
+      description: null,
+      program: null,
+      included: null,
+      tags: null,
+    };
+  }
+
+  const titleEn = values.title.trim();
+  const progEn = values.program.filter(
+    (s) => s.title.trim().length > 0 || s.description.trim().length > 0,
+  );
+  const incEn = values.included.map((s) => s.trim()).filter(Boolean);
+  const tagsEn = values.tags.map((s) => s.trim()).filter(Boolean);
+  return {
+    ...base,
+    title: titleEn || titleEl || null,
+    location: values.location.trim() || null,
+    country: values.country.trim() || null,
+    date_range: values.date_range.trim() || null,
+    departure_city: values.departure_city.trim() || null,
+    description: values.description.trim() ? values.description : null,
+    program: progEn.length > 0 ? formStepsToDbPayload(progEn) : null,
+    included: incEn.length > 0 ? incEn : null,
+    tags: tagsEn.length > 0 ? tagsEn : null,
+  };
+}
+
+function deriveEnglishEnabledFromRow(row: Record<string, unknown>): boolean {
+  if (String(row.title ?? "").trim()) return true;
+  if (!isHtmlEmpty(asHtml(row.description))) return true;
+  const programEn = programDbToFormSteps(row.program);
+  if (programEn.some((s) => s.title.trim() || s.description.trim())) return true;
+  const inc = stringListDbToForm(row.included);
+  if (inc.some((s) => s.trim())) return true;
+  if (String(row.location ?? "").trim() || String(row.country ?? "").trim()) return true;
+  if (String(row.date_range ?? "").trim() || String(row.departure_city ?? "").trim()) return true;
+  const tags = stringListDbToForm(row.tags);
+  if (tags.some((s) => s.trim())) return true;
+  return false;
+}
 
 const defaultForm = (): TripFormValues => ({
   title_el: "",
   location_el: "",
   country_el: "",
-  type_el: "",
-  category_el: "",
   transport_mode_slugs: [],
   date_range_el: "",
   departure_city_el: "",
@@ -119,15 +223,15 @@ const defaultForm = (): TripFormValues => ({
   program_el: [{ days: "1", title: "", description: "" }],
   included_el: [],
   tags_el: [],
+  hasEnglish: false,
+  status: "inactive",
   title: "",
   description: "",
   location: "",
   country: "",
-  type: "",
-  category: "",
   date_range: "",
   departure_city: "",
-  program: [],
+  program: [{ days: "1", title: "", description: "" }],
   included: [],
   tags: [],
   image: null,
@@ -139,6 +243,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
   const qc = useQueryClient();
   const { t } = useLanguage();
   const [tab, setTab] = useState("el");
+  const isCreate = tripId === ADMIN_TRIP_CREATE_ID;
 
   const schema = useMemo(() => buildTripFormSchema(t), [t]);
 
@@ -149,7 +254,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
       if (error) throw error;
       return data as Record<string, unknown>;
     },
-    enabled: open && !!tripId,
+    enabled: open && !!tripId && !isCreate,
   });
 
   const {
@@ -157,15 +262,24 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
     handleSubmit,
     reset,
     setFocus,
+    getValues,
     formState: { errors },
   } = useForm<TripFormValues>({
     resolver: zodResolver(schema),
     defaultValues: defaultForm(),
   });
 
+  const hasEnglishOn = useWatch({ control, name: "hasEnglish" });
+
   useEffect(() => {
     if (open) setTab("el");
   }, [open, tripId]);
+
+  useEffect(() => {
+    if (open && isCreate) {
+      reset(defaultForm());
+    }
+  }, [open, isCreate, reset]);
 
   useEffect(() => {
     const row = q.data;
@@ -177,28 +291,28 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
       programEl = [{ days: "1", title: "", description: "" }];
     }
     let programEn = programDbToFormSteps(row.program);
+    if (programEn.length === 0) {
+      programEn = [{ days: "1", title: "", description: "" }];
+    }
+    const st = row.status;
+    const statusVal = st === "active" ? "active" : "inactive";
     reset({
       title_el: String(row.title_el ?? ""),
       location_el: String(row.location_el ?? ""),
       country_el: String(row.country_el ?? ""),
-      type_el: String(row.type_el ?? ""),
-      category_el: String(row.category_el ?? ""),
-      transport_mode_slugs: mergeTransportSlugsFromColumns(
-        String(row.transport_el ?? ""),
-        String(row.transport ?? ""),
-      ),
+      transport_mode_slugs: mergeTransportSlugsFromColumns(row.transport_el, row.transport),
       date_range_el: String(row.date_range_el ?? ""),
       departure_city_el: String(row.departure_city_el ?? ""),
       description_el: asHtml(row.description_el),
       program_el: programEl,
       included_el: stringListDbToForm(row.included_el),
       tags_el: stringListDbToForm(row.tags_el),
+      hasEnglish: deriveEnglishEnabledFromRow(row),
+      status: statusVal,
       title: String(row.title ?? ""),
       description: asHtml(row.description),
       location: String(row.location ?? ""),
       country: String(row.country ?? ""),
-      type: String(row.type ?? ""),
-      category: String(row.category ?? ""),
       date_range: String(row.date_range ?? ""),
       departure_city: String(row.departure_city ?? ""),
       program: programEn,
@@ -213,47 +327,19 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
 
   const save = useMutation({
     mutationFn: async (values: TripFormValues) => {
-      const progEn = values.program.filter(
-        (s) => s.title.trim().length > 0 || s.description.trim().length > 0,
-      );
-      const incEn = values.included.map((s) => s.trim()).filter(Boolean);
-      const tagsEn = values.tags.map((s) => s.trim()).filter(Boolean);
-      const tagsEl = values.tags_el.map((s) => s.trim()).filter(Boolean);
-      const slugs = values.transport_mode_slugs;
-      await putTrip(tripId, {
-        title: values.title.trim() || null,
-        title_el: values.title_el.trim(),
-        location: values.location.trim() || null,
-        location_el: values.location_el.trim(),
-        country: values.country.trim() || null,
-        country_el: values.country_el.trim(),
-        type: values.type.trim() || null,
-        type_el: values.type_el.trim(),
-        category: values.category.trim() || null,
-        category_el: values.category_el.trim(),
-        transport: slugsToCsvEn(slugs),
-        transport_el: slugsToCsvEl(slugs),
-        date_range: values.date_range.trim() || null,
-        date_range_el: values.date_range_el.trim(),
-        departure_city: values.departure_city.trim() || null,
-        departure_city_el: values.departure_city_el.trim(),
-        description: values.description.trim() ? values.description : null,
-        description_el: values.description_el || null,
-        program_el: formStepsToDbPayload(values.program_el),
-        program: progEn.length > 0 ? formStepsToDbPayload(progEn) : null,
-        included_el: values.included_el.map((s) => s.trim()).filter(Boolean),
-        included: incEn.length > 0 ? incEn : null,
-        tags_el: tagsEl,
-        tags: tagsEn.length > 0 ? tagsEn : null,
-        price_num: values.price_num,
-        duration_days: values.duration_days,
-        image: values.image,
-      });
+      const payload = buildTripPayload(values);
+      if (isCreate) {
+        await postTrip(payload);
+      } else {
+        await putTrip(tripId, payload);
+      }
     },
     onSuccess: () => {
       toast.success(t("admin.tripSaved"));
       void qc.invalidateQueries({ queryKey: ["admin-trips"] });
-      void qc.invalidateQueries({ queryKey: ["admin-trip", tripId] });
+      if (!isCreate) {
+        void qc.invalidateQueries({ queryKey: ["admin-trip", tripId] });
+      }
       onClose();
     },
     onError: (err) => {
@@ -267,10 +353,10 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
   };
 
   const onInvalid = (errs: FieldErrors<TripFormValues>) => {
-    setTab("el");
     requestAnimationFrame(() => {
       for (const name of GREEK_FIELD_ORDER) {
         if (!errs[name]) continue;
+        setTab("el");
         if (name === "title_el" || name === "transport_mode_slugs") {
           setFocus(name);
         }
@@ -279,11 +365,22 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
           ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
         return;
       }
-      if (errs.program) {
-        setTab("en");
-        document
-          .getElementById("trip-field-program")
-          ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      if (getValues("hasEnglish")) {
+        for (const name of ENGLISH_FIELD_ORDER) {
+          if (!errs[name]) continue;
+          setTab("en");
+          if (name === "title") setFocus("title");
+          const id =
+            name === "description"
+              ? "trip-field-description"
+              : name === "program"
+                ? "trip-field-program"
+                : name === "included"
+                  ? "trip-field-included"
+                  : `trip-field-${name}`;
+          document.getElementById(id)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+          return;
+        }
       }
     });
   };
@@ -291,13 +388,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
   const fieldClass = (name: keyof TripFormValues) =>
     cn(errors[name] && "rounded-xl ring-2 ring-destructive/50 border-destructive/40");
 
-  type GreekTextKey =
-    | "location_el"
-    | "country_el"
-    | "type_el"
-    | "category_el"
-    | "date_range_el"
-    | "departure_city_el";
+  type GreekTextKey = "location_el" | "country_el" | "date_range_el" | "departure_city_el";
 
   const GreekTextField = ({
     name,
@@ -326,16 +417,18 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
     );
   };
 
-  type EnTextKey = "location" | "country" | "type" | "category" | "date_range" | "departure_city";
+  type EnTextKey = "location" | "country" | "date_range" | "departure_city";
 
   const EnglishTextField = ({
     name,
     sectionId,
     label,
+    disabled,
   }: {
     name: EnTextKey;
     sectionId: string;
     label: string;
+    disabled?: boolean;
   }) => {
     const inputId = `inp-${name}`;
     return (
@@ -345,7 +438,14 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
           name={name}
           control={control}
           render={({ field }) => (
-            <Input id={inputId} className="mt-1.5" {...field} value={field.value} autoComplete="off" />
+            <Input
+              id={inputId}
+              className="mt-1.5"
+              {...field}
+              value={field.value}
+              autoComplete="off"
+              disabled={disabled}
+            />
           )}
         />
       </div>
@@ -368,12 +468,14 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
         <Dialog.Content className="fixed left-1/2 top-1/2 z-[101] flex max-h-[90vh] w-full max-w-3xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-elev3 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100">
           <div className="shrink-0 border-b border-slate-100 px-6 pb-4 pt-6 dark:border-white/5">
             <Dialog.Title className="text-lg font-semibold text-slate-900 dark:text-zinc-100">
-              {t("admin.editTrip")}
+              {isCreate ? t("admin.addTrip") : t("admin.editTrip")}
             </Dialog.Title>
-            <Dialog.Description className="sr-only">{t("admin.editTrip")}</Dialog.Description>
+            <Dialog.Description className="sr-only">
+              {isCreate ? t("admin.addTrip") : t("admin.editTrip")}
+            </Dialog.Description>
           </div>
 
-          {q.isLoading ? (
+          {q.isLoading && !isCreate ? (
             <Skeleton className="m-6 h-40 w-auto bg-slate-200 dark:bg-zinc-800" />
           ) : (
             <form
@@ -452,6 +554,27 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                       )}
                     />
                   </div>
+                  <div className="flex flex-row flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 sm:col-span-2 dark:border-white/10 dark:bg-zinc-950/50">
+                    <p className="text-sm font-medium text-slate-900 dark:text-zinc-100">{t("admin.tripStatus")}</p>
+                    <Controller
+                      name="status"
+                      control={control}
+                      render={({ field }) => (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium text-slate-600 dark:text-zinc-300">
+                            {field.value === "inactive"
+                              ? t("admin.tripStatusInactive")
+                              : t("admin.tripStatusActive")}
+                          </span>
+                          <Switch
+                            checked={field.value === "active"}
+                            onCheckedChange={(on) => field.onChange(on ? "active" : "inactive")}
+                            aria-label={t("admin.tripStatus")}
+                          />
+                        </div>
+                      )}
+                    />
+                  </div>
                 </div>
 
                 <Tabs value={tab} onValueChange={setTab} className="mt-8">
@@ -485,16 +608,6 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                           name="country_el"
                           sectionId="trip-field-country_el"
                           label={t("admin.tripCountryEl")}
-                        />
-                        <GreekTextField
-                          name="type_el"
-                          sectionId="trip-field-type_el"
-                          label={t("admin.tripTypeEl")}
-                        />
-                        <GreekTextField
-                          name="category_el"
-                          sectionId="trip-field-category_el"
-                          label={t("admin.tripCategoryEl")}
                         />
                         <div
                           className={cn(fieldClass("transport_mode_slugs"), "space-y-2 sm:col-span-2")}
@@ -608,136 +721,140 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
 
                   <TabsContent value="en" forceMount className="data-[state=inactive]:hidden">
                     <div className="space-y-5 pt-4">
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <div className={fieldClass("title")} id="trip-field-title">
-                          <Label htmlFor="trip-title-en">{t("admin.titleEn")}</Label>
-                          <Controller
-                            name="title"
-                            control={control}
-                            render={({ field }) => (
-                              <Input id="trip-title-en" className="mt-1.5" {...field} autoComplete="off" />
-                            )}
-                          />
-                        </div>
-                        <EnglishTextField
-                          name="location"
-                          sectionId="trip-field-location"
-                          label={t("admin.tripLocationEn")}
-                        />
-                        <EnglishTextField
-                          name="country"
-                          sectionId="trip-field-country"
-                          label={t("admin.tripCountryEn")}
-                        />
-                        <EnglishTextField
-                          name="type"
-                          sectionId="trip-field-type"
-                          label={t("admin.tripTypeEn")}
-                        />
-                        <EnglishTextField
-                          name="category"
-                          sectionId="trip-field-category"
-                          label={t("admin.tripCategoryEn")}
-                        />
-                        <div
-                          className={cn(fieldClass("transport_mode_slugs"), "space-y-2 sm:col-span-2")}
-                          id="trip-field-transport_mode_slugs-en"
-                        >
-                          <Label htmlFor="trip-transport-en">{t("admin.tripTransportEn")}</Label>
-                          <Controller
-                            name="transport_mode_slugs"
-                            control={control}
-                            render={({ field }) => (
-                              <TransportMultiSelect
-                                ref={field.ref}
-                                id="trip-transport-en"
-                                value={field.value}
-                                onChange={field.onChange}
-                                lang="en"
-                                placeholder={t("admin.transportPlaceholder")}
-                                menuLabel={t("admin.transportMenu")}
-                                aria-invalid={!!errors.transport_mode_slugs}
-                              />
-                            )}
-                          />
-                          {errors.transport_mode_slugs ? (
-                            <p className="mt-1 text-xs text-destructive">
-                              {(errors.transport_mode_slugs as { message?: string }).message}
-                            </p>
-                          ) : null}
-                        </div>
-                        <EnglishTextField
-                          name="date_range"
-                          sectionId="trip-field-date_range"
-                          label={t("admin.tripDateRangeEn")}
-                        />
-                        <EnglishTextField
-                          name="departure_city"
-                          sectionId="trip-field-departure_city"
-                          label={t("admin.tripDepartureCityEn")}
-                        />
-                      </div>
-                      <div className={fieldClass("description")} id="trip-field-description">
-                        <Label>{t("admin.descriptionEn")}</Label>
-                        <Controller
-                          name="description"
-                          control={control}
-                          render={({ field }) => (
-                            <div className="mt-1.5">
-                              <RichTextEditor value={field.value} onChange={field.onChange} t={t} />
-                            </div>
-                          )}
-                        />
-                      </div>
-                      <div className={fieldClass("program")} id="trip-field-program">
-                        <Label className="mb-2 block">{t("admin.programEn")}</Label>
-                        <Controller
-                          name="program"
-                          control={control}
-                          render={({ field }) => (
-                            <ProgramTimelineEditor
-                              value={field.value as ProgramFormStep[]}
-                              onChange={field.onChange}
-                              {...programEditorProps}
-                            />
-                          )}
-                        />
-                        {errors.program ? (
-                          <p className="mt-1 text-xs text-destructive">
-                            {(errors.program as { message?: string }).message}
+                      <div className="flex flex-row flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-white/10 dark:bg-zinc-950/50">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="trip-has-english" className="text-sm font-medium">
+                            {t("admin.tripEnableEnglish")}
+                          </Label>
+                          <p className="text-xs text-slate-500 dark:text-zinc-400">
+                            {t("admin.tripEnableEnglishHint")}
                           </p>
-                        ) : null}
-                      </div>
-                      <div className={fieldClass("included")} id="trip-field-included">
-                        <Label>{t("admin.tripIncludedEn")}</Label>
+                        </div>
                         <Controller
-                          name="included"
+                          name="hasEnglish"
                           control={control}
                           render={({ field }) => (
-                            <StringArrayField
-                              className="mt-1.5"
-                              value={field.value}
-                              onChange={field.onChange}
-                              placeholder={t("admin.tripArrayHint")}
+                            <Switch
+                              id="trip-has-english"
+                              checked={field.value}
+                              onCheckedChange={(v) => {
+                                field.onChange(v);
+                                if (!v) {
+                                  setFocus("title_el");
+                                }
+                              }}
                             />
                           )}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label>{t("admin.tripTagsEn")}</Label>
-                        <Controller
-                          name="tags"
-                          control={control}
-                          render={({ field }) => (
-                            <StringArrayField
-                              className="mt-1.5"
-                              value={field.value}
-                              onChange={field.onChange}
-                              placeholder={t("admin.tripArrayHint")}
+                      {hasEnglishOn ? (
+                        <div className="space-y-5">
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div className={fieldClass("title")} id="trip-field-title">
+                              <Label htmlFor="trip-title-en">{t("admin.titleEn")}</Label>
+                              <Controller
+                                name="title"
+                                control={control}
+                                render={({ field }) => (
+                                  <Input id="trip-title-en" className="mt-1.5" {...field} autoComplete="off" />
+                                )}
+                              />
+                              {errors.title ? (
+                                <p className="mt-1 text-xs text-destructive">{errors.title.message}</p>
+                              ) : null}
+                            </div>
+                            <EnglishTextField
+                              name="location"
+                              sectionId="trip-field-location"
+                              label={t("admin.tripLocationEn")}
                             />
-                          )}
-                        />
-                      </div>
+                            <EnglishTextField
+                              name="country"
+                              sectionId="trip-field-country"
+                              label={t("admin.tripCountryEn")}
+                            />
+                            <EnglishTextField
+                              name="date_range"
+                              sectionId="trip-field-date_range"
+                              label={t("admin.tripDateRangeEn")}
+                            />
+                            <EnglishTextField
+                              name="departure_city"
+                              sectionId="trip-field-departure_city"
+                              label={t("admin.tripDepartureCityEn")}
+                            />
+                          </div>
+                          <div className={fieldClass("description")} id="trip-field-description">
+                            <Label>{t("admin.descriptionEn")}</Label>
+                            <Controller
+                              name="description"
+                              control={control}
+                              render={({ field }) => (
+                                <div className="mt-1.5">
+                                  <RichTextEditor value={field.value} onChange={field.onChange} t={t} />
+                                </div>
+                              )}
+                            />
+                            {errors.description ? (
+                              <p className="mt-1 text-xs text-destructive">{errors.description.message}</p>
+                            ) : null}
+                          </div>
+                          <div className={fieldClass("program")} id="trip-field-program">
+                            <Label className="mb-2 block">{t("admin.programEn")}</Label>
+                            <Controller
+                              name="program"
+                              control={control}
+                              render={({ field }) => (
+                                <ProgramTimelineEditor
+                                  value={field.value as ProgramFormStep[]}
+                                  onChange={field.onChange}
+                                  {...programEditorProps}
+                                />
+                              )}
+                            />
+                            {errors.program ? (
+                              <p className="mt-1 text-xs text-destructive">
+                                {(errors.program as { message?: string }).message}
+                              </p>
+                            ) : null}
+                          </div>
+                          <div className={fieldClass("included")} id="trip-field-included">
+                            <Label>{t("admin.tripIncludedEn")}</Label>
+                            <Controller
+                              name="included"
+                              control={control}
+                              render={({ field }) => (
+                                <StringArrayField
+                                  className="mt-1.5"
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  placeholder={t("admin.tripArrayHint")}
+                                />
+                              )}
+                            />
+                            {errors.included ? (
+                              <p className="mt-1 text-xs text-destructive">
+                                {(errors.included as { message?: string }).message}
+                              </p>
+                            ) : null}
+                          </div>
+                          <div className="space-y-2">
+                            <Label>{t("admin.tripTagsEn")}</Label>
+                            <Controller
+                              name="tags"
+                              control={control}
+                              render={({ field }) => (
+                                <StringArrayField
+                                  className="mt-1.5"
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  placeholder={t("admin.tripArrayHint")}
+                                />
+                              )}
+                            />
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   </TabsContent>
                 </Tabs>

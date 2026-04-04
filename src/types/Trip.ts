@@ -5,6 +5,8 @@ export type ProgramItem = {
   description: string;
 };
 
+export type TripStatus = "active" | "inactive";
+
 export type Trip = {
   id: string;
   title: string;
@@ -15,14 +17,12 @@ export type Trip = {
   country_el?: string | null;
   price_num: number | null;
   duration_days: number | null;
-  type: string | null;
-  type_el?: string | null;
   image: string | null;
-  category: string | null;
-  category_el?: string | null;
-  transport: string | null;
-  transport_el?: string | null;
+  /** PostgreSQL `text[]`; legacy rows may still be a single string until migrated. */
+  transport: string[] | string | null;
+  transport_el?: string[] | string | null;
   is_featured: boolean | null;
+  status?: TripStatus | string | null;
   date_range: string | null;
   date_range_el?: string | null;
   departure_city: string | null;
@@ -55,12 +55,8 @@ export type TripUpdate = Partial<{
   included_el: string[] | null;
   price_num: number | null;
   duration_days: number | null;
-  type: string | null;
-  type_el: string | null;
-  category: string | null;
-  category_el: string | null;
-  transport: string | null;
-  transport_el: string | null;
+  transport: string[] | null;
+  transport_el: string[] | null;
   date_range: string | null;
   date_range_el: string | null;
   departure_city: string | null;
@@ -68,4 +64,5 @@ export type TripUpdate = Partial<{
   tags: string[] | null;
   tags_el: string[] | null;
   is_featured: boolean | null;
+  status: TripStatus | null;
 }>;

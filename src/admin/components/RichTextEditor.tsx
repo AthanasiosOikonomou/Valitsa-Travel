@@ -21,6 +21,8 @@ type Props = {
   className?: string;
   variant?: "default" | "minimal";
   showToolbar?: boolean;
+  /** When false, the editor is read-only (no typing / toolbar actions). */
+  disabled?: boolean;
   t: (key: string) => string;
   /** When set, toolbar shows attachment picker for this inquiry. */
   attachmentContext?: { inquiryId: string } | null;
@@ -37,6 +39,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, Props>(function R
     className,
     variant = "default",
     showToolbar = true,
+    disabled = false,
     t,
     attachmentContext = null,
     onInquiryAttachmentFilesSelected,
@@ -47,6 +50,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, Props>(function R
 ) {
   const editor = useEditor({
     immediatelyRender: false,
+    editable: !disabled,
     extensions: [
       StarterKit.configure({
         heading: { levels: [2, 3] },
@@ -111,6 +115,10 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, Props>(function R
   );
 
   useEffect(() => {
+    editor?.setEditable(!disabled);
+  }, [editor, disabled]);
+
+  useEffect(() => {
     if (!editor) return;
     const next = value || "";
     const current = editor.getHTML();
@@ -161,6 +169,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, Props>(function R
       className={cn(
         "flex flex-col overflow-hidden rounded-xl transition-[box-shadow,border-color]",
         shellHeight,
+        disabled && "pointer-events-none opacity-60",
         shellMinimal
           ? cn(
               "cursor-text border border-transparent bg-white/80 shadow-none",
@@ -169,7 +178,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, Props>(function R
             )
           : "border border-slate-200 bg-white dark:border-white/10 dark:bg-zinc-950",
       )}
-      onMouseDown={focusShellFromPointer}
+      onMouseDown={disabled ? undefined : focusShellFromPointer}
     >
       {showToolbar ? (
         <div className="sticky top-0 z-10 shrink-0 bg-white dark:bg-zinc-950">

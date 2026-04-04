@@ -4,14 +4,12 @@ import type { Trip } from "@/types/Trip";
 export type TripLang = "en" | "gr";
 
 export type SortOption = "recommended" | "priceAsc" | "priceDesc";
-export type TripTypeFilter = "all" | Trip["type"];
 
 type MultiSelectKey =
   | "selectedContinents"
   | "selectedCountries"
   | "selectedDurations"
-  | "selectedCities"
-  | "selectedCategories";
+  | "selectedCities";
 
 type FlagKey = "showFeatured";
 
@@ -20,8 +18,6 @@ type FacetKey =
   | "country"
   | "duration"
   | "city"
-  | "category"
-  | "tripType"
   | "featured"
   | "price";
 
@@ -37,9 +33,7 @@ export interface TripFilterState {
   selectedCountries: string[];
   selectedDurations: number[];
   selectedCities: string[];
-  selectedCategories: string[];
   showFeatured: boolean;
-  tripType: TripTypeFilter;
   sortBy: SortOption;
   page: number;
 }
@@ -52,7 +46,6 @@ export type TripFilterAction =
   | { type: "toggleMulti"; key: MultiSelectKey; value: string | number }
   | { type: "toggleFlag"; key: FlagKey }
   | { type: "setPage"; value: number }
-  | { type: "setTripType"; value: TripTypeFilter }
   | { type: "setSortBy"; value: SortOption };
 
 export interface TripFilterMetadata {
@@ -61,8 +54,6 @@ export interface TripFilterMetadata {
   countries: string[];
   durations: number[];
   cities: string[];
-  categories: string[];
-  tripTypes: Trip["type"][];
   hasFeaturedTrips: boolean;
 }
 
@@ -72,8 +63,6 @@ export interface AvailableTripFacets {
   countryCounts: Map<string, number>;
   durationCounts: Map<number, number>;
   cityCounts: Map<string, number>;
-  categoryCounts: Map<string, number>;
-  tripTypeCounts: Map<Trip["type"], number>;
   specialCounts: {
     featured: number;
   };
@@ -93,10 +82,7 @@ const countryToContinent: Record<string, string> = {
   USA: "North America",
 };
 
-const filterPresets: Record<
-  string,
-  { selectedDurations?: number[]; selectedCategories?: string[] }
-> = {
+const filterPresets: Record<string, { selectedDurations?: number[] }> = {
   daily: { selectedDurations: [1] },
   twoday: { selectedDurations: [2] },
   internal: {},
@@ -111,13 +97,18 @@ const getPresetCountries = (filter: string | null, countries: string[]) => {
 
 const getContinent = (country: string) => countryToContinent[country] ?? "Other";
 
-// Helper to get the correct field based on language
-function getTripField(trip: Trip, field: string, lang: TripLang): any {
-  if (lang === "gr" && trip[`${field}_el` as keyof Trip] !== undefined) {
-    const el = trip[`${field}_el` as keyof Trip];
-    return el ?? trip[field as keyof Trip];
+type LocalizedStringField = "title" | "location" | "country" | "departure_city";
+
+function getTripField(trip: Trip, field: LocalizedStringField, lang: TripLang): string {
+  if (lang === "gr") {
+    const elKey = `${field}_el` as keyof Trip;
+    const el = trip[elKey];
+    if (el != null && String(el).trim() !== "") {
+      return String(el);
+    }
   }
-  return trip[field as keyof Trip];
+  const base = trip[field];
+  return base != null ? String(base) : "";
 }
 
 const addCount = <T>(map: Map<T, number>, key: T) => {
@@ -163,8 +154,6 @@ export const buildTripFilterMetadata = (trips: Trip[], lang: TripLang): TripFilt
       (left, right) => left - right,
     ),
     cities: sortUniqueStrings(trips.map((trip) => getTripField(trip, "departure_city", lang) ?? "")),
-    categories: sortUniqueStrings(trips.map((trip) => getTripField(trip, "category", lang) ?? "")),
-    tripTypes: [...new Set(trips.map((trip) => getTripField(trip, "type", lang) ?? ""))],
     hasFeaturedTrips: trips.some((trip) => trip.is_featured),
   };
 };
@@ -185,9 +174,7 @@ export const createInitialTripFilterState = (
     selectedCountries: getPresetCountries(activeFilter, metadata.countries),
     selectedDurations: preset?.selectedDurations ?? [],
     selectedCities: [],
-    selectedCategories: preset?.selectedCategories ?? [],
     showFeatured: false,
-    tripType: "all",
     sortBy: "recommended",
     page: 1,
   };
@@ -230,8 +217,6 @@ export const tripFilterReducer = (
     }
     case "toggleFlag":
       return { ...state, [action.key]: !state[action.key] };
-    case "setTripType":
-      return { ...state, tripType: action.value };
     case "setSortBy":
       return { ...state, sortBy: action.value };
     case "setPage":
@@ -287,20 +272,6 @@ export const buildAvailableTripFacets = (
     "city",
     (trip) => getTripField(trip, "departure_city", lang) ?? "",
   );
-  const categoryCounts = buildFacetCounts(
-    trips,
-    state,
-    lang,
-    "category",
-    (trip) => getTripField(trip, "category", lang) ?? "",
-  );
-  const tripTypeCounts = buildFacetCounts(
-    trips,
-    state,
-    lang,
-    "tripType",
-    (trip) => getTripField(trip, "type", lang) ?? "",
-  );
 
   const priceBounds = getPriceBoundsForState(
     trips,
@@ -316,8 +287,6 @@ export const buildAvailableTripFacets = (
     countryCounts,
     durationCounts,
     cityCounts,
-    categoryCounts,
-    tripTypeCounts,
     specialCounts,
   };
 };
@@ -407,18 +376,10 @@ export const sanitizeTripFilterState = (
     selectedCities: state.selectedCities.filter((value) =>
       availableFacets.cityCounts.has(value),
     ),
-    selectedCategories: state.selectedCategories.filter((value) =>
-      availableFacets.categoryCounts.has(value),
-    ),
     showFeatured:
       state.showFeatured &&
       metadata.hasFeaturedTrips &&
       availableFacets.specialCounts.featured > 0,
-    tripType:
-      state.tripType === "all" ||
-      availableFacets.tripTypeCounts.has(state.tripType)
-        ? state.tripType
-        : "all",
   };
 };
 
@@ -433,9 +394,7 @@ export const areTripFilterStatesEqual = (
   arraysEqual(left.selectedCountries, right.selectedCountries) &&
   arraysEqual(left.selectedDurations, right.selectedDurations) &&
   arraysEqual(left.selectedCities, right.selectedCities) &&
-  arraysEqual(left.selectedCategories, right.selectedCategories) &&
   left.showFeatured === right.showFeatured &&
-  left.tripType === right.tripType &&
   left.sortBy === right.sortBy;
 
 export const getContinentLabel = (country: string) => getContinent(country);
@@ -558,22 +517,7 @@ const matchesTripFilters = (
     return false;
   }
 
-  if (
-    excludedFacet !== "category" &&
-    state.selectedCategories.length > 0 &&
-    !state.selectedCategories.includes(getTripField(trip, "category", lang) ?? "")
-  ) {
-    return false;
-  }
-
   if (excludedFacet !== "featured" && state.showFeatured && !trip.is_featured) {
-    return false;
-  }
-  if (
-    excludedFacet !== "tripType" &&
-    state.tripType !== "all" &&
-    getTripField(trip, "type", lang) !== state.tripType
-  ) {
     return false;
   }
 

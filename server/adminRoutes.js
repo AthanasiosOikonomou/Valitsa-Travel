@@ -155,18 +155,43 @@ function normalizeStringArrayField(value) {
   return [];
 }
 
+function normalizePriceNumField(value) {
+  if (value === undefined) return undefined;
+  if (value === null || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function normalizeDurationDaysField(value) {
+  if (value === undefined) return undefined;
+  if (value === null || value === "") return null;
+  const n = Math.trunc(Number(value));
+  return Number.isFinite(n) ? n : null;
+}
+
+const LEGACY_TRIP_BODY_KEYS = ["type", "type_el", "category", "category_el"];
+
 function normalizeTripPutBody(body) {
   if (!body || typeof body !== "object") return body;
   const out = { ...body };
+  for (const key of LEGACY_TRIP_BODY_KEYS) {
+    delete out[key];
+  }
   for (const key of ["program", "program_el"]) {
     if (key in out) {
       out[key] = normalizeProgramField(out[key]);
     }
   }
-  for (const key of ["included", "included_el", "tags", "tags_el"]) {
+  for (const key of ["included", "included_el", "tags", "tags_el", "transport", "transport_el"]) {
     if (key in out) {
       out[key] = normalizeStringArrayField(out[key]);
     }
+  }
+  if ("price_num" in out) {
+    out.price_num = normalizePriceNumField(out.price_num);
+  }
+  if ("duration_days" in out) {
+    out.duration_days = normalizeDurationDaysField(out.duration_days);
   }
   return out;
 }
@@ -188,12 +213,8 @@ const adminTripPutSchema = z
     included_el: z.array(z.string()).nullable().optional(),
     price_num: z.number().nullable().optional(),
     duration_days: z.number().int().nullable().optional(),
-    type: z.string().nullable().optional(),
-    type_el: z.string().nullable().optional(),
-    category: z.string().nullable().optional(),
-    category_el: z.string().nullable().optional(),
-    transport: z.string().nullable().optional(),
-    transport_el: z.string().nullable().optional(),
+    transport: z.array(z.string()).nullable().optional(),
+    transport_el: z.array(z.string()).nullable().optional(),
     date_range: z.string().nullable().optional(),
     date_range_el: z.string().nullable().optional(),
     departure_city: z.string().nullable().optional(),
@@ -201,6 +222,7 @@ const adminTripPutSchema = z
     tags: z.array(z.string()).nullable().optional(),
     tags_el: z.array(z.string()).nullable().optional(),
     is_featured: z.boolean().nullable().optional(),
+    status: z.enum(["active", "inactive"]).optional(),
   })
   .strict();
 
@@ -285,6 +307,40 @@ export function registerAdminRoutes(app, { supabaseAdmin }) {
         return;
       }
       res.json({ ok: true });
+    },
+  );
+
+  app.post(
+    "/api/admin/trips",
+    adminLimiter,
+    requireAdmin,
+    express.json(),
+    async (req, res) => {
+      const parsed = adminTripPutSchema.safeParse(normalizeTripPutBody(req.body ?? {}));
+      if (!parsed.success) {
+        const first = parsed.error.issues[0];
+        res.status(400).json({
+          error: first ? `${first.path.join(".")}: ${first.message}` : "Invalid body",
+        });
+        return;
+      }
+      const row = { ...parsed.data };
+      Object.keys(row).forEach((k) => {
+        if (row[k] === undefined) delete row[k];
+      });
+      if (row.is_featured === undefined || row.is_featured === null) {
+        row.is_featured = false;
+      }
+      if (row.status === undefined || row.status === null) {
+        row.status = "inactive";
+      }
+      const { data, error } = await supabaseAdmin.from("trips").insert(row).select("id").single();
+      if (error) {
+        console.error("[admin] post trip:", error);
+        res.status(500).json({ error: error.message });
+        return;
+      }
+      res.json({ id: data?.id });
     },
   );
 

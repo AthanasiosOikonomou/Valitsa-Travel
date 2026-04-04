@@ -91,3 +91,17 @@ export async function putTrip(tripId: string, payload: TripUpdate): Promise<void
     throw new Error(j.error ?? "Save failed");
   }
 }
+
+export async function postTrip(payload: TripUpdate): Promise<{ id: string }> {
+  const res = await adminFetch("/api/admin/trips", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const j = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(j.error ?? "Create failed");
+  }
+  const j = (await res.json()) as { id?: string };
+  if (!j.id) throw new Error("Create failed: no id");
+  return { id: j.id };
+}

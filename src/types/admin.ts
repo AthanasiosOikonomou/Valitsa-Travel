@@ -8,6 +8,7 @@ export type AdminTripViewRow = Record<string, unknown> & {
   click_count?: number | null;
   inquiry_count?: number | null;
   is_featured?: boolean | null;
+  status?: string | null;
 };
 
 export type InquiryStatus = "new" | "contacted" | "resolved";

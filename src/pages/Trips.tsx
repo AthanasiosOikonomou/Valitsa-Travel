@@ -38,7 +38,6 @@ import {
   sortTrips,
   tripFilterReducer,
   type SortOption,
-  type TripTypeFilter,
 } from "@/lib/tripFilters";
 import ProgressiveImage from "@/components/ProgressiveImage";
 import { useAnalytics } from "@/hooks/useAnalytics";
@@ -231,7 +230,7 @@ const TripsContent = () => {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    supabase.from("trips").select("*")
+    supabase.from("trips").select("*").or("status.eq.active,status.is.null")
       .then(({ data, error }) => {
         if (error) {
           setError(error.message);
@@ -365,7 +364,7 @@ const TripsContent = () => {
   const initialFilterState = useMemo(
     () =>
       createInitialTripFilterState(scopedTrips, filterMetadata, activeFilter),
-    [activeFilter, filterMetadata],
+    [activeFilter, filterMetadata, scopedTrips],
   );
   const [filterState, dispatch] = useReducer(
     tripFilterReducer,
@@ -517,8 +516,6 @@ const TripsContent = () => {
     country: true,
     continent: true,
     city: true,
-    category: false,
-    type: false,
     sort: true,
   });
 
@@ -867,72 +864,6 @@ const TripsContent = () => {
                   type: "toggleMulti",
                   key: "selectedCities",
                   value: city,
-                });
-              }}
-            />
-          );
-        })}
-      </FilterSection>
-
-      <FilterSection
-        id="category"
-        title={t("archive.category")}
-        isOpen={openSections.category}
-        onToggle={toggleSection}
-      >
-        {filterMetadata.categories.map((category) => {
-          const count = availableFacets.categoryCounts.get(category) ?? 0;
-          const checked =
-            normalizedFilterState.selectedCategories.includes(category);
-
-          return (
-            <FacetOption
-              key={category}
-              type="checkbox"
-              label={translateFacetValue("search", category)}
-              checked={checked}
-              count={count}
-              disabled={isDisabled(count, checked)}
-              onChange={() => {
-                window.__valitsaFilterSectionChanged = true;
-                dispatch({
-                  type: "toggleMulti",
-                  key: "selectedCategories",
-                  value: category,
-                });
-              }}
-            />
-          );
-        })}
-      </FilterSection>
-
-      <FilterSection
-        id="type"
-        title={t("archive.tripType")}
-        isOpen={openSections.type}
-        onToggle={toggleSection}
-      >
-        {(["all", ...filterMetadata.tripTypes] as const).map((type) => {
-          const count =
-            type === "all"
-              ? filtered.length
-              : (availableFacets.tripTypeCounts.get(type) ?? 0);
-          const checked = normalizedFilterState.tripType === type;
-
-          return (
-            <FacetOption
-              key={type}
-              type="radio"
-              name="tripType"
-              label={type === "all" ? t("archive.all") : t(`tripType.${type}`)}
-              checked={checked}
-              count={count}
-              disabled={type !== "all" && isDisabled(count, checked)}
-              onChange={() => {
-                window.__valitsaFilterSectionChanged = true;
-                dispatch({
-                  type: "setTripType",
-                  value: type as TripTypeFilter,
                 });
               }}
             />
