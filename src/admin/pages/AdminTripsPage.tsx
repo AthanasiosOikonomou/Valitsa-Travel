@@ -164,19 +164,22 @@ export default function AdminTripsPage() {
 
   return (
     <div className="space-y-8">
-      <p className="text-sm text-muted-foreground">{t("admin.tripsSubtitle")}</p>
-      <Card className="border-violet-500/15">
+      <p className="text-sm text-slate-600 dark:text-zinc-400">{t("admin.tripsSubtitle")}</p>
+      <Card className="border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-zinc-900/90">
         <CardHeader>
-          <CardTitle className="text-base">{t("admin.catalog")}</CardTitle>
+          <CardTitle className="text-base text-slate-900 dark:text-zinc-100">{t("admin.catalog")}</CardTitle>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           {isLoading ? (
-            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-64 w-full bg-slate-200 dark:bg-zinc-800" />
           ) : (
-            <table className="w-full min-w-[720px] border-collapse text-sm">
+            <table className="w-full min-w-[720px] border-collapse text-sm text-slate-900 dark:text-zinc-100">
               <thead>
                 {table.getHeaderGroups().map((hg) => (
-                  <tr key={hg.id} className="border-b border-border text-left text-muted-foreground">
+                  <tr
+                    key={hg.id}
+                    className="border-b border-slate-200 bg-slate-100 text-left text-slate-600 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-400"
+                  >
                     {hg.headers.map((h) => (
                       <th key={h.id} className="pb-3 pr-4 font-medium">
                         {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
@@ -187,7 +190,7 @@ export default function AdminTripsPage() {
               </thead>
               <tbody>
                 {table.getRowModel().rows.map((row) => (
-                  <tr key={row.id} className="border-b border-border/60">
+                  <tr key={row.id} className="border-b border-slate-200/90 dark:border-white/10">
                     {row.getVisibleCells().map((cell) => (
                       <td key={cell.id} className="py-3 pr-4 align-middle">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -272,11 +275,15 @@ function TripEditDialog({ tripId, open, onClose }: { tripId: string; open: boole
     <Dialog.Root open={open} onOpenChange={(o) => !o && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-[101] max-h-[90vh] w-full max-w-3xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-violet-500/20 bg-background p-6 shadow-elev3">
-          <Dialog.Title className="text-lg font-semibold">{t("admin.editTrip")}</Dialog.Title>
-          <Dialog.Description className="text-sm text-muted-foreground">{t("admin.editTripDesc")}</Dialog.Description>
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-[101] max-h-[90vh] w-full max-w-3xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-elev3 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100">
+          <Dialog.Title className="text-lg font-semibold text-slate-900 dark:text-zinc-100">
+            {t("admin.editTrip")}
+          </Dialog.Title>
+          <Dialog.Description className="text-sm text-slate-600 dark:text-zinc-400">
+            {t("admin.editTripDesc")}
+          </Dialog.Description>
           {q.isLoading ? (
-            <Skeleton className="mt-4 h-40 w-full" />
+            <Skeleton className="mt-4 h-40 w-full bg-slate-200 dark:bg-zinc-800" />
           ) : (
             <div className="mt-6 space-y-6">
               <div className="grid gap-4 sm:grid-cols-2">
@@ -323,7 +330,7 @@ function TripEditDialog({ tripId, open, onClose }: { tripId: string; open: boole
                 </Button>
                 <Button
                   type="button"
-                  className="bg-violet-600 text-white hover:bg-violet-500"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
                   disabled={save.isPending}
                   onClick={() => save.mutate()}
                 >

@@ -168,10 +168,34 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
 
             <button
               onClick={onToggleDark}
-              className="premium-outline-button p-2.5 sm:p-3"
+              className="premium-outline-button relative isolate grid h-10 w-10 place-items-center overflow-hidden p-0 sm:h-11 sm:w-11"
               aria-label={t("nav.toggleTheme")}
             >
-              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+              <AnimatePresence mode="wait" initial={false}>
+                {darkMode ? (
+                  <motion.span
+                    key="sun"
+                    initial={{ opacity: 0, rotate: -90, scale: 0.85 }}
+                    animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                    exit={{ opacity: 0, rotate: 90, scale: 0.85 }}
+                    transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                    className="absolute"
+                  >
+                    <Sun size={18} />
+                  </motion.span>
+                ) : (
+                  <motion.span
+                    key="moon"
+                    initial={{ opacity: 0, rotate: 90, scale: 0.85 }}
+                    animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                    exit={{ opacity: 0, rotate: -90, scale: 0.85 }}
+                    transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                    className="absolute"
+                  >
+                    <Moon size={18} />
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </button>
 
             <button

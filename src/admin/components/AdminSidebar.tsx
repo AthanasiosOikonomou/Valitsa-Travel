@@ -6,11 +6,13 @@ import { useLanguage } from "@/contexts/LanguageContext";
 export function AdminSidebar() {
   const { t } = useLanguage();
   return (
-    <aside className="flex h-full w-56 flex-col border-r border-violet-500/15 bg-sidebar text-sidebar-foreground">
-      <div className="flex items-center gap-2 border-b border-violet-500/15 px-5 py-5">
-        <Sparkles className="h-6 w-6 text-violet-400" />
+    <aside className="flex h-full w-56 flex-col border-r border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100">
+      <div className="flex items-center gap-2 border-b border-slate-200 px-5 py-5 dark:border-white/10">
+        <Sparkles className="h-6 w-6 shrink-0 text-primary" aria-hidden />
         <div>
-          <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Valitsa</p>
+          <p className="text-xs font-medium uppercase tracking-widest text-slate-500 dark:text-zinc-400">
+            Valitsa
+          </p>
           <p className="text-sm font-semibold">Admin</p>
         </div>
       </div>
@@ -21,8 +23,8 @@ export function AdminSidebar() {
             cn(
               "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
               isActive
-                ? "border border-violet-500/30 bg-violet-950/40 text-sidebar-accent-foreground"
-                : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60",
+                ? "border border-primary/35 bg-primary/10 text-slate-900 dark:text-zinc-100"
+                : "text-slate-600 hover:bg-slate-100 dark:text-zinc-300 dark:hover:bg-white/5",
             )
           }
         >

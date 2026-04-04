@@ -49,11 +49,13 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md border-violet-500/20 shadow-elev3">
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 dark:bg-zinc-950">
+      <Card className="w-full max-w-md border border-slate-200 bg-white text-slate-900 shadow-elev3 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-semibold tracking-tight">{t("admin.loginTitle")}</CardTitle>
-          <CardDescription>{t("admin.loginSubtitle")}</CardDescription>
+          <CardTitle className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-zinc-100">
+            {t("admin.loginTitle")}
+          </CardTitle>
+          <CardDescription className="text-slate-600 dark:text-zinc-400">{t("admin.loginSubtitle")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
@@ -79,7 +81,7 @@ export default function AdminLoginPage() {
                 required
               />
             </div>
-            <Button type="submit" className="w-full bg-violet-600 text-white hover:bg-violet-500" disabled={loading}>
+            <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

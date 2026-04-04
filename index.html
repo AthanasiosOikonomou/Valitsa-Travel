@@ -47,11 +47,30 @@
     />
 
     <script>
-      try {
-        var s = localStorage.getItem("darkMode");
-        var dark = s === null ? true : s === "true";
-        if (dark) document.documentElement.classList.add("dark");
-      } catch (e) {}
+      (function () {
+        try {
+          var KEY = "valitsa-theme";
+          var LEGACY = "darkMode";
+          var t = localStorage.getItem(KEY);
+          if (t == null) {
+            var leg = localStorage.getItem(LEGACY);
+            if (leg === "true") {
+              t = "dark";
+              localStorage.setItem(KEY, "dark");
+            } else if (leg === "false") {
+              t = "light";
+              localStorage.setItem(KEY, "light");
+            }
+          }
+          var dark;
+          if (t === "dark") dark = true;
+          else if (t === "light") dark = false;
+          else {
+            dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          }
+          document.documentElement.classList.toggle("dark", dark);
+        } catch (e) {}
+      })();
     </script>
 
     <meta property="og:type" content="website" />

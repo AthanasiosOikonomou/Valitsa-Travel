@@ -7,6 +7,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 
+const widgetClass = cn(
+  "rounded-2xl border border-slate-200 bg-white text-left shadow-sm transition-all dark:border-white/10 dark:bg-zinc-900/90",
+  "hover:border-primary/35 hover:bg-slate-50 hover:shadow-md dark:hover:bg-zinc-800/80",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+);
+
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -31,27 +37,28 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-8">
-      <p className="text-sm text-muted-foreground">{t("admin.dashboardSubtitle")}</p>
+      <p className="text-sm text-slate-600 dark:text-zinc-400">{t("admin.dashboardSubtitle")}</p>
       <div className="grid gap-4 sm:grid-cols-2">
         <button
           type="button"
           onClick={() => navigate("/admin/trips")}
-          className={cn(
-            "rounded-2xl border border-violet-500/20 bg-card text-left shadow-sm transition-all",
-            "hover:border-violet-500/45 hover:bg-violet-950/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50",
-          )}
+          className={widgetClass}
           aria-label={t("admin.widgetTripsHint")}
         >
-          <Card className="border-0 bg-transparent shadow-none">
+          <Card className="border-0 bg-transparent shadow-none text-inherit">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-base font-semibold">{t("admin.widgetTrips")}</CardTitle>
-              <Map className="h-5 w-5 text-violet-400" aria-hidden />
+              <CardTitle className="text-base font-semibold text-slate-900 dark:text-zinc-100">
+                {t("admin.widgetTrips")}
+              </CardTitle>
+              <Map className="h-5 w-5 text-primary" aria-hidden />
             </CardHeader>
             <CardContent>
               {trips.isLoading ? (
-                <Skeleton className="h-10 w-20" />
+                <Skeleton className="h-10 w-20 bg-slate-200 dark:bg-zinc-800" />
               ) : (
-                <p className="text-3xl font-bold tabular-nums tracking-tight">{trips.data}</p>
+                <p className="text-3xl font-bold tabular-nums tracking-tight text-slate-900 dark:text-zinc-50">
+                  {trips.data}
+                </p>
               )}
             </CardContent>
           </Card>
@@ -59,22 +66,23 @@ export default function AdminDashboardPage() {
         <button
           type="button"
           onClick={() => navigate("/admin/leads")}
-          className={cn(
-            "rounded-2xl border border-violet-500/20 bg-card text-left shadow-sm transition-all",
-            "hover:border-violet-500/45 hover:bg-violet-950/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50",
-          )}
+          className={widgetClass}
           aria-label={t("admin.widgetInquiriesHint")}
         >
-          <Card className="border-0 bg-transparent shadow-none">
+          <Card className="border-0 bg-transparent shadow-none text-inherit">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-base font-semibold">{t("admin.widgetInquiries")}</CardTitle>
-              <Inbox className="h-5 w-5 text-violet-400" aria-hidden />
+              <CardTitle className="text-base font-semibold text-slate-900 dark:text-zinc-100">
+                {t("admin.widgetInquiries")}
+              </CardTitle>
+              <Inbox className="h-5 w-5 text-primary" aria-hidden />
             </CardHeader>
             <CardContent>
               {leads.isLoading ? (
-                <Skeleton className="h-10 w-20" />
+                <Skeleton className="h-10 w-20 bg-slate-200 dark:bg-zinc-800" />
               ) : (
-                <p className="text-3xl font-bold tabular-nums tracking-tight">{leads.data}</p>
+                <p className="text-3xl font-bold tabular-nums tracking-tight text-slate-900 dark:text-zinc-50">
+                  {leads.data}
+                </p>
               )}
             </CardContent>
           </Card>

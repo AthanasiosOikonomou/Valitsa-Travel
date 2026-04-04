@@ -1,9 +1,12 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { ChevronDown, LogOut, User } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronDown, LogOut, Moon, Sun, User } from "lucide-react";
+import { useTheme } from "next-themes";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAdminAuth } from "@/admin/hooks/useAdminAuth";
+import { useResolvedDarkMode } from "@/hooks/useResolvedDarkMode";
 import { cn } from "@/lib/utils";
 
 function pageTitleKey(pathname: string): string {
@@ -17,6 +20,8 @@ export function AdminHeader() {
   const navigate = useNavigate();
   const { t, lang, setLang } = useLanguage();
   const { user } = useAdminAuth();
+  const { setTheme } = useTheme();
+  const darkMode = useResolvedDarkMode();
   const titleKey = pageTitleKey(pathname);
   const email = user?.email ?? "";
 
@@ -25,15 +30,22 @@ export function AdminHeader() {
     navigate("/admin/login", { replace: true });
   }
 
+  function toggleTheme() {
+    setTheme(darkMode ? "light" : "dark");
+  }
+
+  const shellBtn =
+    "rounded-xl border border-slate-200 bg-white/90 text-slate-700 shadow-sm backdrop-blur-sm transition-colors hover:border-slate-300 hover:bg-white dark:border-white/10 dark:bg-zinc-900/90 dark:text-zinc-200 dark:hover:border-white/15 dark:hover:bg-zinc-900";
+
   return (
-    <header className="sticky top-0 z-40 border-b border-violet-500/15 bg-background/90 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/85 text-slate-900 backdrop-blur-md dark:border-white/10 dark:bg-zinc-950/85 dark:text-zinc-100">
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-4 px-6">
-        <h1 className="truncate text-lg font-semibold tracking-tight text-foreground">
+        <h1 className="truncate text-lg font-semibold tracking-tight text-slate-900 dark:text-zinc-100">
           {t(titleKey)}
         </h1>
         <div className="flex shrink-0 items-center gap-2">
           <div
-            className="flex rounded-xl border border-violet-500/25 bg-violet-950/20 p-0.5"
+            className="flex rounded-xl border border-slate-200 bg-white/90 p-0.5 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-zinc-900/90"
             role="group"
             aria-label={t("admin.language")}
           >
@@ -43,8 +55,8 @@ export function AdminHeader() {
               className={cn(
                 "rounded-lg px-2.5 py-1 text-xs font-medium transition-colors",
                 lang === "gr"
-                  ? "bg-violet-600 text-white shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100",
               )}
             >
               EL
@@ -55,32 +67,67 @@ export function AdminHeader() {
               className={cn(
                 "rounded-lg px-2.5 py-1 text-xs font-medium transition-colors",
                 lang === "en"
-                  ? "bg-violet-600 text-white shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100",
               )}
             >
               EN
             </button>
           </div>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className={cn(shellBtn, "relative isolate grid h-10 w-10 place-items-center overflow-hidden p-0")}
+            aria-label={t("nav.toggleTheme")}
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              {darkMode ? (
+                <motion.span
+                  key="sun"
+                  initial={{ opacity: 0, rotate: -90, scale: 0.85 }}
+                  animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                  exit={{ opacity: 0, rotate: 90, scale: 0.85 }}
+                  transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                  className="absolute"
+                >
+                  <Sun className="h-[18px] w-[18px] text-primary" aria-hidden />
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="moon"
+                  initial={{ opacity: 0, rotate: 90, scale: 0.85 }}
+                  animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                  exit={{ opacity: 0, rotate: -90, scale: 0.85 }}
+                  transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                  className="absolute"
+                >
+                  <Moon className="h-[18px] w-[18px] text-primary" aria-hidden />
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </button>
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
               <button
                 type="button"
-                className="flex max-w-[200px] items-center gap-2 rounded-xl border border-violet-500/25 bg-card px-3 py-2 text-left text-sm text-foreground transition-colors hover:border-violet-500/40 hover:bg-muted/30"
+                className={cn(
+                  "flex max-w-[200px] items-center gap-2 rounded-xl px-3 py-2 text-left text-sm transition-colors",
+                  shellBtn,
+                )}
               >
-                <User className="h-4 w-4 shrink-0 text-violet-400" aria-hidden />
+                <User className="h-4 w-4 shrink-0 text-primary" aria-hidden />
                 <span className="min-w-0 flex-1 truncate text-xs">{email || "—"}</span>
                 <ChevronDown className="h-4 w-4 shrink-0 opacity-60" aria-hidden />
               </button>
             </DropdownMenu.Trigger>
             <DropdownMenu.Portal>
               <DropdownMenu.Content
-                className="z-[200] min-w-[200px] rounded-xl border border-violet-500/20 bg-popover p-1 text-popover-foreground shadow-elev3"
+                className="z-[200] min-w-[200px] rounded-xl border border-slate-200 bg-white p-1 text-slate-900 shadow-elev3 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100"
                 sideOffset={6}
                 align="end"
               >
                 <DropdownMenu.Item
-                  className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm outline-none data-[highlighted]:bg-destructive/15 data-[highlighted]:text-destructive"
+                  className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm outline-none data-[highlighted]:bg-red-500/10 data-[highlighted]:text-red-600 dark:data-[highlighted]:text-red-400"
                   onSelect={(e) => {
                     e.preventDefault();
                     void signOut();

@@ -47,30 +47,32 @@ export function InquiryDetailSheet({ inquiry, open, onOpenChange }: Props) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-xl">
-        <SheetHeader>
-          <SheetTitle>{t("admin.inquiry")}</SheetTitle>
+      <SheetContent className="w-full border-slate-200 bg-white text-slate-900 sm:max-w-xl dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100">
+        <SheetHeader className="border-slate-200 dark:border-white/10">
+          <SheetTitle className="text-slate-900 dark:text-zinc-100">{t("admin.inquiry")}</SheetTitle>
         </SheetHeader>
         {inquiry ? (
           <ScrollArea className="mt-4 h-[calc(100vh-8rem)] pr-4">
             <div className="space-y-4 text-sm">
               <div>
-                <p className="text-xs font-medium uppercase text-muted-foreground">{t("admin.from")}</p>
+                <p className="text-xs font-medium uppercase text-slate-500 dark:text-zinc-400">{t("admin.from")}</p>
                 <p className="font-semibold">{inquiry.name}</p>
                 <a className="text-primary hover:underline" href={`mailto:${inquiry.email}`}>
                   {inquiry.email}
                 </a>
-                {inquiry.phone ? <p className="text-muted-foreground">{inquiry.phone}</p> : null}
+                {inquiry.phone ? (
+                  <p className="text-slate-600 dark:text-zinc-400">{inquiry.phone}</p>
+                ) : null}
               </div>
               <Separator />
               <div>
-                <p className="text-xs font-medium uppercase text-muted-foreground">{t("admin.trip")}</p>
+                <p className="text-xs font-medium uppercase text-slate-500 dark:text-zinc-400">{t("admin.trip")}</p>
                 <p>{inquiry.trips?.title ?? "—"}</p>
               </div>
               <Separator />
               <div>
-                <p className="text-xs font-medium uppercase text-muted-foreground">{t("admin.message")}</p>
-                <p className="whitespace-pre-wrap text-muted-foreground">{inquiry.message}</p>
+                <p className="text-xs font-medium uppercase text-slate-500 dark:text-zinc-400">{t("admin.message")}</p>
+                <p className="whitespace-pre-wrap text-slate-600 dark:text-zinc-400">{inquiry.message}</p>
               </div>
               <Separator />
               <div className="space-y-2">
@@ -79,7 +81,7 @@ export function InquiryDetailSheet({ inquiry, open, onOpenChange }: Props) {
                   id="inq-status"
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
-                  className="flex h-10 w-full rounded-xl border border-input bg-background px-3 text-sm"
+                  className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-100"
                 >
                   {STATUSES.map((s) => (
                     <option key={s} value={s}>
@@ -94,7 +96,7 @@ export function InquiryDetailSheet({ inquiry, open, onOpenChange }: Props) {
               </div>
               <Button
                 type="button"
-                className="w-full bg-violet-600 text-white hover:bg-violet-500"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 disabled={save.isPending}
                 onClick={() => save.mutate()}
               >

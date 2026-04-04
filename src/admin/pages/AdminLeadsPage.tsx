@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { InquiryDetailSheet } from "@/admin/components/InquiryDetailSheet";
+import { cn } from "@/lib/utils";
 
 export default function AdminLeadsPage() {
   const { t } = useLanguage();
@@ -27,15 +28,15 @@ export default function AdminLeadsPage() {
 
   return (
     <div className="space-y-8">
-      <p className="text-sm text-muted-foreground">{t("admin.leadsSubtitle")}</p>
+      <p className="text-sm text-slate-600 dark:text-zinc-400">{t("admin.leadsSubtitle")}</p>
 
-      <Card className="border-violet-500/15">
+      <Card className="border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-zinc-900/90">
         <CardHeader>
-          <CardTitle className="text-base">{t("admin.inbox")}</CardTitle>
+          <CardTitle className="text-base text-slate-900 dark:text-zinc-100">{t("admin.inbox")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           {q.isLoading ? (
-            <Skeleton className="h-40 w-full" />
+            <Skeleton className="h-40 w-full bg-slate-200 dark:bg-zinc-800" />
           ) : (
             (q.data ?? []).map((row) => (
               <button
@@ -45,17 +46,22 @@ export default function AdminLeadsPage() {
                   setSelected(row);
                   setOpen(true);
                 }}
-                className="flex w-full items-center justify-between gap-4 rounded-xl border border-violet-500/15 bg-card px-4 py-3 text-left transition-colors hover:border-violet-500/35 hover:bg-violet-950/20"
+                className={cn(
+                  "flex w-full items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left transition-colors",
+                  "hover:border-primary/30 hover:bg-slate-50 dark:border-white/10 dark:bg-zinc-950 dark:hover:bg-zinc-800/60",
+                )}
               >
                 <div className="min-w-0">
-                  <p className="truncate font-medium">{row.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">{row.email}</p>
+                  <p className="truncate font-medium text-slate-900 dark:text-zinc-100">{row.name}</p>
+                  <p className="truncate text-xs text-slate-600 dark:text-zinc-400">{row.email}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   {row.status ? (
-                    <Badge className="capitalize border-violet-500/25 bg-violet-950/40">{String(row.status)}</Badge>
+                    <Badge className="border border-primary/25 bg-primary/10 capitalize text-slate-800 dark:text-zinc-200">
+                      {String(row.status)}
+                    </Badge>
                   ) : null}
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-slate-500 dark:text-zinc-500">
                     {row.created_at ? new Date(row.created_at).toLocaleString() : ""}
                   </span>
                 </div>

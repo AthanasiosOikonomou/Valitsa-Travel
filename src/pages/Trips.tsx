@@ -20,7 +20,7 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import type { Trip } from "@/types/Trip";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useTheme } from "@/contexts/ThemeContext";
+import { useResolvedDarkMode } from "@/hooks/useResolvedDarkMode";
 import TripDetail from "@/components/TripDetail";
 import ContactModal from "@/components/ContactModal";
 import Seo from "@/components/Seo";
@@ -181,7 +181,7 @@ const EMPTY_STATE_DEBOUNCE_MS = 280;
 const TripsContent = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { darkMode, toggleDark } = useTheme();
+  const darkMode = useResolvedDarkMode();
   const { t, lang } = useLanguage();
   const { trackTripView } = useAnalytics();
 

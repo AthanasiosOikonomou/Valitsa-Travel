@@ -1,9 +1,5 @@
 import Navbar from "@/components/Navbar";
-import { useTheme } from "@/contexts/ThemeContext";
-function NavbarWrapper() {
-  const { darkMode, toggleDark } = useTheme();
-  return <Navbar darkMode={darkMode} onToggleDark={toggleDark} />;
-}
+import { useTheme } from "next-themes";
 import { Suspense, lazy, useEffect, useLayoutEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -14,11 +10,20 @@ import {
   useLocation,
 } from "react-router-dom";
 import { MotionConfig } from "framer-motion";
+import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/contexts/LanguageContext";
-import { ThemeProvider } from "@/contexts/ThemeContext";
+import { THEME_STORAGE_KEY } from "@/lib/themeStorage";
+import { useResolvedDarkMode } from "@/hooks/useResolvedDarkMode";
+
+function NavbarWrapper() {
+  const darkMode = useResolvedDarkMode();
+  const { setTheme } = useTheme();
+  const toggleDark = () => setTheme(darkMode ? "light" : "dark");
+  return <Navbar darkMode={darkMode} onToggleDark={toggleDark} />;
+}
 import { instantScrollToTop } from "@/lib/instantScrollToTop";
 import ScrollUpRail from "@/components/ScrollUpRail";
 import { AdminGuard } from "@/admin/components/AdminGuard";
@@ -62,7 +67,13 @@ function PublicChrome() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <MotionConfig reducedMotion="user">
-      <ThemeProvider>
+      <NextThemesProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        storageKey={THEME_STORAGE_KEY}
+        disableTransitionOnChange
+      >
         <LanguageProvider>
           <TooltipProvider>
             <Toaster />
@@ -76,7 +87,7 @@ const App = () => (
               <PublicChrome />
               <Suspense
                 fallback={
-                  <div className="min-h-screen bg-background" aria-hidden="true" />
+                  <div className="min-h-screen bg-slate-50 dark:bg-zinc-950" aria-hidden="true" />
                 }
               >
                 <ScrollToTop />
@@ -98,7 +109,7 @@ const App = () => (
             </BrowserRouter>
           </TooltipProvider>
         </LanguageProvider>
-      </ThemeProvider>
+      </NextThemesProvider>
     </MotionConfig>
   </QueryClientProvider>
 );

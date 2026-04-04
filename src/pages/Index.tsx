@@ -3,7 +3,7 @@ import { AnimatePresence } from "framer-motion";
 import type { Trip } from "@/types/Trip";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAnalytics } from "@/hooks/useAnalytics";
-import { useTheme } from "@/contexts/ThemeContext";
+import { useResolvedDarkMode } from "@/hooks/useResolvedDarkMode";
 import HeroSection from "@/components/HeroSection";
 import FeaturedTrips from "@/components/FeaturedTrips";
 import TripDetail from "@/components/TripDetail";
@@ -12,7 +12,7 @@ import TermsModal from "@/components/TermsModal";
 import { showTrips } from "@/lib/showTrips";
 
 const IndexContent = () => {
-  const { darkMode, toggleDark } = useTheme();
+  const darkMode = useResolvedDarkMode();
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [termsOpen, setTermsOpen] = useState(false);
   const { t, lang } = useLanguage();

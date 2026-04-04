@@ -44,7 +44,7 @@ export function TripImageDropzone({ value, onChange, className }: Props) {
       <div
         {...getRootProps()}
         className={cn(
-          "relative flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border/80 bg-muted/30 px-6 py-10 transition-colors hover:bg-muted/50",
+          "relative flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-6 py-10 transition-colors hover:bg-slate-100 dark:border-white/15 dark:bg-zinc-950/50 dark:hover:bg-zinc-900/50",
           isDragActive && "border-primary bg-primary/5",
           busy && "pointer-events-none opacity-70",
         )}
@@ -53,9 +53,9 @@ export function TripImageDropzone({ value, onChange, className }: Props) {
         {busy ? (
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         ) : (
-          <ImageIcon className="h-8 w-8 text-muted-foreground" />
+          <ImageIcon className="h-8 w-8 text-slate-400 dark:text-zinc-500" />
         )}
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-center text-sm text-slate-600 dark:text-zinc-400">
           Drop an image here, or click to browse
         </p>
       </div>
