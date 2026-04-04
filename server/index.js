@@ -283,9 +283,31 @@ const required = {
 
 // MAIL_CC is optional
 const mailCc = process.env.MAIL_CC || "";
-/** Envelope From / sender address (SMTP auth still uses MAIL_USER). Defaults to sales inbox. */
+/** Visible From address (SMTP auth uses MAIL_USER). Defaults to sales inbox. */
 const mailFrom =
   process.env.MAIL_FROM?.trim() || "sales@valitsatravel.gr";
+
+const normalizeEmailAddress = (addr) => {
+  const s = String(addr ?? "").trim();
+  const m = s.match(/<([^>]+)>/);
+  return (m ? m[1] : s).trim().toLowerCase();
+};
+
+/** When display From ≠ authenticated mailbox, many SMTP servers only deliver to internal addresses unless envelope MAIL FROM uses the auth user. */
+const useSmtpEnvelopeFromAuth =
+  Boolean(required.user) &&
+  normalizeEmailAddress(required.user) !== normalizeEmailAddress(mailFrom);
+
+const smtpEnvelopeFromAuth = (toList) =>
+  useSmtpEnvelopeFromAuth
+    ? {
+        envelope: {
+          from: required.user,
+          to: toList,
+        },
+      }
+    : {};
+
 const supabaseUrl = process.env.VITE_SUPABASE_URL || "";
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const supabaseAdmin =
@@ -598,7 +620,7 @@ app.post(inquiryRoutes, async (req, res) => {
 
   const staffMailOptions = {
     from: `Valitsa Travel <${mailFrom}>`,
-      to: required.to,
+    to: required.to,
     ...(mailCc ? { cc: mailCc } : {}),
     replyTo: `${sanitizeHeader(from_name)} <${sanitizeHeader(from_email)}>`,
     ...(!mailLogoUrl && hasLocalLogo
@@ -614,12 +636,18 @@ app.post(inquiryRoutes, async (req, res) => {
       : {}),
   };
 
+  const staffToList = [
+    required.to,
+    ...mailCc.split(",").map((x) => x.trim()).filter(Boolean),
+  ];
+
   let staffMailSent = false;
   let staffResult = null;
 
   try {
     staffResult = await transporter.sendMail({
       ...staffMailOptions,
+      ...smtpEnvelopeFromAuth(staffToList),
       subject,
       text: textBody,
       html: htmlBody,
@@ -637,18 +665,33 @@ app.post(inquiryRoutes, async (req, res) => {
     console.error("[inquiry] staff mail failed:", error);
   }
 
+  const confirmTo = from_email.trim();
   let confirmationSent = false;
+  let confirmationResult = null;
   try {
-    await transporter.sendMail({
+    confirmationResult = await transporter.sendMail({
       from: `Valitsa Travel <${mailFrom}>`,
-      to: from_email.trim(),
+      replyTo: `Valitsa Travel <${mailFrom}>`,
+      to: confirmTo,
+      ...smtpEnvelopeFromAuth([confirmTo]),
       subject: confirmationSubject(normalizedLang),
       text: confirmationTextBody(firstName, lastName, normalizedLang),
       html: generateEmailTemplate(firstName, lastName, normalizedLang),
     });
     confirmationSent = true;
+    console.log("[inquiry] confirmation mail sent", {
+      to: confirmTo,
+      messageId: confirmationResult.messageId,
+      accepted: confirmationResult.accepted,
+      rejected: confirmationResult.rejected,
+      smtpEnvelopeFromAuth: useSmtpEnvelopeFromAuth,
+    });
   } catch (error) {
-    console.error("[inquiry] confirmation mail failed:", error);
+    console.error("[inquiry] confirmation mail failed:", {
+      to: confirmTo,
+      smtpEnvelopeFromAuth: useSmtpEnvelopeFromAuth,
+      error,
+    });
   }
 
   if (effectiveTripId) {
@@ -671,6 +714,7 @@ app.post(inquiryRoutes, async (req, res) => {
     ok: true,
     staffMailSent,
     confirmationSent,
+    confirmationTo: confirmTo,
     to: required.to,
     cc: mailCc || null,
     ...(staffResult
@@ -680,6 +724,9 @@ app.post(inquiryRoutes, async (req, res) => {
           rejected: staffResult.rejected,
           response: staffResult.response,
         }
+      : {}),
+    ...(confirmationResult
+      ? { confirmationMessageId: confirmationResult.messageId }
       : {}),
   });
 });

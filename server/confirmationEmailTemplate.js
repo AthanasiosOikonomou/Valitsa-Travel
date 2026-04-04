@@ -1,10 +1,3 @@
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const escapeHtml = (value) =>
   String(value)
     .replaceAll("&", "&amp;")
@@ -14,21 +7,12 @@ const escapeHtml = (value) =>
     .replaceAll("'", "&#39;")
     .replaceAll("`", "&#96;");
 
-/**
- * Absolute URL for the confirmation email logo (light wordmark).
- * Optional MAIL_LOGO_CONFIRMATION_URL overrides; else PUBLIC_SITE_URL + logo-light.png or logo-light.svg.
- */
+/** Fixed production URL for the confirmation email logo (no env vars). */
+const CONFIRMATION_LOGO_URL =
+  "https://valitsatravel.gr/branding/navbar/logo-light.png";
+
 export function buildConfirmationLogoUrl() {
-  const explicit = process.env.MAIL_LOGO_CONFIRMATION_URL?.trim();
-  if (explicit) return explicit;
-
-  const base = process.env.PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
-  if (!base) return "";
-
-  const publicDir = path.join(__dirname, "../public/branding/navbar");
-  const pngPath = path.join(publicDir, "logo-light.png");
-  const file = fs.existsSync(pngPath) ? "logo-light.png" : "logo-light.svg";
-  return `${base}/branding/navbar/${file}`;
+  return CONFIRMATION_LOGO_URL;
 }
 
 /** @param {unknown} raw */
