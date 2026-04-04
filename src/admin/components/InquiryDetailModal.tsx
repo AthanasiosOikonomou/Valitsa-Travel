@@ -80,6 +80,7 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
   pendingUploadsRef.current = pendingUploads;
   const uploadAbortByClientIdRef = useRef<Map<string, AbortController>>(new Map());
   const timelineScrollRef = useRef<HTMLDivElement>(null);
+  const timelineEndRef = useRef<HTMLDivElement>(null);
   const prevTimelineLenRef = useRef(0);
   const editorRef = useRef<RichTextEditorHandle>(null);
   const navigate = useNavigate();
@@ -162,25 +163,21 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
   }, [inquiry, commentsQ.data, t]);
 
   const scrollTimelineToBottom = useCallback((behavior: ScrollBehavior) => {
-    const el = timelineScrollRef.current;
-    if (!el) return;
-    el.scrollTo({ top: el.scrollHeight, behavior });
+    timelineEndRef.current?.scrollIntoView({ block: "end", behavior });
   }, []);
 
-  useLayoutEffect(() => {
-    const el = timelineScrollRef.current;
-    if (!el || !open) return;
-    if (commentsQ.isLoading) return;
+  const timelineLen = timeline.length;
 
-    const len = timeline.length;
-    const grew = len > prevTimelineLenRef.current;
-    const hadItems = prevTimelineLenRef.current > 0;
-    prevTimelineLenRef.current = len;
+  useLayoutEffect(() => {
+    if (!open || commentsQ.isLoading) return;
+    const prevLen = prevTimelineLenRef.current;
+    if (timelineLen === prevLen) return;
+    prevTimelineLenRef.current = timelineLen;
 
     requestAnimationFrame(() => {
-      scrollTimelineToBottom(grew && hadItems ? "smooth" : "auto");
+      scrollTimelineToBottom("smooth");
     });
-  }, [open, timeline, commentsQ.isLoading, scrollTimelineToBottom]);
+  }, [open, timelineLen, commentsQ.isLoading, scrollTimelineToBottom]);
 
   const postMut = useMutation({
     mutationFn: (vars: { content: string; attachments: InquiryCommentAttachment[] }) => {
@@ -489,14 +486,6 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
                       <ul className="flex flex-col gap-4">
                         {timeline.map((item) => {
                           const customer = isCustomerBubble(item);
-                          if (import.meta.env.DEV && item.kind === "comment") {
-                            console.log(
-                              "Loading message:",
-                              item.row.id,
-                              "with attachments:",
-                              item.row.attachments,
-                            );
-                          }
                           const safeHtml =
                             item.kind === "comment" ? sanitizeInquiryHtml(item.html) : "";
                           const legacyPreviewUrls =
@@ -666,6 +655,7 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
                         })}
                       </ul>
                     )}
+                    <div ref={timelineEndRef} className="h-px w-full shrink-0" aria-hidden />
                   </div>
                 </motion.div>
               </div>

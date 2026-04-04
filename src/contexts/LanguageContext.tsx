@@ -531,7 +531,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.timelineSystem": "Σύστημα",
     "admin.timelineAdmin": "Διαχειριστής",
     "admin.timelineYou": "Εσείς",
-    "admin.commentPlaceholder": "Γράψτε εσωτερικό σχόλιο…",
+    "admin.commentPlaceholder": "Γράψτε ένα σχόλιο ή επισυνάψτε αρχεία...",
     "admin.postComment": "Αποστολή σχολίου",
     "admin.postingComment": "Αποστολή…",
     "admin.commentPosted": "Το σχόλιο προστέθηκε",

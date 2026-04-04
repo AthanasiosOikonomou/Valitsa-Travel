@@ -101,10 +101,10 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, Props>(function R
     ref,
     () => ({
       insertContent: (html: string) => {
-        editor?.chain().focus().insertContent(html).run();
+        editor?.chain().focus("end").insertContent(html).run();
       },
       focus: () => {
-        editor?.chain().focus().run();
+        editor?.chain().focus("end").run();
       },
     }),
     [editor],
@@ -148,6 +148,14 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, Props>(function R
     );
   }
 
+  const focusShellFromPointer = (e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    const el = e.target as HTMLElement;
+    if (el.closest('[role="toolbar"]')) return;
+    if (el.closest(".ProseMirror")) return;
+    editor.chain().focus("end").run();
+  };
+
   return (
     <div
       className={cn(
@@ -155,21 +163,24 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, Props>(function R
         shellHeight,
         shellMinimal
           ? cn(
-              "border border-transparent bg-white/80 shadow-none",
-              "focus-within:border-slate-200 focus-within:shadow-sm focus-within:ring-2 focus-within:ring-primary/25",
-              "dark:bg-zinc-950/50 dark:focus-within:border-white/10 dark:focus-within:ring-primary/30",
+              "cursor-text border border-transparent bg-white/80 shadow-none",
+              "focus-within:border-purple-500/50 focus-within:shadow-sm focus-within:ring-2 focus-within:ring-purple-500",
+              "dark:bg-zinc-950/50 dark:focus-within:border-purple-400/45 dark:focus-within:ring-purple-400",
             )
           : "border border-slate-200 bg-white dark:border-white/10 dark:bg-zinc-950",
       )}
+      onMouseDown={focusShellFromPointer}
     >
       {showToolbar ? (
-        <RichTextEditorToolbar
-          editor={editor as Editor}
-          t={t}
-          attachmentContext={attachmentContext}
-          onInquiryAttachmentFilesSelected={onInquiryAttachmentFilesSelected}
-          attachmentPickerDisabled={attachmentPickerDisabled}
-        />
+        <div className="sticky top-0 z-10 shrink-0 bg-white dark:bg-zinc-950">
+          <RichTextEditorToolbar
+            editor={editor as Editor}
+            t={t}
+            attachmentContext={attachmentContext}
+            onInquiryAttachmentFilesSelected={onInquiryAttachmentFilesSelected}
+            attachmentPickerDisabled={attachmentPickerDisabled}
+          />
+        </div>
       ) : null}
       <div className="min-h-0 flex-1 w-full overflow-y-auto overflow-x-hidden scrollbar-inquiry">
         <EditorContent editor={editor} />
