@@ -6,6 +6,9 @@ export const INQUIRY_ATTACHMENTS_BUCKET = "inquiry-attachments";
 /** Signed URL TTL for download / open actions (seconds). */
 export const INQUIRY_ATTACHMENT_DOWNLOAD_TTL_SEC = 60;
 
+/** Signed URL TTL for attachment preview modal (image / PDF in-page). */
+export const INQUIRY_ATTACHMENT_PREVIEW_TTL_SEC = 3600;
+
 /** Signed URL TTL for inline image thumbnails in the timeline (seconds). */
 export const INQUIRY_ATTACHMENT_THUMB_TTL_SEC = 1800;
 
