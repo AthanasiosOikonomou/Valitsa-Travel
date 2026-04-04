@@ -248,7 +248,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
       role="presentation"
-      className="fixed inset-0 z-[120] overflow-hidden overscroll-none transform-gpu [backface-visibility:hidden]"
+      className="fixed inset-0 z-[260] overflow-hidden overscroll-none transform-gpu [backface-visibility:hidden]"
     >
       <div
         className="pointer-events-none absolute inset-0 bg-black/50 backdrop-blur-md"
@@ -267,6 +267,23 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
         className="surface-elevated relative flex max-h-full min-h-0 w-full max-w-7xl flex-col overflow-hidden rounded-[2rem] bg-background shadow-lg transform-gpu [backface-visibility:hidden]"
         onClick={(e) => e.stopPropagation()}
       >
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
+          className="pointer-events-auto absolute right-[max(1rem,env(safe-area-inset-right))] top-[max(1rem,env(safe-area-inset-top))] z-50 inline-flex min-h-[44px] min-w-[44px] cursor-pointer touch-manipulation items-center justify-center rounded-full border-0 bg-white/80 p-3 shadow-sm backdrop-blur-sm transition-transform duration-elev ease-material hover:scale-105 hover:bg-gray-100 active:scale-95 dark:bg-zinc-900/80 dark:hover:bg-zinc-800"
+          style={{ WebkitTapHighlightColor: "transparent" }}
+          aria-label={t("common.close")}
+        >
+          <X
+            size={20}
+            className="shrink-0 text-gray-800 dark:text-zinc-100"
+            strokeWidth={2.25}
+            aria-hidden
+          />
+        </button>
         <div className="relative flex min-h-0 flex-1 flex-col">
           <div
             ref={panelRef}
@@ -593,19 +610,6 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
       </motion.div>
         </div>
       </div>
-      <button
-        type="button"
-        onClick={onClose}
-        className="pointer-events-auto fixed right-4 top-4 z-[200] flex h-12 w-12 items-center justify-center rounded-full border-0 bg-foreground text-background shadow-lg transition-[transform,opacity,background-color,box-shadow] duration-elev ease-material hover:opacity-95 hover:shadow-elev3 dark:hover:opacity-100 active:scale-[0.97] dark:bg-muted dark:hover:brightness-110 sm:right-6 sm:top-6"
-        style={{ WebkitTapHighlightColor: "transparent" }}
-        aria-label={t("common.close")}
-      >
-        <X
-          size={20}
-          className="shrink-0 text-background dark:text-red-400/80"
-          strokeWidth={2.25}
-        />
-      </button>
     </motion.div>
   );
 };
