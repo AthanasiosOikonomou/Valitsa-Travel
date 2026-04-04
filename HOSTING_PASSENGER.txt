@@ -17,3 +17,7 @@ Passenger production checklist (Valitsa Travel)
 
 4) Local verification before deploy
    - npm run verify:deploy
+
+5) Client routes (/trips, /admin/login, …)
+   - Run `npm run build` on the server or in CI so `dist/index.html` exists next to `package.json`.
+   - Without `dist/`, Express cannot serve the SPA; deep links will 404.

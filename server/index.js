@@ -31,7 +31,6 @@ const port = Number(process.env.PORT || process.env.API_PORT || 8787);
 const isProduction =
   process.env.NODE_ENV === "production" ||
   process.env.NODE_ENV === "Production";
-console.log("isProduction:", isProduction);
 const requireCaptcha = isProduction;
 
 app.disable("x-powered-by");
@@ -736,28 +735,26 @@ app.post(inquiryRoutes, async (req, res) => {
 
 registerAdminRoutes(app, { supabaseAdmin });
 
-// Production: serve Vite build so BrowserRouter paths (/trips, /admin/login, …) work under Passenger.
+// Serve Vite build when dist exists (not gated on NODE_ENV — many hosts omit NODE_ENV=production).
 const distDir = path.join(__dirname, "../dist");
-if (isProduction) {
-  const indexHtml = path.join(distDir, "index.html");
-  if (!fs.existsSync(indexHtml)) {
-    console.warn(
-      "[static] dist/index.html not found — run `npm run build` before deploy; SPA routes will 404.",
-    );
-  } else {
-    app.use(express.static(distDir));
-    app.use((req, res, next) => {
-      if (req.method !== "GET" && req.method !== "HEAD") {
-        next();
-        return;
-      }
-      if (req.path.startsWith("/api")) {
-        next();
-        return;
-      }
-      res.sendFile(indexHtml);
-    });
-  }
+const indexHtml = path.join(distDir, "index.html");
+if (fs.existsSync(indexHtml)) {
+  app.use(express.static(distDir));
+  app.use((req, res, next) => {
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      next();
+      return;
+    }
+    if (req.path.startsWith("/api")) {
+      next();
+      return;
+    }
+    res.sendFile(indexHtml);
+  });
+} else {
+  console.warn(
+    "[static] dist/index.html not found — run `npm run build` before deploy; SPA routes will 404.",
+  );
 }
 
 app.listen(port, () => {
