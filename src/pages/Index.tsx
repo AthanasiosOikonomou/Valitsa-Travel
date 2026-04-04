@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AnimatePresence } from "framer-motion";
 import type { Trip } from "@/types/Trip";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import { useTheme } from "@/contexts/ThemeContext";
 import HeroSection from "@/components/HeroSection";
 import FeaturedTrips from "@/components/FeaturedTrips";
@@ -15,6 +16,16 @@ const IndexContent = () => {
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [termsOpen, setTermsOpen] = useState(false);
   const { t, lang } = useLanguage();
+  const { trackTripView } = useAnalytics();
+
+  const handleSelectTrip = useCallback(
+    (trip: Trip) => {
+      const title = lang === "gr" && trip.title_el ? trip.title_el : trip.title;
+      trackTripView(trip.id, title, trip.image);
+      setSelectedTrip(trip);
+    },
+    [lang, trackTripView],
+  );
 
   const seoTitle =
     lang === "gr"
@@ -163,7 +174,7 @@ const IndexContent = () => {
       />
       <HeroSection />
       {showTrips ? (
-        <FeaturedTrips onSelectTrip={setSelectedTrip} />
+        <FeaturedTrips onSelectTrip={handleSelectTrip} />
       ) : null}
 
       <AnimatePresence>

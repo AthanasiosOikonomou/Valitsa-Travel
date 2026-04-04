@@ -12,6 +12,13 @@ export default defineConfig(({ mode }) => {
     host: "localhost",
     port: 5180,
     strictPort: false,
+    // Forward /api to Express (npm run dev:api on API_PORT, default 8787) so fetch('/api/...') works in dev.
+    proxy: {
+      "/api": {
+        target: process.env.VITE_API_PROXY_TARGET ?? "http://127.0.0.1:8787",
+        changeOrigin: true,
+      },
+    },
     hmr: {
       overlay: false,
     },
@@ -20,6 +27,12 @@ export default defineConfig(({ mode }) => {
     host: "localhost",
     port: 5180,
     strictPort: false,
+    proxy: {
+      "/api": {
+        target: process.env.VITE_API_PROXY_TARGET ?? "http://127.0.0.1:8787",
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     minify: prod ? "esbuild" : "oxc",

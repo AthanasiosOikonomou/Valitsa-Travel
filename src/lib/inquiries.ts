@@ -24,6 +24,8 @@ export type CreateInquiryPayload = {
   tripLocation?: string;
   tripPrice?: string;
   tripUrl?: string;
+  /** Cover image URL for analytics (trip-detail). */
+  tripImage?: string | null;
 };
 
 /**
@@ -66,6 +68,7 @@ export async function createInquiry(payload: CreateInquiryPayload): Promise<void
     trip_location: payload.tripLocation ?? "",
     trip_price: payload.tripPrice ?? "",
     trip_url: payload.tripUrl ?? "",
+    trip_image: payload.tripImage ?? "",
     submitted_at: new Date().toISOString(),
   };
 

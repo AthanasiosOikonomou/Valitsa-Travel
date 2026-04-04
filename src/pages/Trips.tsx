@@ -41,6 +41,7 @@ import {
   type TripTypeFilter,
 } from "@/lib/tripFilters";
 import ProgressiveImage from "@/components/ProgressiveImage";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import { showTrips } from "@/lib/showTrips";
 import {
   formatTripDuration,
@@ -182,6 +183,13 @@ const TripsContent = () => {
   const navigate = useNavigate();
   const { darkMode, toggleDark } = useTheme();
   const { t, lang } = useLanguage();
+  const { trackTripView } = useAnalytics();
+
+  const handleSelectTrip = (trip: Trip) => {
+    const title = lang === "gr" && trip.title_el ? trip.title_el : trip.title;
+    trackTripView(trip.id, title, trip.image);
+    setSelectedTrip(trip);
+  };
 
   const activeFilter = searchParams.get("filter");
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
@@ -535,9 +543,14 @@ const TripsContent = () => {
       (trip) => String(trip.id) === String(tripParam),
     );
     if (matchedTrip) {
+      const title =
+        lang === "gr" && matchedTrip.title_el
+          ? matchedTrip.title_el
+          : matchedTrip.title;
+      trackTripView(matchedTrip.id, title, matchedTrip.image);
       setSelectedTrip(matchedTrip);
     }
-  }, [scopedTrips, searchParams]);
+  }, [scopedTrips, searchParams, lang, trackTripView]);
 
   // Only scroll on explicit user actions: pagination (-280) or filter section (-120)
   const prevPageRef = useRef(normalizedFilterState.page);
@@ -1106,7 +1119,7 @@ const TripsContent = () => {
                     trip={trip}
                     index={idx}
                     animateEntry={cardsEntryEnabled}
-                    onClick={setSelectedTrip}
+                    onClick={handleSelectTrip}
                   />
                 ))}
               </div>

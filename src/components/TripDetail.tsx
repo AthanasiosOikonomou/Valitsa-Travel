@@ -155,6 +155,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
           typeof window !== "undefined"
             ? `${window.location.origin}/trips?trip=${trip.id}`
             : "",
+        tripImage: trip.image ?? "",
       });
 
       setSubmitted(true);

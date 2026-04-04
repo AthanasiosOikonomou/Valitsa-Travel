@@ -60,6 +60,8 @@ const defaultCorsOrigins = [
   "http://127.0.0.1:8080",
   "http://localhost:8080",
   "http://localhost:5173",
+  "http://127.0.0.1:5180",
+  "http://localhost:5180",
 ];
 
 const configuredOrigins = parseCorsOrigins(process.env.CORS_ORIGIN || "");
@@ -135,6 +137,16 @@ const inquirySpeedLimiter = slowDown({
   delayMs: () => 500,
 });
 
+const trackClickLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: "Too many requests. Please try again later.",
+  },
+});
+
 const inquiryRoutes = ["/api/send-inquiry", "/send-inquiry"];
 
 app.use(inquiryRoutes, inquiryLimiter, inquirySpeedLimiter);
@@ -163,8 +175,15 @@ const inquirySchema = z.object({
     .or(z.literal(""))
     .optional()
     .default(""),
+  trip_image: z.string().trim().max(2000).optional().default(""),
   submitted_at: z.string().trim().datetime({ offset: true }).optional(),
   captcha_token: z.string().trim().max(4000).optional().default(""),
+});
+
+const trackClickSchema = z.object({
+  trip_id: z.string().uuid(),
+  name: z.string().trim().max(400).optional().default(""),
+  image: z.string().trim().max(2000).optional().default(""),
 });
 
 const escapeHtml = (value) =>
@@ -291,6 +310,34 @@ const persistInquiry = async ({
   }
 };
 
+/**
+ * Atomic upsert + increment for analytics_events (see increment_trip_analytics in Supabase).
+ * @param {{ trip_id: string, trip_name: string | null, trip_image: string | null, kind: 'click' | 'inquiry' }} params
+ */
+const incrementTripAnalytics = async ({
+  trip_id,
+  trip_name,
+  trip_image,
+  kind,
+}) => {
+  if (!supabaseAdmin) {
+    return { error: new Error("Supabase admin client not configured") };
+  }
+  const name =
+    trip_name && String(trip_name).trim() ? String(trip_name).trim() : null;
+  const image =
+    trip_image && String(trip_image).trim()
+      ? String(trip_image).trim()
+      : null;
+  const { error } = await supabaseAdmin.rpc("increment_trip_analytics", {
+    p_trip_id: trip_id,
+    p_trip_name: name,
+    p_trip_image: image,
+    p_kind: kind,
+  });
+  return { error };
+};
+
 const mailLogoUrl = process.env.MAIL_LOGO_URL || "";
 const localLogoPath = path.resolve(
   __dirname,
@@ -314,6 +361,44 @@ const transporter = !hasMissingConfig
 
 app.get(["/api/health", "/health"], (_req, res) => {
   res.json({ ok: true, inquiries_db: inquiriesDbEnabled });
+});
+
+app.post("/api/track-click", trackClickLimiter, async (req, res) => {
+  const parsed = trackClickSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    const firstIssue = parsed.error.issues[0];
+    if (!firstIssue) {
+      res.status(400).json({ error: "Invalid track-click payload." });
+      return;
+    }
+    const field = firstIssue.path.join(".") || "payload";
+    res.status(400).json({ error: `Invalid ${field}: ${firstIssue.message}` });
+    return;
+  }
+
+  if (!supabaseAdmin) {
+    res.status(503).json({
+      error:
+        "Analytics is not configured. Set VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
+    });
+    return;
+  }
+
+  const { trip_id, name, image } = parsed.data;
+  const { error } = await incrementTripAnalytics({
+    trip_id,
+    trip_name: name || null,
+    trip_image: image || null,
+    kind: "click",
+  });
+
+  if (error) {
+    console.error("[analytics] track-click RPC failed:", error);
+    res.status(500).json({ error: "Could not record analytics." });
+    return;
+  }
+
+  res.status(204).end();
 });
 
 app.post(inquiryRoutes, async (req, res) => {
@@ -357,6 +442,7 @@ app.post(inquiryRoutes, async (req, res) => {
     trip_location,
     trip_price,
     trip_url,
+    trip_image,
     submitted_at,
     captcha_token,
   } = parsed.data;
@@ -517,6 +603,23 @@ app.post(inquiryRoutes, async (req, res) => {
       rejected: result.rejected,
       response: result.response,
     });
+
+    if (effectiveTripId) {
+      const inquiryImage =
+        trip_image && String(trip_image).trim()
+          ? String(trip_image).trim()
+          : null;
+      const { error: analyticsError } = await incrementTripAnalytics({
+        trip_id: effectiveTripId,
+        trip_name: trip_title.trim() || null,
+        trip_image: inquiryImage,
+        kind: "inquiry",
+      });
+      // Email already sent — do not fail the response if analytics RPC fails
+      if (analyticsError) {
+        console.error("[analytics] inquiry increment failed:", analyticsError);
+      }
+    }
 
     res.json({
       ok: true,
