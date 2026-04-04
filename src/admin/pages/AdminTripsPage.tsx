@@ -302,27 +302,27 @@ function TripEditDialog({ tripId, open, onClose }: { tripId: string; open: boole
               </div>
               <div className="space-y-2">
                 <Label>{t("admin.descriptionEn")}</Label>
-                <RichTextEditor value={desc} onChange={setDesc} />
+                <RichTextEditor value={desc} onChange={setDesc} t={t} />
               </div>
               <div className="space-y-2">
                 <Label>{t("admin.descriptionEl")}</Label>
-                <RichTextEditor value={descEl} onChange={setDescEl} />
+                <RichTextEditor value={descEl} onChange={setDescEl} t={t} />
               </div>
               <div className="space-y-2">
                 <Label>{t("admin.programEn")}</Label>
-                <RichTextEditor value={prog} onChange={setProg} />
+                <RichTextEditor value={prog} onChange={setProg} t={t} />
               </div>
               <div className="space-y-2">
                 <Label>{t("admin.programEl")}</Label>
-                <RichTextEditor value={progEl} onChange={setProgEl} />
+                <RichTextEditor value={progEl} onChange={setProgEl} t={t} />
               </div>
               <div className="space-y-2">
                 <Label>{t("admin.includedEn")}</Label>
-                <RichTextEditor value={inc} onChange={setInc} />
+                <RichTextEditor value={inc} onChange={setInc} t={t} />
               </div>
               <div className="space-y-2">
                 <Label>{t("admin.includedEl")}</Label>
-                <RichTextEditor value={incEl} onChange={setIncEl} />
+                <RichTextEditor value={incEl} onChange={setIncEl} t={t} />
               </div>
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={onClose}>

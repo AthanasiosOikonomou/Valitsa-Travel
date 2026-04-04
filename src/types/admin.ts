@@ -22,5 +22,15 @@ export type AdminInquiryRow = {
   admin_notes?: string | null;
   status?: InquiryStatus | string | null;
   created_at?: string | null;
+  updated_at?: string | null;
   trips?: { id: string; title: string | null; image: string | null } | null;
+};
+
+export type InquiryCommentRow = {
+  id: string;
+  inquiry_id: string;
+  admin_id: string | null;
+  content: string;
+  created_at: string;
+  author_label?: string | null;
 };

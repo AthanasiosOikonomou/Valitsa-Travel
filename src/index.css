@@ -964,8 +964,12 @@ body.modal-blur-active .navbar-shell {
 
 @layer components {
   .admin-prose .tiptap {
-    color: inherit;
+    color: rgb(15 23 42 / 0.92);
     caret-color: hsl(var(--primary));
+  }
+
+  .dark .admin-prose .tiptap {
+    color: rgb(244 244 245);
   }
 
   .admin-prose .tiptap a {
@@ -1007,5 +1011,53 @@ body.modal-blur-active .navbar-shell {
     font-size: 1rem;
     font-weight: 600;
     margin: 0.75em 0 0.35em;
+  }
+
+  .admin-prose .tiptap h2,
+  .admin-prose .tiptap h3 {
+    color: inherit;
+  }
+
+  .admin-prose .tiptap p,
+  .admin-prose .tiptap li,
+  .admin-prose .tiptap span[style] {
+    color: inherit;
+  }
+}
+
+@layer utilities {
+  .scrollbar-inquiry {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(148 163 184 / 0.45) transparent;
+  }
+
+  .dark .scrollbar-inquiry {
+    scrollbar-color: rgb(255 255 255 / 0.18) transparent;
+  }
+
+  .scrollbar-inquiry::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  .scrollbar-inquiry::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-inquiry::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background-color: rgb(148 163 184 / 0.5);
+  }
+
+  .dark .scrollbar-inquiry::-webkit-scrollbar-thumb {
+    background-color: rgb(255 255 255 / 0.2);
+  }
+
+  .scrollbar-inquiry::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(100 116 139 / 0.65);
+  }
+
+  .dark .scrollbar-inquiry::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(255 255 255 / 0.32);
   }
 }

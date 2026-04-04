@@ -204,4 +204,132 @@ export function registerAdminRoutes(app, { supabaseAdmin }) {
       res.json({ ok: true });
     },
   );
+
+  const inquiryCommentBodySchema = z.object({
+    content: z.string().min(1, "content required").max(500_000),
+  });
+
+  app.get(
+    "/api/admin/inquiries/:id/comments",
+    adminLimiter,
+    requireAdmin,
+    async (req, res) => {
+      const inquiryId = req.params.id;
+      const { data, error } = await supabaseAdmin
+        .from("inquiry_comments")
+        .select("*")
+        .eq("inquiry_id", inquiryId)
+        .order("created_at", { ascending: true });
+      if (error) {
+        if (error.code === "42P01" || error.message?.includes("does not exist")) {
+          res.status(503).json({ error: "inquiry_comments table is not available." });
+          return;
+        }
+        console.error("[admin] get inquiry comments:", error);
+        res.status(500).json({ error: error.message });
+        return;
+      }
+      res.json({ comments: data ?? [] });
+    },
+  );
+
+  app.post(
+    "/api/admin/inquiries/:id/comments",
+    adminLimiter,
+    requireAdmin,
+    express.json(),
+    async (req, res) => {
+      const inquiryId = req.params.id;
+      const parsed = inquiryCommentBodySchema.safeParse(req.body ?? {});
+      if (!parsed.success) {
+        const first = parsed.error.issues[0];
+        res.status(400).json({
+          error: first ? `${first.path.join(".")}: ${first.message}` : "Invalid body",
+        });
+        return;
+      }
+      const user = req.adminUser;
+      const author_label =
+        user.email ??
+        (typeof user.user_metadata?.full_name === "string"
+          ? user.user_metadata.full_name
+          : null) ??
+        "Admin";
+      const row = {
+        inquiry_id: inquiryId,
+        admin_id: user.id,
+        content: parsed.data.content,
+        author_label,
+      };
+      const { data, error } = await supabaseAdmin
+        .from("inquiry_comments")
+        .insert(row)
+        .select("id, inquiry_id, admin_id, content, created_at, author_label")
+        .single();
+      if (error) {
+        if (error.message?.includes("author_label") || error.code === "42703") {
+          const { author_label: _a, ...withoutLabel } = row;
+          const retry = await supabaseAdmin
+            .from("inquiry_comments")
+            .insert(withoutLabel)
+            .select("id, inquiry_id, admin_id, content, created_at")
+            .single();
+          if (retry.error) {
+            console.error("[admin] post inquiry comment:", retry.error);
+            res.status(500).json({ error: retry.error.message });
+            return;
+          }
+          res.status(201).json({ comment: { ...retry.data, author_label: author_label } });
+          return;
+        }
+        console.error("[admin] post inquiry comment:", error);
+        res.status(500).json({ error: error.message });
+        return;
+      }
+      res.status(201).json({ comment: data });
+    },
+  );
+
+  app.patch(
+    "/api/admin/inquiries/:id",
+    adminLimiter,
+    requireAdmin,
+    express.json(),
+    async (req, res) => {
+      const id = req.params.id;
+      const parsed = z
+        .object({
+          status: z.enum(["new", "contacted", "resolved"]).optional(),
+        })
+        .safeParse(req.body ?? {});
+      if (!parsed.success) {
+        const first = parsed.error.issues[0];
+        res.status(400).json({
+          error: first ? `${first.path.join(".")}: ${first.message}` : "Invalid body",
+        });
+        return;
+      }
+      const updates = { ...parsed.data };
+      Object.keys(updates).forEach((k) => {
+        if (updates[k] === undefined) delete updates[k];
+      });
+      if (Object.keys(updates).length === 0) {
+        res.status(400).json({ error: "No fields to update" });
+        return;
+      }
+      const { error } = await supabaseAdmin.from("inquiries").update(updates).eq("id", id);
+      if (error) {
+        console.error("[admin] patch inquiry:", error);
+        res.status(500).json({ error: error.message });
+        return;
+      }
+      res.json({ ok: true });
+    },
+  );
+
+  if (process.env.NODE_ENV !== "production") {
+    console.log(
+      "[admin] Inquiry comments API registered: GET|POST /api/admin/inquiries/:id/comments",
+    );
+  }
 }

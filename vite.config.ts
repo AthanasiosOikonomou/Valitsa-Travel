@@ -1,10 +1,28 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import dotenv from "dotenv";
 import path from "path";
+
+// Match server/index.js so API_PORT in server/.env is visible here (fixes /api proxy → wrong port → 404).
+dotenv.config({ path: path.join(__dirname, ".env") });
+dotenv.config({ path: path.join(__dirname, "server/.env") });
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const prod = mode === "production";
+  const apiDevTarget =
+    process.env.VITE_API_PROXY_TARGET ??
+    `http://127.0.0.1:${process.env.API_PORT ?? "8787"}`;
+
+  const logApiProxyPlugin = {
+    name: "valitsa-log-api-proxy",
+    configureServer() {
+      if (!prod) {
+        console.log(`[vite] /api proxy -> ${apiDevTarget}`);
+      }
+    },
+  };
+
   return {
   // Production: esbuild minify + drop (Vite 8 defaults to Oxc minify, which ignores esbuild.drop).
   esbuild: prod ? { drop: ["console", "debugger"] } : {},
@@ -15,7 +33,7 @@ export default defineConfig(({ mode }) => {
     // Forward /api to Express (npm run dev:api on API_PORT, default 8787) so fetch('/api/...') works in dev.
     proxy: {
       "/api": {
-        target: process.env.VITE_API_PROXY_TARGET ?? "http://127.0.0.1:8787",
+        target: apiDevTarget,
         changeOrigin: true,
       },
     },
@@ -29,7 +47,7 @@ export default defineConfig(({ mode }) => {
     strictPort: false,
     proxy: {
       "/api": {
-        target: process.env.VITE_API_PROXY_TARGET ?? "http://127.0.0.1:8787",
+        target: apiDevTarget,
         changeOrigin: true,
       },
     },
@@ -64,7 +82,7 @@ export default defineConfig(({ mode }) => {
       },
     },
   },
-  plugins: [react()],
+  plugins: [react(), logApiProxyPlugin],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

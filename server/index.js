@@ -648,4 +648,9 @@ app.listen(port, () => {
       ? "[inquiries] Supabase persistence enabled (public.inquiries)."
       : "[inquiries] Supabase persistence OFF — inquiries are email-only until URL + service role key are set.",
   );
+  if (process.env.NODE_ENV !== "production") {
+    console.log(
+      `[vite proxy] Use http://127.0.0.1:${port} as API target (Vite default: vite.config.ts).`,
+    );
+  }
 });

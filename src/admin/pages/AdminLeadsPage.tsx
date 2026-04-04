@@ -6,7 +6,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { InquiryDetailSheet } from "@/admin/components/InquiryDetailSheet";
+import { InquiryDetailModal } from "@/admin/components/InquiryDetailModal";
 import { cn } from "@/lib/utils";
 
 export default function AdminLeadsPage() {
@@ -71,7 +71,7 @@ export default function AdminLeadsPage() {
         </CardContent>
       </Card>
 
-      <InquiryDetailSheet
+      <InquiryDetailModal
         inquiry={selected}
         open={open}
         onOpenChange={(o) => {
