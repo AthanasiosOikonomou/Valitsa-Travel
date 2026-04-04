@@ -21,9 +21,16 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { instantScrollToTop } from "@/lib/instantScrollToTop";
 import ScrollUpRail from "@/components/ScrollUpRail";
+import { AdminGuard } from "@/admin/components/AdminGuard";
+import { AdminLayout } from "@/admin/components/AdminLayout";
 
 const Index = lazy(() => import("./pages/Index.tsx"));
 const Trips = lazy(() => import("./pages/Trips.tsx"));
+const AdminLoginPage = lazy(() => import("./admin/pages/AdminLoginPage.tsx"));
+const AdminDashboardPage = lazy(() => import("./admin/pages/AdminDashboardPage.tsx"));
+const AdminTripsPage = lazy(() => import("./admin/pages/AdminTripsPage.tsx"));
+const AdminLeadsPage = lazy(() => import("./admin/pages/AdminLeadsPage.tsx"));
+const AdminSettingsPage = lazy(() => import("./admin/pages/AdminSettingsPage.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -35,13 +42,23 @@ const ScrollToTop = () => {
     window.history.scrollRestoration = "manual";
   }, []);
 
-  // useLayoutEffect fires before paint — guaranteed to run before the browser shows the new page
   useLayoutEffect(() => {
     instantScrollToTop();
   }, [key]);
 
   return null;
 };
+
+function PublicChrome() {
+  const { pathname } = useLocation();
+  const hide = pathname.startsWith("/admin");
+  return (
+    <>
+      {!hide && <NavbarWrapper />}
+      {!hide && <ScrollUpRail />}
+    </>
+  );
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -57,20 +74,26 @@ const App = () => (
                 v7_relativeSplatPath: true,
               }}
             >
-              <NavbarWrapper />
-              <ScrollUpRail />
+              <PublicChrome />
               <Suspense
                 fallback={
-                  <div
-                    className="min-h-screen bg-background"
-                    aria-hidden="true"
-                  />
+                  <div className="min-h-screen bg-background" aria-hidden="true" />
                 }
               >
                 <ScrollToTop />
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/trips" element={<Trips />} />
+                  <Route path="/admin/login" element={<AdminLoginPage />} />
+                  <Route path="/admin" element={<AdminGuard />}>
+                    <Route element={<AdminLayout />}>
+                      <Route index element={<Navigate to="dashboard" replace />} />
+                      <Route path="dashboard" element={<AdminDashboardPage />} />
+                      <Route path="trips" element={<AdminTripsPage />} />
+                      <Route path="leads" element={<AdminLeadsPage />} />
+                      <Route path="settings" element={<AdminSettingsPage />} />
+                    </Route>
+                  </Route>
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </Suspense>

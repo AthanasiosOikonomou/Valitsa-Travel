@@ -10,6 +10,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
+import { registerAdminRoutes } from "./adminRoutes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -113,11 +114,11 @@ app.use(
 
       callback(new Error("Not allowed by CORS"));
     },
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type"],
+    methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
-app.use(express.json({ limit: "20kb" }));
+app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: false, limit: "20kb" }));
 
 const inquiryLimiter = rateLimit({
@@ -637,6 +638,8 @@ app.post(inquiryRoutes, async (req, res) => {
     res.status(500).json({ error: message });
   }
 });
+
+registerAdminRoutes(app, { supabaseAdmin });
 
 app.listen(port, () => {
   console.log(`Mail API running on http://localhost:${port}`);
