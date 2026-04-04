@@ -116,6 +116,7 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
     retry: false,
     staleTime: 0,
     refetchOnMount: "always",
+    refetchOnWindowFocus: false,
   });
 
   const quickInserts = useMemo(
@@ -363,7 +364,19 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
   if (!inquiry) return null;
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+    <Dialog.Root
+      open={open}
+      onOpenChange={(next) => {
+        if (import.meta.env.DEV && !next) {
+          console.log(
+            "Modal Closing Triggered by:",
+            "Radix Dialog.Root onOpenChange(false)",
+            new Error().stack,
+          );
+        }
+        onOpenChange(next);
+      }}
+    >
       <Dialog.Portal>
         <Dialog.Overlay asChild>
           <motion.div

@@ -25,6 +25,7 @@ export default function AdminLeadsPage() {
       if (error) throw error;
       return (data ?? []) as AdminInquiryRow[];
     },
+    refetchOnWindowFocus: false,
   });
 
   return (

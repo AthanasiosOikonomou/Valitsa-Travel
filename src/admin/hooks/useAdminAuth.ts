@@ -8,6 +8,8 @@ export function useAdminAuth() {
   const [roleResolved, setRoleResolved] = useState(false);
   const [ready, setReady] = useState(false);
   const roleRequestId = useRef(0);
+  /** Avoid blocking the admin shell on token refresh / tab refocus for the same user. */
+  const lastResolvedUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -17,6 +19,7 @@ export function useAdminAuth() {
       const rid = ++roleRequestId.current;
 
       if (!s?.user) {
+        lastResolvedUserIdRef.current = null;
         setSession(null);
         setRole(null);
         setRoleResolved(true);
@@ -24,6 +27,20 @@ export function useAdminAuth() {
       }
 
       setSession(s);
+
+      if (s.user.id === lastResolvedUserIdRef.current) {
+        void (async () => {
+          const { data } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", s.user.id)
+            .maybeSingle();
+          if (!alive || roleRequestId.current !== rid) return;
+          setRole(data?.role ?? null);
+        })();
+        return;
+      }
+
       setRole(null);
       setRoleResolved(false);
 
@@ -36,6 +53,7 @@ export function useAdminAuth() {
       if (!alive || roleRequestId.current !== rid) return;
       setRole(data?.role ?? null);
       setRoleResolved(true);
+      lastResolvedUserIdRef.current = s.user.id;
     };
 
     void (async () => {
