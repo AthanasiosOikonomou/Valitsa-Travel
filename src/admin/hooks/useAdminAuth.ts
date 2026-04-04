@@ -1,39 +1,68 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabaseClient";
 
 export function useAdminAuth() {
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<string | null>(null);
+  const [roleResolved, setRoleResolved] = useState(false);
   const [ready, setReady] = useState(false);
-
-  const loadRole = useCallback(async (userId: string) => {
-    const { data } = await supabase.from("profiles").select("role").eq("id", userId).maybeSingle();
-    setRole(data?.role ?? null);
-  }, []);
+  const roleRequestId = useRef(0);
 
   useEffect(() => {
     let alive = true;
-    (async () => {
-      const { data: { session: s } } = await supabase.auth.getSession();
+
+    const applySession = async (s: Session | null) => {
       if (!alive) return;
+      const rid = ++roleRequestId.current;
+
+      if (!s?.user) {
+        setSession(null);
+        setRole(null);
+        setRoleResolved(true);
+        return;
+      }
+
       setSession(s);
-      if (s?.user) await loadRole(s.user.id);
-      setReady(true);
+      setRole(null);
+      setRoleResolved(false);
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", s.user.id)
+        .maybeSingle();
+
+      if (!alive || roleRequestId.current !== rid) return;
+      setRole(data?.role ?? null);
+      setRoleResolved(true);
+    };
+
+    void (async () => {
+      const {
+        data: { session: initial },
+      } = await supabase.auth.getSession();
+      await applySession(initial);
+      if (alive) setReady(true);
     })();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_evt, s) => {
-      setSession(s);
-      if (s?.user) await loadRole(s.user.id);
-      else setRole(null);
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, next) => {
+      void (async () => {
+        await applySession(next);
+        if (alive) setReady(true);
+      })();
     });
+
     return () => {
       alive = false;
       subscription.unsubscribe();
     };
-  }, [loadRole]);
+  }, []);
 
   const isAdmin = role === "admin";
   const user: User | null = session?.user ?? null;
 
-  return { ready, session, user, role, isAdmin };
+  return { ready, session, user, role, isAdmin, roleResolved };
 }

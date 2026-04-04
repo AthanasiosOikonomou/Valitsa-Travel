@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -8,13 +8,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { useAdminAuth } from "@/admin/hooks/useAdminAuth";
 
 export default function AdminLoginPage() {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { ready, session, isAdmin, roleResolved } = useAdminAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!ready || !session || !roleResolved || isAdmin) return;
+    void (async () => {
+      await supabase.auth.signOut();
+      toast.error(t("admin.forbiddenAccessToast"));
+    })();
+  }, [ready, session, roleResolved, isAdmin, t]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -46,6 +56,18 @@ export default function AdminLoginPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (!ready || (session && !roleResolved)) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-zinc-950">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" aria-hidden />
+      </div>
+    );
+  }
+
+  if (session && isAdmin) {
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
   return (

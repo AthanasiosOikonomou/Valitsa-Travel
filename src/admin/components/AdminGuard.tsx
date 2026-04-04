@@ -1,15 +1,33 @@
+import { useEffect } from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/lib/supabaseClient";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useAdminAuth } from "@/admin/hooks/useAdminAuth";
 
-export function AdminGuard() {
-  const { ready, session, isAdmin } = useAdminAuth();
+function NonAdminRedirect() {
+  const { t } = useLanguage();
+  useEffect(() => {
+    void supabase.auth.signOut();
+    toast.error(t("admin.forbiddenAccessToast"));
+  }, [t]);
+  return <Navigate to="/" replace />;
+}
 
-  if (!ready) {
+export function AdminGuard() {
+  const { ready, session, isAdmin, roleResolved } = useAdminAuth();
+
+  if (!ready || (session && !roleResolved)) {
     return (
-      <div className="min-h-screen bg-slate-50 p-8 dark:bg-zinc-950">
-        <Skeleton className="h-10 w-64 bg-slate-200 dark:bg-zinc-800" />
-        <Skeleton className="mt-4 h-96 w-full max-w-4xl bg-slate-200 dark:bg-zinc-800" />
+      <div
+        className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-50 dark:bg-zinc-950"
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+      >
+        <Loader2 className="h-10 w-10 animate-spin text-primary" aria-hidden />
+        <span className="sr-only">Loading</span>
       </div>
     );
   }
@@ -19,7 +37,7 @@ export function AdminGuard() {
   }
 
   if (!isAdmin) {
-    return <Navigate to="/" replace />;
+    return <NonAdminRedirect />;
   }
 
   return <Outlet />;

@@ -27,6 +27,7 @@ function NavbarWrapper() {
 import { instantScrollToTop } from "@/lib/instantScrollToTop";
 import ScrollUpRail from "@/components/ScrollUpRail";
 import { AdminGuard } from "@/admin/components/AdminGuard";
+import { AdminSessionSync } from "@/admin/components/AdminSessionSync";
 import { AdminLayout } from "@/admin/components/AdminLayout";
 
 const Index = lazy(() => import("./pages/Index.tsx"));
@@ -75,6 +76,7 @@ const App = () => (
         disableTransitionOnChange
       >
         <LanguageProvider>
+          <AdminSessionSync />
           <TooltipProvider>
             <Toaster />
             <Sonner />

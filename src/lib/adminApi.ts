@@ -5,14 +5,61 @@ export async function getAccessToken(): Promise<string | null> {
   return data.session?.access_token ?? null;
 }
 
-export async function uploadTripImage(file: File): Promise<{ url: string }> {
+type UnauthorizedHandler = () => void;
+
+let adminUnauthorizedHandler: UnauthorizedHandler | null = null;
+
+/** Registered from AdminSessionSync (inside LanguageProvider) for 401/403 API responses. */
+export function setAdminUnauthorizedHandler(handler: UnauthorizedHandler | null) {
+  adminUnauthorizedHandler = handler;
+}
+
+let unauthorizedFiring = false;
+
+function triggerAdminUnauthorized() {
+  if (unauthorizedFiring) return;
+  unauthorizedFiring = true;
+  try {
+    adminUnauthorizedHandler?.();
+  } finally {
+    setTimeout(() => {
+      unauthorizedFiring = false;
+    }, 1500);
+  }
+}
+
+/**
+ * Authenticated fetch for /api/admin/*. Attaches Bearer token; on 401/403 runs global sign-out + redirect.
+ */
+export async function adminFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
   const token = await getAccessToken();
-  if (!token) throw new Error("Not signed in");
+  if (!token) {
+    triggerAdminUnauthorized();
+    throw new Error("Not signed in");
+  }
+
+  const headers = new Headers(init.headers);
+  headers.set("Authorization", `Bearer ${token}`);
+  if (init.body !== undefined && !(init.body instanceof FormData)) {
+    if (!headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json");
+    }
+  }
+
+  const res = await fetch(input, { ...init, headers });
+
+  if (res.status === 401 || res.status === 403) {
+    triggerAdminUnauthorized();
+  }
+
+  return res;
+}
+
+export async function uploadTripImage(file: File): Promise<{ url: string }> {
   const body = new FormData();
   body.append("file", file);
-  const res = await fetch("/api/admin/upload-image", {
+  const res = await adminFetch("/api/admin/upload-image", {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
     body,
   });
   if (!res.ok) {
@@ -23,14 +70,8 @@ export async function uploadTripImage(file: File): Promise<{ url: string }> {
 }
 
 export async function patchTripFeatured(tripId: string, is_featured: boolean): Promise<void> {
-  const token = await getAccessToken();
-  if (!token) throw new Error("Not signed in");
-  const res = await fetch(`/api/admin/trips/${tripId}`, {
+  const res = await adminFetch(`/api/admin/trips/${tripId}`, {
     method: "PATCH",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify({ is_featured }),
   });
   if (!res.ok) {
@@ -42,14 +83,8 @@ export async function patchTripFeatured(tripId: string, is_featured: boolean): P
 export type TripUpdatePayload = Record<string, unknown>;
 
 export async function putTrip(tripId: string, payload: TripUpdatePayload): Promise<void> {
-  const token = await getAccessToken();
-  if (!token) throw new Error("Not signed in");
-  const res = await fetch(`/api/admin/trips/${tripId}`, {
+  const res = await adminFetch(`/api/admin/trips/${tripId}`, {
     method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(payload),
   });
   if (!res.ok) {

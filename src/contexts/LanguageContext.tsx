@@ -227,6 +227,8 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.signingIn": "Signing in…",
     "admin.signIn": "Sign in",
     "admin.unauthorizedToast": "Unauthorized: admin access required",
+    "admin.sessionExpiredToast": "Your session has expired. Please sign in again.",
+    "admin.forbiddenAccessToast": "Access denied. Admin privileges are required. You have been signed out.",
     "admin.signInFailed": "Sign in failed",
     "admin.close": "Close",
     "admin.activityFeed": "Activity",
@@ -480,6 +482,10 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.signIn": "Σύνδεση",
     "admin.unauthorizedToast":
       "Μη εξουσιοδοτημένος: απαιτείται ρόλος διαχειριστή",
+    "admin.sessionExpiredToast":
+      "Η συνεδρία σας έληξε. Συνδεθείτε ξανά.",
+    "admin.forbiddenAccessToast":
+      "Μη εξουσιοδοτημένη πρόσβαση. Έχετε αποσυνδεθεί.",
     "admin.signInFailed": "Η σύνδεση απέτυχε",
     "admin.close": "Κλείσιμο",
     "admin.activityFeed": "Χρονολόγιο",
