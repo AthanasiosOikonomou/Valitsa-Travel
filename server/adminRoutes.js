@@ -176,6 +176,7 @@ export function registerAdminRoutes(app, { supabaseAdmin }) {
     "/api/admin/trips/:id",
     adminLimiter,
     requireAdmin,
+    express.json(),
     async (req, res) => {
       const id = req.params.id;
       const parsed = adminTripPutSchema.safeParse(req.body ?? {});

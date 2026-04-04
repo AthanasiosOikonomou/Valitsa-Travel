@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
 export default function AdminLoginPage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,13 +35,13 @@ export default function AdminLoginPage() {
 
       if (profile?.role !== "admin") {
         await supabase.auth.signOut();
-        toast.error("Unauthorized: Admin access required");
+        toast.error(t("admin.unauthorizedToast"));
         return;
       }
 
       navigate("/admin/dashboard", { replace: true });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Sign in failed";
+      const msg = err instanceof Error ? err.message : t("admin.signInFailed");
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -48,15 +50,15 @@ export default function AdminLoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md border-border/80 shadow-elev3">
+      <Card className="w-full max-w-md border-violet-500/20 shadow-elev3">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-semibold tracking-tight">Admin sign in</CardTitle>
-          <CardDescription>Enter your credentials to access the dashboard.</CardDescription>
+          <CardTitle className="text-2xl font-semibold tracking-tight">{t("admin.loginTitle")}</CardTitle>
+          <CardDescription>{t("admin.loginSubtitle")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="admin-email">Email</Label>
+              <Label htmlFor="admin-email">{t("admin.email")}</Label>
               <Input
                 id="admin-email"
                 type="email"
@@ -67,7 +69,7 @@ export default function AdminLoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="admin-password">Password</Label>
+              <Label htmlFor="admin-password">{t("admin.password")}</Label>
               <Input
                 id="admin-password"
                 type="password"
@@ -77,14 +79,14 @@ export default function AdminLoginPage() {
                 required
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full bg-violet-600 text-white hover:bg-violet-500" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in…
+                  {t("admin.signingIn")}
                 </>
               ) : (
-                "Sign in"
+                t("admin.signIn")
               )}
             </Button>
           </form>

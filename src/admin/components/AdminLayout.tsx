@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { AdminSidebar } from "@/admin/components/AdminSidebar";
+import { AdminHeader } from "@/admin/components/AdminHeader";
 import { AdminErrorBoundary } from "@/admin/components/AdminErrorBoundary";
 
 export function AdminLayout() {
@@ -9,6 +10,7 @@ export function AdminLayout() {
     <div className="flex min-h-screen bg-background text-foreground">
       <AdminSidebar />
       <div className="flex min-h-screen flex-1 flex-col">
+        <AdminHeader />
         <main className="flex-1 overflow-auto">
           <AdminErrorBoundary>
             <AnimatePresence mode="wait">

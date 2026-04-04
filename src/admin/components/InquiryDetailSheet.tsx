@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
+import { useLanguage } from "@/contexts/LanguageContext";
 import type { AdminInquiryRow } from "@/types/admin";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,7 @@ type Props = {
 };
 
 export function InquiryDetailSheet({ inquiry, open, onOpenChange }: Props) {
+  const { t } = useLanguage();
   const qc = useQueryClient();
   const [notes, setNotes] = useState("");
   const [status, setStatus] = useState<string>("new");
@@ -47,13 +49,13 @@ export function InquiryDetailSheet({ inquiry, open, onOpenChange }: Props) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-xl">
         <SheetHeader>
-          <SheetTitle>Inquiry</SheetTitle>
+          <SheetTitle>{t("admin.inquiry")}</SheetTitle>
         </SheetHeader>
         {inquiry ? (
           <ScrollArea className="mt-4 h-[calc(100vh-8rem)] pr-4">
             <div className="space-y-4 text-sm">
               <div>
-                <p className="text-xs font-medium uppercase text-muted-foreground">From</p>
+                <p className="text-xs font-medium uppercase text-muted-foreground">{t("admin.from")}</p>
                 <p className="font-semibold">{inquiry.name}</p>
                 <a className="text-primary hover:underline" href={`mailto:${inquiry.email}`}>
                   {inquiry.email}
@@ -62,17 +64,17 @@ export function InquiryDetailSheet({ inquiry, open, onOpenChange }: Props) {
               </div>
               <Separator />
               <div>
-                <p className="text-xs font-medium uppercase text-muted-foreground">Trip</p>
+                <p className="text-xs font-medium uppercase text-muted-foreground">{t("admin.trip")}</p>
                 <p>{inquiry.trips?.title ?? "—"}</p>
               </div>
               <Separator />
               <div>
-                <p className="text-xs font-medium uppercase text-muted-foreground">Message</p>
+                <p className="text-xs font-medium uppercase text-muted-foreground">{t("admin.message")}</p>
                 <p className="whitespace-pre-wrap text-muted-foreground">{inquiry.message}</p>
               </div>
               <Separator />
               <div className="space-y-2">
-                <Label htmlFor="inq-status">Status</Label>
+                <Label htmlFor="inq-status">{t("admin.status")}</Label>
                 <select
                   id="inq-status"
                   value={status}
@@ -87,16 +89,16 @@ export function InquiryDetailSheet({ inquiry, open, onOpenChange }: Props) {
                 </select>
               </div>
               <div className="space-y-2">
-                <Label>Internal notes</Label>
-                <RichTextEditor value={notes} onChange={setNotes} placeholder="Private notes…" />
+                <Label>{t("admin.internalNotes")}</Label>
+                <RichTextEditor value={notes} onChange={setNotes} placeholder={t("admin.notesPlaceholder")} />
               </div>
               <Button
                 type="button"
-                className="w-full"
+                className="w-full bg-violet-600 text-white hover:bg-violet-500"
                 disabled={save.isPending}
                 onClick={() => save.mutate()}
               >
-                {save.isPending ? "Saving…" : "Save"}
+                {save.isPending ? t("admin.saving") : t("admin.save")}
               </Button>
             </div>
           </ScrollArea>

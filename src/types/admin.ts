@@ -2,6 +2,8 @@ export type AdminTripViewRow = Record<string, unknown> & {
   id?: string;
   trip_id?: string;
   title?: string | null;
+  title_el?: string | null;
+  name?: string | null;
   image?: string | null;
   click_count?: number | null;
   inquiry_count?: number | null;

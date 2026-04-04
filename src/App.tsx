@@ -30,7 +30,6 @@ const AdminLoginPage = lazy(() => import("./admin/pages/AdminLoginPage.tsx"));
 const AdminDashboardPage = lazy(() => import("./admin/pages/AdminDashboardPage.tsx"));
 const AdminTripsPage = lazy(() => import("./admin/pages/AdminTripsPage.tsx"));
 const AdminLeadsPage = lazy(() => import("./admin/pages/AdminLeadsPage.tsx"));
-const AdminSettingsPage = lazy(() => import("./admin/pages/AdminSettingsPage.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -91,7 +90,6 @@ const App = () => (
                       <Route path="dashboard" element={<AdminDashboardPage />} />
                       <Route path="trips" element={<AdminTripsPage />} />
                       <Route path="leads" element={<AdminLeadsPage />} />
-                      <Route path="settings" element={<AdminSettingsPage />} />
                     </Route>
                   </Route>
                   <Route path="*" element={<Navigate to="/" replace />} />

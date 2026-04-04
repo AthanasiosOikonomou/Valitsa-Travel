@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -34,6 +35,16 @@ export function RichTextEditor({ value, onChange, placeholder, className, ...res
       onChange(editor.getHTML());
     },
   });
+
+  useEffect(() => {
+    if (!editor) return;
+    const next = value || "";
+    const current = editor.getHTML();
+    if (current === next) return;
+    const isEmptyHtml = (h: string) => h === "" || h === "<p></p>";
+    if (isEmptyHtml(current) && isEmptyHtml(next)) return;
+    editor.commands.setContent(next, { emitUpdate: false });
+  }, [editor, value]);
 
   if (!editor) {
     return <div className="min-h-[140px] rounded-xl border border-border bg-muted/40" />;
