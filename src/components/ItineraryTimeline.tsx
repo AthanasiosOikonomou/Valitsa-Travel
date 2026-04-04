@@ -84,7 +84,31 @@ export function toItineraryItem(raw: unknown): ItineraryItem {
       strField(o.content) ||
       strField(o.detail);
     const step = strField(o.step);
-    const dayNum = typeof o.day === "number" ? String(o.day) : "";
+    const explicitDays = strField(o.days);
+    const dayNum =
+      explicitDays ||
+      (typeof o.day === "number" && Number.isFinite(o.day) ? String(Math.trunc(o.day)) : "") ||
+      (typeof o.day === "string" ? strField(o.day) : "");
+
+    if (explicitDays && (titleField || description)) {
+      const isRange = /^-?\d+-\d+$/.test(explicitDays);
+      if (titleField) {
+        const parsed = parseItineraryHead(titleField);
+        const split = splitTitleDetail(parsed.title);
+        return {
+          dayLabel: explicitDays,
+          title: split.title,
+          description: [description, split.detail].filter(Boolean).join(" ").trim(),
+          isRange,
+        };
+      }
+      return {
+        dayLabel: explicitDays,
+        title: "",
+        description,
+        isRange,
+      };
+    }
 
     if (titleField || description) {
       if (titleField) {

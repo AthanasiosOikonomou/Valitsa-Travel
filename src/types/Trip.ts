@@ -1,9 +1,8 @@
 // Strict TypeScript type for Trip based on the database schema
 export type ProgramItem = {
-  day: number;
+  days: string;
   title: string;
   description: string;
-  // Add more fields if the structure is known
 };
 
 export type Trip = {
@@ -38,3 +37,35 @@ export type Trip = {
   description: string | null;
   description_el?: string | null;
 };
+
+/** Flat payload for admin PUT `/api/admin/trips/:id` (matches `adminTripPutSchema`). */
+export type TripUpdate = Partial<{
+  title: string | null;
+  title_el: string | null;
+  location: string | null;
+  location_el: string | null;
+  country: string | null;
+  country_el: string | null;
+  image: string | null;
+  description: string | null;
+  description_el: string | null;
+  program: ProgramItem[] | null;
+  program_el: ProgramItem[] | null;
+  included: string[] | null;
+  included_el: string[] | null;
+  price_num: number | null;
+  duration_days: number | null;
+  type: string | null;
+  type_el: string | null;
+  category: string | null;
+  category_el: string | null;
+  transport: string | null;
+  transport_el: string | null;
+  date_range: string | null;
+  date_range_el: string | null;
+  departure_city: string | null;
+  departure_city_el: string | null;
+  tags: string[] | null;
+  tags_el: string[] | null;
+  is_featured: boolean | null;
+}>;

@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabaseClient";
+import type { TripUpdate } from "@/types/Trip";
 
 export async function getAccessToken(): Promise<string | null> {
   const { data } = await supabase.auth.getSession();
@@ -80,9 +81,7 @@ export async function patchTripFeatured(tripId: string, is_featured: boolean): P
   }
 }
 
-export type TripUpdatePayload = Record<string, unknown>;
-
-export async function putTrip(tripId: string, payload: TripUpdatePayload): Promise<void> {
+export async function putTrip(tripId: string, payload: TripUpdate): Promise<void> {
   const res = await adminFetch(`/api/admin/trips/${tripId}`, {
     method: "PUT",
     body: JSON.stringify(payload),
