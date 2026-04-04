@@ -735,6 +735,30 @@ app.post(inquiryRoutes, async (req, res) => {
 
 registerAdminRoutes(app, { supabaseAdmin });
 
+// Production: serve Vite build so BrowserRouter paths (/trips, /admin/login, …) work under Passenger.
+const distDir = path.join(__dirname, "../dist");
+if (isProduction) {
+  const indexHtml = path.join(distDir, "index.html");
+  if (!fs.existsSync(indexHtml)) {
+    console.warn(
+      "[static] dist/index.html not found — run `npm run build` before deploy; SPA routes will 404.",
+    );
+  } else {
+    app.use(express.static(distDir));
+    app.use((req, res, next) => {
+      if (req.method !== "GET" && req.method !== "HEAD") {
+        next();
+        return;
+      }
+      if (req.path.startsWith("/api")) {
+        next();
+        return;
+      }
+      res.sendFile(indexHtml);
+    });
+  }
+}
+
 app.listen(port, () => {
   console.log(`Mail API running on http://localhost:${port}`);
   console.log(
