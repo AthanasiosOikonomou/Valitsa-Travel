@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import * as Dialog from "@radix-ui/react-dialog";
 import { Pencil } from "lucide-react";
-import { toast } from "sonner";
 import { supabase } from "@/lib/supabaseClient";
-import { patchTripFeatured, putTrip } from "@/lib/adminApi";
+import { patchTripFeatured } from "@/lib/adminApi";
 import { buildTripMetricsMap } from "@/admin/lib/tripMetrics";
 import type { AdminTripViewRow } from "@/types/admin";
 import type { Lang } from "@/contexts/LanguageContext";
@@ -14,10 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TripImageDropzone } from "@/admin/components/TripImageDropzone";
-import { RichTextEditor } from "@/admin/components/RichTextEditor";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { TripEditDialog } from "@/admin/components/TripEditDialog";
 import { cn } from "@/lib/utils";
 import { useSearchParams } from "react-router-dom";
 
@@ -32,10 +27,6 @@ function titleOf(row: AdminTripViewRow, lang: Lang, untitled: string) {
   }
   const s = row.title ?? row.title_el ?? row.name;
   return s != null && String(s).trim() ? String(s) : untitled;
-}
-
-function asHtml(v: unknown): string {
-  return typeof v === "string" ? v : "";
 }
 
 async function fetchAdminTripsWithMetrics(): Promise<AdminTripViewRow[]> {
@@ -283,142 +274,5 @@ export default function AdminTripsPage() {
       </Card>
       {editId ? <TripEditDialog tripId={editId} open onClose={closeTripEditor} /> : null}
     </div>
-  );
-}
-
-function TripEditDialog({ tripId, open, onClose }: { tripId: string; open: boolean; onClose: () => void }) {
-  const qc = useQueryClient();
-  const { t } = useLanguage();
-  const q = useQuery({
-    queryKey: ["admin-trip", tripId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("trips").select("*").eq("id", tripId).single();
-      if (error) throw error;
-      return data as Record<string, unknown>;
-    },
-    enabled: open && !!tripId,
-  });
-
-  const [title, setTitle] = useState("");
-  const [titleEl, setTitleEl] = useState("");
-  const [image, setImage] = useState<string | null>(null);
-  const [desc, setDesc] = useState("");
-  const [descEl, setDescEl] = useState("");
-  const [prog, setProg] = useState("");
-  const [progEl, setProgEl] = useState("");
-  const [inc, setInc] = useState("");
-  const [incEl, setIncEl] = useState("");
-
-  useEffect(() => {
-    const row = q.data;
-    if (!row) return;
-    setTitle(String(row.title ?? ""));
-    setTitleEl(String(row.title_el ?? ""));
-    setImage((row.image as string | null) ?? null);
-    setDesc(asHtml(row.description));
-    setDescEl(asHtml(row.description_el));
-    setProg(asHtml(row.program));
-    setProgEl(asHtml(row.program_el));
-    setInc(asHtml(row.included));
-    setIncEl(asHtml(row.included_el));
-  }, [q.data]);
-
-  const save = useMutation({
-    mutationFn: async () => {
-      await putTrip(tripId, {
-        title,
-        title_el: titleEl || null,
-        image,
-        description: desc,
-        description_el: descEl || null,
-        program: prog,
-        program_el: progEl || null,
-        included: inc,
-        included_el: incEl || null,
-      });
-    },
-    onSuccess: () => {
-      toast.success(t("admin.tripSaved"));
-      void qc.invalidateQueries({ queryKey: ["admin-trips"] });
-      void qc.invalidateQueries({ queryKey: ["admin-trip", tripId] });
-      onClose();
-    },
-    onError: (err) => {
-      const msg = err instanceof Error ? err.message : String(err);
-      toast.error(t("admin.tripSaveFailed"), { description: msg });
-    },
-  });
-
-  return (
-    <Dialog.Root open={open} onOpenChange={(o) => !o && onClose()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-[101] max-h-[90vh] w-full max-w-3xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-elev3 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100">
-          <Dialog.Title className="text-lg font-semibold text-slate-900 dark:text-zinc-100">
-            {t("admin.editTrip")}
-          </Dialog.Title>
-          <Dialog.Description className="text-sm text-slate-600 dark:text-zinc-400">
-            {t("admin.editTripDesc")}
-          </Dialog.Description>
-          {q.isLoading ? (
-            <Skeleton className="mt-4 h-40 w-full bg-slate-200 dark:bg-zinc-800" />
-          ) : (
-            <div className="mt-6 space-y-6">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>{t("admin.titleEn")}</Label>
-                  <Input value={title} onChange={(e) => setTitle(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label>{t("admin.titleEl")}</Label>
-                  <Input value={titleEl} onChange={(e) => setTitleEl(e.target.value)} />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>{t("admin.heroImage")}</Label>
-                <TripImageDropzone value={image} onChange={setImage} />
-              </div>
-              <div className="space-y-2">
-                <Label>{t("admin.descriptionEn")}</Label>
-                <RichTextEditor value={desc} onChange={setDesc} t={t} />
-              </div>
-              <div className="space-y-2">
-                <Label>{t("admin.descriptionEl")}</Label>
-                <RichTextEditor value={descEl} onChange={setDescEl} t={t} />
-              </div>
-              <div className="space-y-2">
-                <Label>{t("admin.programEn")}</Label>
-                <RichTextEditor value={prog} onChange={setProg} t={t} />
-              </div>
-              <div className="space-y-2">
-                <Label>{t("admin.programEl")}</Label>
-                <RichTextEditor value={progEl} onChange={setProgEl} t={t} />
-              </div>
-              <div className="space-y-2">
-                <Label>{t("admin.includedEn")}</Label>
-                <RichTextEditor value={inc} onChange={setInc} t={t} />
-              </div>
-              <div className="space-y-2">
-                <Label>{t("admin.includedEl")}</Label>
-                <RichTextEditor value={incEl} onChange={setIncEl} t={t} />
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={onClose}>
-                  {t("admin.cancel")}
-                </Button>
-                <Button
-                  type="button"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90"
-                  disabled={save.isPending}
-                  onClick={() => save.mutate()}
-                >
-                  {save.isPending ? t("admin.saving") : t("admin.save")}
-                </Button>
-              </div>
-            </div>
-          )}
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
   );
 }

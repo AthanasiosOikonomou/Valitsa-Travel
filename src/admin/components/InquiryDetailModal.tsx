@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { InquiryCommentAttachmentGallery } from "@/admin/components/InquiryCommentAttachmentGallery";
 import { InquiryTimelineHtml } from "@/admin/components/InquiryTimelineHtml";
+import { isHtmlEmpty } from "@/lib/isHtmlEmpty";
 import {
   extractImageUrlsFromHtml,
   inquiryHtmlToPlainText,
@@ -40,11 +41,6 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
-
-function isHtmlEmpty(html: string): boolean {
-  const stripped = html.replace(/<[^>]+>/g, "").replace(/\s|&nbsp;/g, "");
-  return stripped.length === 0;
-}
 
 function escapeForHtml(s: string): string {
   return s
