@@ -27,7 +27,9 @@ dotenv.config({ path: path.join(__dirname, "../.env") });
 dotenv.config({ path: path.join(__dirname, ".env") });
 
 const app = express();
-const port = Number(process.env.API_PORT || 8787);
+const port = Number(
+  process.env.PORT || process.env.API_PORT || 8787,
+);
 const isProduction = process.env.NODE_ENV === "production";
 const requireCaptcha = isProduction;
 
