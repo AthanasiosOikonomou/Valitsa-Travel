@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { InquiryDetailModal } from "@/admin/components/InquiryDetailModal";
+import { inquiryStatusLabel } from "@/lib/inquiryStatusLabel";
 import { cn } from "@/lib/utils";
 
 export default function AdminLeadsPage() {
@@ -56,9 +57,9 @@ export default function AdminLeadsPage() {
                   <p className="truncate text-xs text-slate-600 dark:text-zinc-400">{row.email}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  {row.status ? (
-                    <Badge className="border border-primary/25 bg-primary/10 capitalize text-slate-800 dark:text-zinc-200">
-                      {String(row.status)}
+                  {row.status?.trim() ? (
+                    <Badge className="border border-primary/25 bg-primary/10 text-slate-800 dark:text-zinc-200">
+                      {inquiryStatusLabel(row.status, t)}
                     </Badge>
                   ) : null}
                   <span className="text-xs text-slate-500 dark:text-zinc-500">

@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { RichTextEditor } from "@/admin/components/RichTextEditor";
+import { inquiryStatusLabel } from "@/lib/inquiryStatusLabel";
 import { cn } from "@/lib/utils";
 
 const STATUSES = ["new", "contacted", "resolved"] as const;
@@ -31,16 +32,8 @@ function isHtmlEmpty(html: string): boolean {
   return stripped.length === 0;
 }
 
-function statusLabel(s: string, t: (key: string) => string): string {
-  if (s === "new") return t("admin.statusNew");
-  if (s === "contacted") return t("admin.statusContacted");
-  if (s === "resolved") return t("admin.statusResolved");
-  return s;
-}
-
 type TimelineItem =
   | { key: string; kind: "customer"; at: string; author: string; plain: string }
-  | { key: string; kind: "legacy"; at: string; author: string; html: string }
   | { key: string; kind: "comment"; at: string; author: string; html: string; row: InquiryCommentRow };
 
 function isCustomerBubble(item: TimelineItem): boolean {
@@ -94,16 +87,6 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
         at: inquiry.created_at ?? "",
         author: t("admin.timelineCustomer"),
         plain: inquiry.message,
-      });
-    }
-    const legacy = inquiry.admin_notes?.trim();
-    if (legacy) {
-      items.push({
-        key: "legacy",
-        kind: "legacy",
-        at: inquiry.updated_at ?? inquiry.created_at ?? "",
-        author: t("admin.timelineLegacy"),
-        html: legacy,
       });
     }
     const rows = commentsQ.data ?? [];
@@ -284,7 +267,7 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
                       >
                         {STATUSES.map((s) => (
                           <option key={s} value={s}>
-                            {statusLabel(s, t)}
+                            {inquiryStatusLabel(s, t)}
                           </option>
                         ))}
                       </select>

@@ -19,7 +19,6 @@ export type AdminInquiryRow = {
   phone?: string | null;
   message: string;
   trip_id?: string | null;
-  admin_notes?: string | null;
   status?: InquiryStatus | string | null;
   created_at?: string | null;
   updated_at?: string | null;
