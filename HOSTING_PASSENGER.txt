@@ -1,0 +1,19 @@
+Passenger production checklist (Valitsa Travel)
+==============================================
+
+1) Hosting panel (required if ERR_REQUIRE_ESM or generic Passenger error)
+   - Application root: the directory that contains THIS repo's package.json and passenger_entry.cjs (not server/ alone).
+   - Startup file: passenger_entry.cjs
+   - Save, then restart the Node/Passenger app (or touch tmp/restart.txt if your host documents that).
+
+2) After restart — get the real error
+   - Open the site error page and click "Technical details for the administrator of this website."
+   - Also read application stdout/stderr in the hosting panel.
+   - If logs still show require() of server/index.js, the startup file in the panel is still wrong.
+
+3) On the server (SSH or file manager)
+   - Confirm passenger_entry.cjs exists next to package.json in the deployed path.
+   - Confirm git revision matches what you expect: git rev-parse --short HEAD
+
+4) Local verification before deploy
+   - npm run verify:deploy

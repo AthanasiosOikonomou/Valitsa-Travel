@@ -13,6 +13,7 @@
     "preview": "vite preview",
     "start:api": "node server/index.js",
     "start:passenger": "node passenger_entry.cjs",
+    "verify:deploy": "node scripts/verify-passenger-deploy.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "dev:client": "vite"
