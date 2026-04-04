@@ -12,18 +12,18 @@ export const SheetContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof Dialog.Content>
 >(({ className, children, ...props }, ref) => (
   <Dialog.Portal>
-    <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" />
+    <Dialog.Overlay className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm" />
     <Dialog.Content
       ref={ref}
       className={cn(
-        "fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col border-l border-border bg-background shadow-elev3 duration-200 animate-in slide-in-from-right",
+        "fixed right-0 top-0 z-[101] flex h-full w-full max-w-xl flex-col border-l border-border bg-background pt-[env(safe-area-inset-top)] shadow-elev3 duration-200 animate-in slide-in-from-right",
         className,
       )}
       {...props}
     >
       {children}
-      <Dialog.Close className="absolute right-4 top-4 rounded-lg p-2 opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring">
-        <X className="h-4 w-4" />
+      <Dialog.Close className="absolute right-3 top-3 inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring md:right-4 md:top-4">
+        <X className="h-5 w-5" />
       </Dialog.Close>
     </Dialog.Content>
   </Dialog.Portal>

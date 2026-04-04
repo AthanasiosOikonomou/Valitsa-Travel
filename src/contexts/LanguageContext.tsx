@@ -178,6 +178,7 @@ const translations: Record<Lang, Record<string, string>> = {
 
     // Admin
     "admin.language": "Language",
+    "admin.openMenu": "Open menu",
     "admin.signOut": "Sign out",
     "admin.dashboardTitle": "Dashboard",
     "admin.dashboardSubtitle": "Overview of your catalog and inquiries.",
@@ -526,6 +527,7 @@ const translations: Record<Lang, Record<string, string>> = {
 
     // Admin
     "admin.language": "Γλώσσα",
+    "admin.openMenu": "Άνοιγμα μενού",
     "admin.signOut": "Αποσύνδεση",
     "admin.dashboardTitle": "Πίνακας ελέγχου",
     "admin.dashboardSubtitle": "Επισκόπηση καταλόγου και αιτημάτων.",

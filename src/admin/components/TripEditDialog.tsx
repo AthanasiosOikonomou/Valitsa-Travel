@@ -389,6 +389,8 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
   const fieldClass = (name: keyof TripFormValues) =>
     cn(errors[name] && "rounded-xl ring-2 ring-destructive/50 border-destructive/40");
 
+  const tripInputClass = "mt-1.5 min-h-11 text-base md:text-sm";
+
   type GreekTextKey = "location_el" | "country_el" | "date_range_el" | "departure_city_el";
 
   const GreekTextField = ({
@@ -408,7 +410,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
           name={name}
           control={control}
           render={({ field }) => (
-            <Input id={inputId} className="mt-1.5" {...field} value={field.value} autoComplete="off" />
+            <Input id={inputId} className={tripInputClass} {...field} value={field.value} autoComplete="off" />
           )}
         />
         {errors[name] ? (
@@ -441,7 +443,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
           render={({ field }) => (
             <Input
               id={inputId}
-              className="mt-1.5"
+              className={tripInputClass}
               {...field}
               value={field.value}
               autoComplete="off"
@@ -467,9 +469,16 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
     <Dialog.Root open={open} onOpenChange={(o) => !o && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-[101] flex max-h-[90vh] w-full max-w-3xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-elev3 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100">
-          <div className="relative shrink-0 border-b border-slate-100 px-6 pb-4 pt-6 pr-14 dark:border-white/5">
-            <Dialog.Title className="pr-2 text-lg font-semibold text-slate-900 dark:text-zinc-100">
+        <Dialog.Content
+          className={cn(
+            "fixed z-[101] flex min-h-0 w-full flex-col overflow-hidden border border-slate-200 bg-white text-slate-900 shadow-elev3 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100",
+            "inset-0 h-[100dvh] max-h-none translate-none rounded-none",
+            "pt-[env(safe-area-inset-top)]",
+            "md:inset-auto md:left-1/2 md:top-1/2 md:h-auto md:max-h-[90vh] md:max-w-3xl md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl md:pt-0",
+          )}
+        >
+          <div className="relative shrink-0 border-b border-slate-100 px-6 pb-4 pt-4 pr-[4.5rem] dark:border-white/5 md:pt-6">
+            <Dialog.Title className="pr-2 text-lg font-semibold leading-snug text-slate-900 dark:text-zinc-100">
               {isCreate ? t("admin.addTrip") : t("admin.editTrip")}
             </Dialog.Title>
             <Dialog.Description className="sr-only">
@@ -478,7 +487,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
             <Dialog.Close asChild>
               <button
                 type="button"
-                className="absolute right-4 top-5 inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-red-400"
+                className="absolute right-3 top-3 inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-red-400 md:right-4 md:top-4"
                 aria-label={t("admin.close")}
               >
                 <X className="h-5 w-5 shrink-0" aria-hidden />
@@ -487,14 +496,16 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
           </div>
 
           {q.isLoading && !isCreate ? (
-            <Skeleton className="m-6 h-40 w-auto bg-slate-200 dark:bg-zinc-800" />
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+              <Skeleton className="h-40 w-full bg-slate-200 dark:bg-zinc-800" />
+            </div>
           ) : (
             <form
               className="flex min-h-0 flex-1 flex-col"
               onSubmit={handleSubmit(onValid, onInvalid)}
               noValidate
             >
-              <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2 sm:col-span-2">
                     <Label>{t("admin.heroImage")}</Label>
@@ -523,7 +534,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                           inputMode="decimal"
                           step="any"
                           min={0}
-                          className="mt-1.5"
+                          className={tripInputClass}
                           value={field.value ?? ""}
                           onChange={(e) => {
                             const v = e.target.value;
@@ -550,7 +561,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                           inputMode="numeric"
                           step={1}
                           min={0}
-                          className="mt-1.5"
+                          className={tripInputClass}
                           value={field.value ?? ""}
                           onChange={(e) => {
                             const v = e.target.value;
@@ -589,9 +600,13 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                 </div>
 
                 <Tabs value={tab} onValueChange={setTab} className="mt-8">
-                  <TabsList className="grid w-full grid-cols-2 sm:inline-flex sm:w-auto">
-                    <TabsTrigger value="el">{t("admin.tabGreek")}</TabsTrigger>
-                    <TabsTrigger value="en">{t("admin.tabEnglish")}</TabsTrigger>
+                  <TabsList className="flex h-auto min-h-11 w-full flex-nowrap items-stretch justify-start gap-1 overflow-x-auto overflow-y-hidden scroll-smooth [-webkit-overflow-scrolling:touch] sm:inline-flex sm:h-11 sm:w-auto sm:overflow-visible">
+                    <TabsTrigger className="min-h-11 shrink-0 flex-none px-5 sm:flex-1" value="el">
+                      {t("admin.tabGreek")}
+                    </TabsTrigger>
+                    <TabsTrigger className="min-h-11 shrink-0 flex-none px-5 sm:flex-1" value="en">
+                      {t("admin.tabEnglish")}
+                    </TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="el" forceMount className="data-[state=inactive]:hidden">
@@ -603,7 +618,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                             name="title_el"
                             control={control}
                             render={({ field }) => (
-                              <Input id="inp-title_el" className="mt-1.5" {...field} autoComplete="off" />
+                              <Input id="inp-title_el" className={tripInputClass} {...field} autoComplete="off" />
                             )}
                           />
                           {errors.title_el ? (
@@ -767,7 +782,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                                 name="title"
                                 control={control}
                                 render={({ field }) => (
-                                  <Input id="trip-title-en" className="mt-1.5" {...field} autoComplete="off" />
+                                  <Input id="trip-title-en" className={tripInputClass} {...field} autoComplete="off" />
                                 )}
                               />
                               {errors.title ? (
@@ -871,13 +886,13 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                 </Tabs>
               </div>
 
-              <div className="flex shrink-0 justify-end gap-2 border-t border-slate-200 bg-slate-50/90 px-6 py-4 dark:border-white/10 dark:bg-zinc-950/80">
-                <Button type="button" variant="outline" onClick={onClose}>
+              <div className="flex shrink-0 justify-end gap-2 border-t border-slate-200 bg-slate-50/90 px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] dark:border-white/10 dark:bg-zinc-950/80 md:pb-4">
+                <Button type="button" variant="outline" className="min-h-11 px-5" onClick={onClose}>
                   {t("admin.cancel")}
                 </Button>
                 <Button
                   type="submit"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  className="min-h-11 bg-primary px-5 text-primary-foreground hover:bg-primary/90"
                   disabled={save.isPending}
                 >
                   {save.isPending ? t("admin.saving") : t("admin.save")}

@@ -79,7 +79,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, Props>(function R
     editorProps: {
       attributes: {
         class: cn(
-          "admin-prose prose prose-sm max-w-none px-3 py-2 text-sm text-slate-900 focus:outline-none dark:prose-invert dark:text-zinc-100",
+          "admin-prose prose prose-sm max-w-none px-3 py-2 text-base text-slate-900 focus:outline-none dark:prose-invert dark:text-zinc-100 md:text-sm",
           "prose-p:my-2 prose-ul:my-2 prose-ol:my-2",
           "prose-a:text-indigo-600 prose-a:underline prose-a:decoration-indigo-600/80 dark:prose-a:text-indigo-300",
           variant === "minimal"
@@ -130,7 +130,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, Props>(function R
 
   const shellMinimal = variant === "minimal";
 
-  const shellHeight = showToolbar ? "h-[236px]" : "h-[200px]";
+  const shellHeight = showToolbar ? "h-[260px] md:h-[236px]" : "h-[200px]";
 
   if (!editor) {
     return (
@@ -145,7 +145,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, Props>(function R
       >
         {showToolbar ? (
           <div
-            className="h-9 shrink-0 border-b border-slate-200 bg-white dark:border-white/10 dark:bg-zinc-950"
+            className="h-11 shrink-0 border-b border-slate-200 bg-white dark:border-white/10 dark:bg-zinc-950"
             aria-hidden
           />
         ) : null}

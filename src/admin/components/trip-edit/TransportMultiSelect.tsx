@@ -58,7 +58,7 @@ export const TransportMultiSelect = forwardRef<HTMLButtonElement, Props>(functio
           disabled={disabled}
           aria-invalid={ariaInvalid}
           className={cn(
-            "h-auto min-h-10 w-full justify-between gap-2 whitespace-normal rounded-xl border-slate-200 px-3 py-2 text-left font-normal dark:border-white/10",
+            "h-auto min-h-11 w-full justify-between gap-2 whitespace-normal rounded-xl border-slate-200 px-3 py-2 text-left text-base font-normal md:text-sm dark:border-white/10",
             value.length === 0 && "text-slate-500 dark:text-zinc-500",
             ariaInvalid && "border-destructive/60 ring-2 ring-destructive/30",
             className,
@@ -83,7 +83,7 @@ export const TransportMultiSelect = forwardRef<HTMLButtonElement, Props>(functio
             return (
               <DropdownMenu.CheckboxItem
                 key={slug}
-                className="flex cursor-pointer select-none items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-900 outline-none data-[highlighted]:bg-slate-100 dark:text-zinc-100 dark:data-[highlighted]:bg-zinc-800"
+                className="flex min-h-11 cursor-pointer select-none items-center gap-2 rounded-lg px-3 py-2 text-base text-slate-900 outline-none data-[highlighted]:bg-slate-100 md:text-sm dark:text-zinc-100 dark:data-[highlighted]:bg-zinc-800"
                 checked={checked}
                 onSelect={(e) => e.preventDefault()}
                 onCheckedChange={() => onChange(toggleSlug(value, slug))}

@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, LogOut, Moon, Sun, User } from "lucide-react";
+import { ChevronDown, LogOut, Menu, Moon, Sun, User } from "lucide-react";
 import { useTheme } from "next-themes";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -15,7 +15,7 @@ function pageTitleKey(pathname: string): string {
   return "admin.dashboardTitle";
 }
 
-export function AdminHeader() {
+export function AdminHeader({ onMobileNavOpen }: { onMobileNavOpen?: () => void }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { t, lang, setLang } = useLanguage();
@@ -39,11 +39,26 @@ export function AdminHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/85 text-slate-900 backdrop-blur-md dark:border-white/10 dark:bg-zinc-950/85 dark:text-zinc-100">
-      <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-4 px-6">
-        <h1 className="truncate text-lg font-semibold tracking-tight text-slate-900 dark:text-zinc-100">
-          {t(titleKey)}
-        </h1>
-        <div className="flex shrink-0 items-center gap-2">
+      <div className="mx-auto flex min-h-14 w-full max-w-6xl items-center justify-between gap-2 px-4 py-2 sm:gap-4 sm:px-6">
+        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+          {onMobileNavOpen ? (
+            <button
+              type="button"
+              onClick={onMobileNavOpen}
+              className={cn(
+                shellBtn,
+                "inline-flex shrink-0 md:hidden items-center justify-center rounded-xl min-h-11 min-w-11 p-0",
+              )}
+              aria-label={t("admin.openMenu")}
+            >
+              <Menu className="h-5 w-5 text-primary" aria-hidden />
+            </button>
+          ) : null}
+          <h1 className="truncate text-lg font-semibold tracking-tight text-slate-900 dark:text-zinc-100">
+            {t(titleKey)}
+          </h1>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <div
             className="flex rounded-xl border border-slate-200 bg-white/90 p-0.5 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-zinc-900/90"
             role="group"
@@ -53,7 +68,7 @@ export function AdminHeader() {
               type="button"
               onClick={() => setLang("gr")}
               className={cn(
-                "rounded-lg px-2.5 py-1 text-xs font-medium transition-colors",
+                "inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg px-2.5 text-xs font-medium transition-colors sm:min-h-0 sm:min-w-0 sm:py-1",
                 lang === "gr"
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100",
@@ -65,7 +80,7 @@ export function AdminHeader() {
               type="button"
               onClick={() => setLang("en")}
               className={cn(
-                "rounded-lg px-2.5 py-1 text-xs font-medium transition-colors",
+                "inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg px-2.5 text-xs font-medium transition-colors sm:min-h-0 sm:min-w-0 sm:py-1",
                 lang === "en"
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100",
@@ -77,7 +92,7 @@ export function AdminHeader() {
           <button
             type="button"
             onClick={toggleTheme}
-            className={cn(shellBtn, "relative isolate grid h-10 w-10 place-items-center overflow-hidden p-0")}
+            className={cn(shellBtn, "relative isolate grid min-h-11 min-w-11 place-items-center overflow-hidden p-0 sm:h-10 sm:w-10")}
             aria-label={t("nav.toggleTheme")}
           >
             <AnimatePresence mode="wait" initial={false}>
@@ -111,7 +126,7 @@ export function AdminHeader() {
               <button
                 type="button"
                 className={cn(
-                  "flex max-w-[200px] items-center gap-2 rounded-xl px-3 py-2 text-left text-sm transition-colors",
+                  "flex max-w-[200px] min-h-11 items-center gap-2 rounded-xl px-3 py-2 text-left text-sm transition-colors",
                   shellBtn,
                 )}
               >

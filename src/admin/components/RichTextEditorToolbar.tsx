@@ -51,7 +51,7 @@ function ToolbarBtn({
       aria-label={label}
       title={label}
       className={cn(
-        "grid h-8 w-8 shrink-0 place-items-center rounded-lg text-slate-600 transition-colors disabled:opacity-40 dark:text-zinc-300",
+        "grid h-11 w-11 shrink-0 place-items-center rounded-lg text-slate-600 transition-colors disabled:opacity-40 dark:text-zinc-300",
         active
           ? "bg-primary/15 text-primary dark:bg-primary/25"
           : "hover:bg-slate-100 dark:hover:bg-white/10",
@@ -132,7 +132,7 @@ export function RichTextEditorToolbar({
       className={cn(
         "z-10 flex shrink-0 flex-nowrap items-center gap-1 overflow-x-auto overflow-y-hidden border-b border-slate-200/80 bg-white px-1 py-1.5 dark:border-white/10 dark:bg-zinc-950",
         "scrollbar-inquiry",
-        "sm:flex-wrap sm:overflow-x-visible",
+        "lg:flex-wrap lg:overflow-x-visible",
         className,
       )}
       role="toolbar"
@@ -218,7 +218,7 @@ export function RichTextEditorToolbar({
             editor.chain().focus().setFontSize(v).run();
           }
         }}
-        className="ml-1 h-8 min-w-[7.5rem] max-w-[9rem] shrink-0 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-800 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100"
+        className="ml-1 h-11 min-h-11 min-w-[7.5rem] max-w-[9rem] shrink-0 rounded-lg border border-slate-200 bg-white px-2 text-base text-slate-800 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100 md:text-sm"
       >
         {FONT_SIZES.map((s) => (
           <option key={s.value || "default"} value={s.value}>

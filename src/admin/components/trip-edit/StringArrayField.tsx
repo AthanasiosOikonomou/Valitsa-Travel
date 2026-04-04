@@ -49,7 +49,7 @@ export function StringArrayField({ value, onChange, placeholder, disabled, class
 
   return (
     <div className={cn("space-y-2", className)}>
-      <div className="flex min-h-10 flex-wrap gap-2 rounded-xl border border-slate-200 bg-white px-2 py-2 dark:border-white/10 dark:bg-zinc-950">
+      <div className="flex min-h-11 flex-wrap gap-2 rounded-xl border border-slate-200 bg-white px-2 py-2 dark:border-white/10 dark:bg-zinc-950">
         {value.map((tag, i) => (
           <span
             key={`${tag}-${i}`}
@@ -61,11 +61,11 @@ export function StringArrayField({ value, onChange, placeholder, disabled, class
             <button
               type="button"
               disabled={disabled}
-              className="rounded p-0.5 text-slate-500 hover:bg-slate-200 hover:text-slate-900 disabled:opacity-40 dark:hover:bg-white/10 dark:hover:text-zinc-100"
+              className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md p-2 text-slate-500 hover:bg-slate-200 hover:text-slate-900 disabled:opacity-40 dark:hover:bg-white/10 dark:hover:text-zinc-100"
               onClick={() => removeAt(i)}
               aria-label="Remove"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-4 w-4" />
             </button>
           </span>
         ))}
@@ -76,7 +76,7 @@ export function StringArrayField({ value, onChange, placeholder, disabled, class
           onKeyDown={onKeyDown}
           onBlur={() => commitDraft()}
           placeholder={placeholder}
-          className="min-w-[8rem] flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent"
+          className="min-h-11 min-w-[8rem] flex-1 border-0 bg-transparent text-base shadow-none focus-visible:ring-0 md:text-sm dark:bg-transparent"
         />
       </div>
     </div>

@@ -383,14 +383,24 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
           />
         </Dialog.Overlay>
         <Dialog.Content asChild>
-          <div className="fixed left-1/2 top-1/2 z-[101] flex w-[min(96vw,920px)] max-h-[90vh] -translate-x-1/2 -translate-y-1/2 outline-none">
+          <div
+            className={cn(
+              "fixed z-[101] flex min-h-0 w-full flex-col outline-none",
+              "inset-0 h-[100dvh] max-h-none translate-none",
+              "pt-[env(safe-area-inset-top)]",
+              "md:inset-auto md:left-1/2 md:top-1/2 md:h-auto md:max-h-[90vh] md:w-[min(96vw,920px)] md:-translate-x-1/2 md:-translate-y-1/2 md:pt-0",
+            )}
+          >
             <motion.div
-              className="flex max-h-[90vh] min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-elev3 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100"
+              className={cn(
+                "flex min-h-0 flex-1 flex-col overflow-hidden rounded-none border border-slate-200 bg-white text-slate-900 shadow-elev3 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100",
+                "md:max-h-[90vh] md:rounded-2xl",
+              )}
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
             >
-              <header className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 dark:border-white/10">
+              <header className="relative flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 pr-14 dark:border-white/10">
                 <Dialog.Title className="text-lg font-semibold tracking-tight text-slate-900 dark:text-zinc-100">
                   {t("admin.inquiry")}
                 </Dialog.Title>
@@ -400,7 +410,7 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
                 <Dialog.Close asChild>
                   <button
                     type="button"
-                    className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-zinc-100"
+                    className="absolute right-3 top-3 inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-zinc-100 md:right-4 md:top-4"
                     aria-label={t("admin.close")}
                   >
                     <X className="h-5 w-5" />
@@ -408,13 +418,12 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
                 </Dialog.Close>
               </header>
 
-              <div className="flex min-h-0 flex-1 flex-col md:flex-row md:overflow-hidden">
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
                 <aside
                   className={cn(
                     "shrink-0 space-y-4 border-b border-slate-200 px-5 py-4 md:flex md:max-w-sm md:flex-col md:border-b-0 md:border-r md:border-slate-200 dark:border-white/10",
                     "bg-slate-50/90 dark:bg-zinc-900/40",
                     "md:overflow-y-auto md:scrollbar-inquiry",
-                    "max-md:sticky max-md:top-0 max-md:z-[5] max-md:border-b max-md:backdrop-blur-md max-md:supports-[backdrop-filter]:bg-slate-50/85 max-md:dark:supports-[backdrop-filter]:bg-zinc-900/80",
                   )}
                 >
                   <div className="space-y-1 text-sm">
@@ -444,7 +453,7 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
                         id="inq-modal-status"
                         value={status}
                         onChange={(e) => setStatus(e.target.value)}
-                        className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-100"
+                        className="flex min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-base text-slate-900 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-100 md:text-sm"
                       >
                         {STATUSES.map((s) => (
                           <option key={s} value={s}>
@@ -456,7 +465,7 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full border-slate-200 dark:border-white/15"
+                      className="min-h-11 w-full border-slate-200 dark:border-white/15"
                       disabled={patchStatusMut.isPending}
                       onClick={() => patchStatusMut.mutate()}
                     >
@@ -669,7 +678,7 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
                 </motion.div>
               </div>
 
-              <footer className="relative z-10 shrink-0 space-y-3 border-t border-slate-200 bg-slate-50 px-5 py-4 dark:border-white/10 dark:bg-zinc-950">
+              <footer className="relative z-10 shrink-0 space-y-3 border-t border-slate-200 bg-slate-50 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] dark:border-white/10 dark:bg-zinc-950 md:pb-4">
                 <p className="text-sm font-medium leading-none text-slate-900 dark:text-zinc-100">
                   {t("admin.postComment")}
                 </p>
@@ -748,7 +757,7 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
                 ) : null}
                 <Button
                   type="button"
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                  className="min-h-11 w-full bg-primary text-primary-foreground hover:bg-primary/90"
                   disabled={postMut.isPending || !canPostComment || hasUploadingAttachment}
                   onClick={() => {
                     if (!inquiry || !canPostComment || hasUploadingAttachment) return;

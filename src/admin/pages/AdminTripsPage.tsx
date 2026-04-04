@@ -287,8 +287,7 @@ export default function AdminTripsPage() {
             <Button
               type="button"
               variant="outline"
-              size="sm"
-              className="shrink-0"
+              className="min-h-11 min-w-11 shrink-0 px-0"
               aria-label={t("admin.tripTableEdit")}
               onClick={() => openTripEditor(tripId(row.original))}
             >
@@ -307,8 +306,7 @@ export default function AdminTripsPage() {
               <Button
                 type="button"
                 variant="ghost"
-                size="icon"
-                className="h-9 w-9 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                className="min-h-11 min-w-11 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
                 aria-label={t("admin.tripTableDelete")}
                 onClick={() => setDeleteTargetId(id)}
               >
@@ -330,7 +328,7 @@ export default function AdminTripsPage() {
       <Card className="border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-zinc-900/90">
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 space-y-0">
           <CardTitle className="text-base text-slate-900 dark:text-zinc-100">{t("admin.catalog")}</CardTitle>
-          <Button type="button" variant="default" className="shrink-0 gap-2" onClick={openCreateTrip}>
+          <Button type="button" variant="default" className="min-h-11 shrink-0 gap-2 px-5" onClick={openCreateTrip}>
             <Plus className="h-4 w-4" aria-hidden />
             {t("admin.addTrip")}
           </Button>
