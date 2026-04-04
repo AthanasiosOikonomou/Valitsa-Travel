@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
+import { X } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Controller, useForm, useWatch, type FieldErrors } from "react-hook-form";
@@ -467,13 +468,22 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-[101] flex max-h-[90vh] w-full max-w-3xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-elev3 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100">
-          <div className="shrink-0 border-b border-slate-100 px-6 pb-4 pt-6 dark:border-white/5">
-            <Dialog.Title className="text-lg font-semibold text-slate-900 dark:text-zinc-100">
+          <div className="relative shrink-0 border-b border-slate-100 px-6 pb-4 pt-6 pr-14 dark:border-white/5">
+            <Dialog.Title className="pr-2 text-lg font-semibold text-slate-900 dark:text-zinc-100">
               {isCreate ? t("admin.addTrip") : t("admin.editTrip")}
             </Dialog.Title>
             <Dialog.Description className="sr-only">
               {isCreate ? t("admin.addTrip") : t("admin.editTrip")}
             </Dialog.Description>
+            <Dialog.Close asChild>
+              <button
+                type="button"
+                className="absolute right-4 top-5 inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-red-400"
+                aria-label={t("admin.close")}
+              >
+                <X className="h-5 w-5 shrink-0" aria-hidden />
+              </button>
+            </Dialog.Close>
           </div>
 
           {q.isLoading && !isCreate ? (
