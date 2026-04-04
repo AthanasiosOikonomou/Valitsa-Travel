@@ -18,6 +18,7 @@ import {
   ItineraryTimeline,
   toItineraryItem,
 } from "@/components/ItineraryTimeline";
+import { SafeRichTextHtml } from "@/components/SafeRichTextHtml";
 
 interface TripDetailProps {
   trip: Trip;
@@ -365,9 +366,10 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                   transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
                 >
                   {activeTab === "description" && (
-                    <p className="text-body-prose text-lg leading-relaxed">
-                      {getDetailField("description")}
-                    </p>
+                    <SafeRichTextHtml
+                      html={String(getDetailField("description") ?? "")}
+                      className="text-body-prose text-lg leading-relaxed text-foreground"
+                    />
                   )}
                   {activeTab === "program" && (
                     <ItineraryTimeline items={programItems} />

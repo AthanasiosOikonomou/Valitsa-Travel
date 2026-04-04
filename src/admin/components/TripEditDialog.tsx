@@ -69,7 +69,7 @@ function buildTripFormSchema(t: (key: string) => string) {
         .array(programStepSchema)
         .min(1, t("admin.tripProgramMinDay"))
         .refine(
-          (steps) => steps.some((s) => s.title.trim().length > 0 || s.description.trim().length > 0),
+          (steps) => steps.some((s) => s.title.trim().length > 0 || !isHtmlEmpty(s.description)),
           { message: t("admin.tripProgramNeedsContent") },
         ),
       included_el: z
@@ -180,7 +180,7 @@ function buildTripPayload(values: TripFormValues) {
 
   const titleEn = values.title.trim();
   const progEn = values.program.filter(
-    (s) => s.title.trim().length > 0 || s.description.trim().length > 0,
+    (s) => s.title.trim().length > 0 || !isHtmlEmpty(s.description),
   );
   const incEn = values.included.map((s) => s.trim()).filter(Boolean);
   const tagsEn = values.tags.map((s) => s.trim()).filter(Boolean);
@@ -191,7 +191,7 @@ function buildTripPayload(values: TripFormValues) {
     country: values.country.trim() || null,
     date_range: values.date_range.trim() || null,
     departure_city: values.departure_city.trim() || null,
-    description: values.description.trim() ? values.description : null,
+    description: !isHtmlEmpty(values.description) ? values.description : null,
     program: progEn.length > 0 ? formStepsToDbPayload(progEn) : null,
     included: incEn.length > 0 ? incEn : null,
     tags: tagsEn.length > 0 ? tagsEn : null,
@@ -202,7 +202,7 @@ function deriveEnglishEnabledFromRow(row: Record<string, unknown>): boolean {
   if (String(row.title ?? "").trim()) return true;
   if (!isHtmlEmpty(asHtml(row.description))) return true;
   const programEn = programDbToFormSteps(row.program);
-  if (programEn.some((s) => s.title.trim() || s.description.trim())) return true;
+  if (programEn.some((s) => s.title.trim() || !isHtmlEmpty(s.description))) return true;
   const inc = stringListDbToForm(row.included);
   if (inc.some((s) => s.trim())) return true;
   if (String(row.location ?? "").trim() || String(row.country ?? "").trim()) return true;
@@ -453,6 +453,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
   };
 
   const programEditorProps = {
+    t,
     addDayLabel: t("admin.tripAddDay"),
     removeDayAriaLabel: t("admin.tripRemoveDay"),
     daysFieldLabel: t("admin.tripProgramDays"),

@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Trip } from "@/types/Trip";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ProgressiveImage from "@/components/ProgressiveImage";
+import { SafeRichTextHtml } from "@/components/SafeRichTextHtml";
 import { formatTripDuration, formatTripPrice } from "@/lib/tripDisplay";
 
 interface TripCardProps {
@@ -129,9 +130,12 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
               <h4 className="text-display mb-4 max-w-[90%] text-balance text-xl font-semibold leading-tight tracking-[-0.02em] text-white">
                 {getField("title")}
               </h4>
-              <p className="text-sm leading-relaxed !text-white">
-                {getField("description")}
-              </p>
+              <div className="line-clamp-4 max-h-[5.5rem] overflow-hidden text-sm leading-relaxed !text-white [&_.prose]:!text-white [&_a]:!text-white/90 [&_a]:underline">
+                <SafeRichTextHtml
+                  html={String(getField("description") ?? "")}
+                  className="!text-white prose-headings:!text-white prose-strong:!text-white"
+                />
+              </div>
               <button
                 className="mt-7 inline-flex min-w-[136px] items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-white/65 bg-transparent px-4 py-2.5 text-xs font-semibold text-white/95 transition-all [transition-duration:560ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:bg-white/10"
                 onClick={(e) => {

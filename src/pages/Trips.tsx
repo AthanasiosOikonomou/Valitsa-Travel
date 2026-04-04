@@ -40,6 +40,7 @@ import {
   type SortOption,
 } from "@/lib/tripFilters";
 import ProgressiveImage from "@/components/ProgressiveImage";
+import { SafeRichTextHtml } from "@/components/SafeRichTextHtml";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { showTrips } from "@/lib/showTrips";
 import {
@@ -1177,9 +1178,12 @@ const TripResultCard = ({
           <h3 className="text-xl text-display mb-2 group-hover:text-primary transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] leading-tight line-clamp-2 min-h-[3.75rem]">
             {getField("title")}
           </h3>
-          <p className="premium-subheading text-sm mb-3 line-clamp-2 min-h-[3rem]">
-            {getField("description")}
-          </p>
+          <div className="premium-subheading mb-3 line-clamp-2 min-h-[3rem] overflow-hidden text-sm [&_.prose]:text-inherit">
+            <SafeRichTextHtml
+              html={String(getField("description") ?? "")}
+              className="text-foreground-muted"
+            />
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 mt-2">

@@ -1,5 +1,6 @@
 import { Plus, Trash2 } from "lucide-react";
 import type { ProgramFormStep } from "@/lib/tripAdminForm";
+import { RichTextEditor } from "@/admin/components/RichTextEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +10,7 @@ type Props = {
   value: ProgramFormStep[];
   onChange: (next: ProgramFormStep[]) => void;
   disabled?: boolean;
+  t: (key: string) => string;
   addDayLabel: string;
   daysFieldLabel: string;
   daysPlaceholder?: string;
@@ -22,6 +24,7 @@ export function ProgramTimelineEditor({
   value,
   onChange,
   disabled,
+  t,
   addDayLabel,
   daysFieldLabel,
   daysPlaceholder,
@@ -86,12 +89,11 @@ export function ProgramTimelineEditor({
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">{dayDescriptionLabel}</Label>
-              <textarea
-                disabled={disabled}
+              <RichTextEditor
                 value={row.description}
-                onChange={(e) => updateAt(index, { description: e.target.value })}
-                rows={4}
-                className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-100"
+                onChange={(html) => updateAt(index, { description: html })}
+                t={t}
+                disabled={disabled}
               />
             </div>
           </div>
