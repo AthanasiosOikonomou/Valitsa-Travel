@@ -18,6 +18,7 @@ import { TripImageDropzone } from "@/admin/components/TripImageDropzone";
 import { RichTextEditor } from "@/admin/components/RichTextEditor";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 function tripId(row: AdminTripViewRow) {
   return String(row.id ?? row.trip_id ?? "");
@@ -107,30 +108,36 @@ export default function AdminTripsPage() {
     () => [
       columnHelper.display({
         id: "thumb",
-        header: "",
+        header: t("admin.tripTablePhoto"),
         cell: ({ row }) => {
           const img = row.original.image as string | null | undefined;
-          return img ? (
-            <img src={img} alt="" className="h-12 w-20 rounded-lg object-cover" />
-          ) : (
-            <div className="h-12 w-20 rounded-lg bg-muted" />
+          return (
+            <div className="flex justify-center">
+              {img ? (
+                <img src={img} alt="" className="h-12 w-20 rounded-lg object-cover" />
+              ) : (
+                <div className="h-12 w-20 rounded-lg bg-muted" />
+              )}
+            </div>
           );
         },
       }),
       columnHelper.accessor((r) => titleOf(r, lang, t("admin.untitled")), {
         id: "title",
         header: t("admin.name"),
-        cell: (i) => <span className="font-medium">{i.getValue()}</span>,
+        cell: (i) => (
+          <span className="block break-words text-center font-medium leading-snug">{i.getValue()}</span>
+        ),
       }),
       columnHelper.accessor((r) => Number(r.click_count ?? 0), {
         id: "clicks",
         header: t("admin.clicks"),
-        cell: (i) => <span className="tabular-nums">{i.getValue()}</span>,
+        cell: (i) => <span className="block text-center tabular-nums">{i.getValue()}</span>,
       }),
       columnHelper.accessor((r) => Number(r.inquiry_count ?? 0), {
         id: "subs",
         header: t("admin.forms"),
-        cell: (i) => <span className="tabular-nums">{i.getValue()}</span>,
+        cell: (i) => <span className="block text-center tabular-nums">{i.getValue()}</span>,
       }),
       columnHelper.accessor((r) => Boolean(r.is_featured), {
         id: "feat",
@@ -139,21 +146,32 @@ export default function AdminTripsPage() {
           const id = tripId(row.original);
           const busy = featuredPendingId === id;
           return (
-            <Switch
-              checked={Boolean(row.original.is_featured)}
-              disabled={busy}
-              onCheckedChange={(v) => featuredMut.mutate({ id, next: v })}
-            />
+            <div className="flex justify-center">
+              <Switch
+                checked={Boolean(row.original.is_featured)}
+                disabled={busy}
+                onCheckedChange={(v) => featuredMut.mutate({ id, next: v })}
+              />
+            </div>
           );
         },
       }),
       columnHelper.display({
         id: "act",
-        header: "",
+        header: t("admin.tripTableEdit"),
         cell: ({ row }) => (
-          <Button type="button" variant="outline" size="sm" onClick={() => setEditId(tripId(row.original))}>
-            <Pencil className="h-4 w-4" />
-          </Button>
+          <div className="flex justify-center">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              aria-label={t("admin.tripTableEdit")}
+              onClick={() => setEditId(tripId(row.original))}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          </div>
         ),
       }),
     ],
@@ -173,15 +191,26 @@ export default function AdminTripsPage() {
           {isLoading ? (
             <Skeleton className="h-64 w-full bg-slate-200 dark:bg-zinc-800" />
           ) : (
-            <table className="w-full min-w-[720px] border-collapse text-sm text-slate-900 dark:text-zinc-100">
+            <table className="w-full min-w-[760px] border-collapse text-sm text-slate-900 dark:text-zinc-100">
               <thead>
                 {table.getHeaderGroups().map((hg) => (
                   <tr
                     key={hg.id}
-                    className="border-b border-slate-200 bg-slate-100 text-left text-slate-600 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-400"
+                    className="border-b border-slate-200 bg-slate-100 text-center text-slate-600 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-400"
                   >
                     {hg.headers.map((h) => (
-                      <th key={h.id} className="pb-3 pr-4 font-medium">
+                      <th
+                        key={h.id}
+                        className={cn(
+                          "px-3 py-3 align-middle text-center text-sm font-medium text-slate-600 dark:text-zinc-400",
+                          h.column.id === "thumb" && "w-[112px] min-w-[112px] max-w-[112px]",
+                          h.column.id === "title" && "min-w-[200px] max-w-[min(28rem,40vw)]",
+                          h.column.id === "clicks" && "w-24 min-w-[5.5rem]",
+                          h.column.id === "subs" && "w-28 min-w-[6.5rem]",
+                          h.column.id === "feat" && "w-32 min-w-[8rem]",
+                          h.column.id === "act" && "w-24 min-w-[6rem]",
+                        )}
+                      >
                         {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
                       </th>
                     ))}
@@ -190,9 +219,23 @@ export default function AdminTripsPage() {
               </thead>
               <tbody>
                 {table.getRowModel().rows.map((row) => (
-                  <tr key={row.id} className="border-b border-slate-200/90 dark:border-white/10">
+                  <tr
+                    key={row.id}
+                    className="border-b border-slate-200 transition-colors hover:bg-muted/50 dark:border-white/10"
+                  >
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="py-3 pr-4 align-middle">
+                      <td
+                        key={cell.id}
+                        className={cn(
+                          "px-3 py-3 align-middle text-center",
+                          cell.column.id === "thumb" && "w-[112px] min-w-[112px] max-w-[112px]",
+                          cell.column.id === "title" && "min-w-[200px] max-w-[min(28rem,40vw)]",
+                          cell.column.id === "clicks" && "w-24 min-w-[5.5rem]",
+                          cell.column.id === "subs" && "w-28 min-w-[6.5rem]",
+                          cell.column.id === "feat" && "w-32 min-w-[8rem]",
+                          cell.column.id === "act" && "w-24 min-w-[6rem]",
+                        )}
+                      >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     ))}

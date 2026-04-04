@@ -195,6 +195,8 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.forms": "Interested",
     "admin.featured": "Featured",
     "admin.untitled": "Untitled",
+    "admin.tripTablePhoto": "Image",
+    "admin.tripTableEdit": "Edit",
     "admin.editTrip": "Edit trip",
     "admin.editTripDesc":
       "English and Greek fields; rich text is stored as HTML.",
@@ -449,6 +451,8 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.forms": "Ενδιαφερόμενοι",
     "admin.featured": "Προτεινόμενο",
     "admin.untitled": "Χωρίς τίτλο",
+    "admin.tripTablePhoto": "Φωτογραφία",
+    "admin.tripTableEdit": "Επεξεργασία",
     "admin.editTrip": "Επεξεργασία ταξιδιού",
     "admin.editTripDesc":
       "Πεδία στα αγγλικά και ελληνικά· το πλούσιο κείμενο αποθηκεύεται ως HTML.",
