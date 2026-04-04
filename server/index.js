@@ -11,6 +11,13 @@ import { fileURLToPath } from "url";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { registerAdminRoutes } from "./adminRoutes.js";
+import {
+  confirmationSubject,
+  confirmationTextBody,
+  generateEmailTemplate,
+  normalizeInquiryLanguage,
+  resolveDisplayNames,
+} from "./confirmationEmailTemplate.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -179,6 +186,10 @@ const inquirySchema = z.object({
   trip_image: z.string().trim().max(2000).optional().default(""),
   submitted_at: z.string().trim().datetime({ offset: true }).optional(),
   captcha_token: z.string().trim().max(4000).optional().default(""),
+  first_name: z.string().trim().max(60).optional().default(""),
+  last_name: z.string().trim().max(60).optional().default(""),
+  language: z.enum(["en", "gr", "el"]).optional(),
+  locale: z.enum(["en", "gr", "el"]).optional(),
 });
 
 const trackClickSchema = z.object({
@@ -272,6 +283,9 @@ const required = {
 
 // MAIL_CC is optional
 const mailCc = process.env.MAIL_CC || "";
+/** Envelope From / sender address (SMTP auth still uses MAIL_USER). Defaults to sales inbox. */
+const mailFrom =
+  process.env.MAIL_FROM?.trim() || "sales@valitsatravel.gr";
 const supabaseUrl = process.env.VITE_SUPABASE_URL || "";
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const supabaseAdmin =
@@ -446,7 +460,19 @@ app.post(inquiryRoutes, async (req, res) => {
     trip_image,
     submitted_at,
     captcha_token,
+    first_name,
+    last_name,
+    language,
+    locale,
   } = parsed.data;
+
+  const languageRaw = language ?? locale;
+  const normalizedLang = normalizeInquiryLanguage(languageRaw);
+  const { firstName, lastName } = resolveDisplayNames({
+    from_name,
+    first_name,
+    last_name,
+  });
 
   if (requireCaptcha) {
     const captchaValid = await verifyCaptcha(captcha_token, req.ip);
@@ -570,73 +596,92 @@ app.post(inquiryRoutes, async (req, res) => {
     </div>
   `;
 
-  try {
-    const mailOptions = {
-      from: `Valitsa Travel <${required.user}>`,
+  const staffMailOptions = {
+    from: `Valitsa Travel <${mailFrom}>`,
       to: required.to,
-      ...(mailCc ? { cc: mailCc } : {}),
-      replyTo: `${sanitizeHeader(from_name)} <${sanitizeHeader(from_email)}>`,
-      ...(!mailLogoUrl && hasLocalLogo
-        ? {
-            attachments: [
-              {
-                filename: "logo-dark.png",
-                path: localLogoPath,
-                cid: "valitsa-logo",
-              },
-            ],
-          }
-        : {}),
-    };
+    ...(mailCc ? { cc: mailCc } : {}),
+    replyTo: `${sanitizeHeader(from_name)} <${sanitizeHeader(from_email)}>`,
+    ...(!mailLogoUrl && hasLocalLogo
+      ? {
+          attachments: [
+            {
+              filename: "logo-dark.png",
+              path: localLogoPath,
+              cid: "valitsa-logo",
+            },
+          ],
+        }
+      : {}),
+  };
 
-    const result = await transporter.sendMail({
-      ...mailOptions,
+  let staffMailSent = false;
+  let staffResult = null;
+
+  try {
+    staffResult = await transporter.sendMail({
+      ...staffMailOptions,
       subject,
       text: textBody,
       html: htmlBody,
     });
-
+    staffMailSent = true;
     console.log("Inquiry email accepted by SMTP", {
       to: required.to,
       cc: mailCc || null,
-      messageId: result.messageId,
-      accepted: result.accepted,
-      rejected: result.rejected,
-      response: result.response,
-    });
-
-    if (effectiveTripId) {
-      const inquiryImage =
-        trip_image && String(trip_image).trim()
-          ? String(trip_image).trim()
-          : null;
-      const { error: analyticsError } = await incrementTripAnalytics({
-        trip_id: effectiveTripId,
-        trip_name: trip_title.trim() || null,
-        trip_image: inquiryImage,
-        kind: "inquiry",
-      });
-      // Email already sent — do not fail the response if analytics RPC fails
-      if (analyticsError) {
-        console.error("[analytics] inquiry increment failed:", analyticsError);
-      }
-    }
-
-    res.json({
-      ok: true,
-      to: required.to,
-      cc: mailCc || null,
-      messageId: result.messageId,
-      accepted: result.accepted,
-      rejected: result.rejected,
-      response: result.response,
+      messageId: staffResult.messageId,
+      accepted: staffResult.accepted,
+      rejected: staffResult.rejected,
+      response: staffResult.response,
     });
   } catch (error) {
-    console.error("Failed to send inquiry email:", error);
-    const message =
-      error instanceof Error ? error.message : "Failed to send email";
-    res.status(500).json({ error: message });
+    console.error("[inquiry] staff mail failed:", error);
   }
+
+  let confirmationSent = false;
+  try {
+    await transporter.sendMail({
+      from: `Valitsa Travel <${mailFrom}>`,
+      to: from_email.trim(),
+      subject: confirmationSubject(normalizedLang),
+      text: confirmationTextBody(firstName, lastName, normalizedLang),
+      html: generateEmailTemplate(firstName, lastName, normalizedLang),
+    });
+    confirmationSent = true;
+  } catch (error) {
+    console.error("[inquiry] confirmation mail failed:", error);
+  }
+
+  if (effectiveTripId) {
+    const inquiryImage =
+      trip_image && String(trip_image).trim()
+        ? String(trip_image).trim()
+        : null;
+    const { error: analyticsError } = await incrementTripAnalytics({
+      trip_id: effectiveTripId,
+      trip_name: trip_title.trim() || null,
+      trip_image: inquiryImage,
+      kind: "inquiry",
+    });
+    if (analyticsError) {
+      console.error("[analytics] inquiry increment failed:", analyticsError);
+    }
+  }
+
+  res.json({
+    ok: true,
+    staffMailSent,
+    confirmationSent,
+    to: required.to,
+    cc: mailCc || null,
+    ...(staffResult
+      ? {
+          messageId: staffResult.messageId,
+          accepted: staffResult.accepted,
+          rejected: staffResult.rejected,
+          response: staffResult.response,
+        }
+      : {}),
+  });
 });
 
 registerAdminRoutes(app, { supabaseAdmin });

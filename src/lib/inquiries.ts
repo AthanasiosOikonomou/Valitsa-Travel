@@ -10,6 +10,9 @@ const createInquirySchema = z.object({
   tripId: z.string().uuid().optional(),
 });
 
+/** Submitted to API for bilingual confirmation email; `el` is normalized server-side to Greek. */
+export type InquiryLanguage = "en" | "gr" | "el";
+
 export type CreateInquiryPayload = {
   source: "contact-modal" | "trip-detail";
   firstName: string;
@@ -18,6 +21,8 @@ export type CreateInquiryPayload = {
   captchaToken: string;
   mobile?: string;
   message: string;
+  /** UI language for confirmation email template. Defaults to Greek if omitted. */
+  language?: InquiryLanguage;
   /** When omitted or empty, stored as null (general contact). */
   tripId?: string | null;
   tripTitle?: string;
@@ -58,11 +63,14 @@ export async function createInquiry(payload: CreateInquiryPayload): Promise<void
 
   const body = {
     from_name: `${rest.firstName} ${rest.lastName}`.trim(),
+    first_name: rest.firstName.trim(),
+    last_name: rest.lastName.trim(),
     from_email: rest.email,
     phone: rest.mobile,
     message: rest.message,
     source: payload.source,
     captcha_token: payload.captchaToken,
+    language: payload.language ?? "gr",
     trip_id,
     trip_title: payload.tripTitle ?? "",
     trip_location: payload.tripLocation ?? "",

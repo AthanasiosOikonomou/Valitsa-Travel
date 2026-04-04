@@ -148,6 +148,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
         captchaToken: requiresCaptcha ? captchaToken : "dev-bypass",
         mobile: formData.mobile,
         message: formData.message,
+        language: lang,
         tripId: trip.id,
         tripTitle: getDetailField("title"),
         tripLocation: getDetailField("location"),

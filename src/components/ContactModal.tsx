@@ -20,7 +20,7 @@ interface ContactModalProps {
 }
 
 const ContactModal = ({ open, onClose }: ContactModalProps) => {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   useScrollLock(open);
   const requiresCaptcha = !import.meta.env.DEV;
   const [view, setView] = useState<"options" | "form">("options");
@@ -142,6 +142,7 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
         captchaToken: requiresCaptcha ? captchaToken : "dev-bypass",
         mobile: form.mobile,
         message: form.message,
+        language: lang,
         tripId: null,
       });
 
