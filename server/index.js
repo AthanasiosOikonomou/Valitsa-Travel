@@ -27,10 +27,11 @@ dotenv.config({ path: path.join(__dirname, "../.env") });
 dotenv.config({ path: path.join(__dirname, ".env") });
 
 const app = express();
-const port = Number(
-  process.env.PORT || process.env.API_PORT || 8787,
-);
-const isProduction = process.env.NODE_ENV === "production";
+const port = Number(process.env.PORT || process.env.API_PORT || 8787);
+const isProduction =
+  process.env.NODE_ENV === "production" ||
+  process.env.NODE_ENV === "Production";
+console.log("isProduction:", isProduction);
 const requireCaptcha = isProduction;
 
 app.disable("x-powered-by");
@@ -286,8 +287,7 @@ const required = {
 // MAIL_CC is optional
 const mailCc = process.env.MAIL_CC || "";
 /** Visible From address (SMTP auth uses MAIL_USER). Defaults to sales inbox. */
-const mailFrom =
-  process.env.MAIL_FROM?.trim() || "sales@valitsatravel.gr";
+const mailFrom = process.env.MAIL_FROM?.trim() || "sales@valitsatravel.gr";
 
 const normalizeEmailAddress = (addr) => {
   const s = String(addr ?? "").trim();
@@ -365,9 +365,7 @@ const incrementTripAnalytics = async ({
   const name =
     trip_name && String(trip_name).trim() ? String(trip_name).trim() : null;
   const image =
-    trip_image && String(trip_image).trim()
-      ? String(trip_image).trim()
-      : null;
+    trip_image && String(trip_image).trim() ? String(trip_image).trim() : null;
   const { error } = await supabaseAdmin.rpc("increment_trip_analytics", {
     p_trip_id: trip_id,
     p_trip_name: name,
@@ -640,7 +638,10 @@ app.post(inquiryRoutes, async (req, res) => {
 
   const staffToList = [
     required.to,
-    ...mailCc.split(",").map((x) => x.trim()).filter(Boolean),
+    ...mailCc
+      .split(",")
+      .map((x) => x.trim())
+      .filter(Boolean),
   ];
 
   let staffMailSent = false;
@@ -766,7 +767,10 @@ app.listen(port, () => {
       ? "[inquiries] Supabase persistence enabled (public.inquiries)."
       : "[inquiries] Supabase persistence OFF — inquiries are email-only until URL + service role key are set.",
   );
-  if (process.env.NODE_ENV !== "production") {
+  if (
+    process.env.NODE_ENV !== "production" &&
+    process.env.NODE_ENV !== "Production"
+  ) {
     console.log(
       `[vite proxy] Use http://127.0.0.1:${port} as API target (Vite default: vite.config.ts).`,
     );
