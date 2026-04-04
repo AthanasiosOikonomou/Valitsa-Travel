@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -19,6 +19,7 @@ import { RichTextEditor } from "@/admin/components/RichTextEditor";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useSearchParams } from "react-router-dom";
 
 function tripId(row: AdminTripViewRow) {
   return String(row.id ?? row.trip_id ?? "");
@@ -76,6 +77,7 @@ async function fetchAdminTripsWithMetrics(): Promise<AdminTripViewRow[]> {
 export default function AdminTripsPage() {
   const qc = useQueryClient();
   const { t, lang } = useLanguage();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["admin-trips"],
     queryFn: fetchAdminTripsWithMetrics,
@@ -103,6 +105,39 @@ export default function AdminTripsPage() {
     featuredMut.isPending && featuredMut.variables ? featuredMut.variables.id : null;
 
   const [editId, setEditId] = useState<string | null>(null);
+
+  const openTripEditor = useCallback(
+    (id: string) => {
+      setEditId(id);
+      setSearchParams(
+        (prev) => {
+          const n = new URLSearchParams(prev);
+          n.set("edit", id);
+          return n;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  const closeTripEditor = useCallback(() => {
+    setEditId(null);
+    setSearchParams(
+      (prev) => {
+        const n = new URLSearchParams(prev);
+        n.delete("edit");
+        return n;
+      },
+      { replace: true },
+    );
+  }, [setSearchParams]);
+
+  useEffect(() => {
+    const e = searchParams.get("edit");
+    if (e) setEditId(e);
+  }, [searchParams]);
+
   const columnHelper = createColumnHelper<AdminTripViewRow>();
   const columns = useMemo(
     () => [
@@ -167,7 +202,7 @@ export default function AdminTripsPage() {
               size="sm"
               className="shrink-0"
               aria-label={t("admin.tripTableEdit")}
-              onClick={() => setEditId(tripId(row.original))}
+              onClick={() => openTripEditor(tripId(row.original))}
             >
               <Pencil className="h-4 w-4" />
             </Button>
@@ -175,7 +210,7 @@ export default function AdminTripsPage() {
         ),
       }),
     ],
-    [columnHelper, t, lang, featuredPendingId, featuredMut],
+    [columnHelper, t, lang, featuredPendingId, featuredMut, openTripEditor],
   );
 
   const table = useReactTable({ data: rows, columns, getCoreRowModel: getCoreRowModel() });
@@ -246,7 +281,7 @@ export default function AdminTripsPage() {
           )}
         </CardContent>
       </Card>
-      {editId ? <TripEditDialog tripId={editId} open onClose={() => setEditId(null)} /> : null}
+      {editId ? <TripEditDialog tripId={editId} open onClose={closeTripEditor} /> : null}
     </div>
   );
 }

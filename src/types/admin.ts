@@ -25,6 +25,12 @@ export type AdminInquiryRow = {
   trips?: { id: string; title: string | null; image: string | null } | null;
 };
 
+export type InquiryCommentAttachment = {
+  name: string;
+  path: string;
+  type: string;
+};
+
 export type InquiryCommentRow = {
   id: string;
   inquiry_id: string;
@@ -32,4 +38,5 @@ export type InquiryCommentRow = {
   content: string;
   created_at: string;
   author_label?: string | null;
+  attachments?: InquiryCommentAttachment[] | null;
 };

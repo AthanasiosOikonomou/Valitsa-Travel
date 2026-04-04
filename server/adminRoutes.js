@@ -93,6 +93,8 @@ const adminTripPutSchema = z
 export function registerAdminRoutes(app, { supabaseAdmin }) {
   const requireAdmin = createRequireAdmin(supabaseAdmin);
   const bucket = process.env.SUPABASE_TRIP_IMAGES_BUCKET || "trip-images";
+  const inquiryAttachmentsBucket =
+    process.env.SUPABASE_INQUIRY_ATTACHMENTS_BUCKET || "inquiry-attachments";
 
   app.post(
     "/api/admin/upload-image",
@@ -205,9 +207,42 @@ export function registerAdminRoutes(app, { supabaseAdmin }) {
     },
   );
 
-  const inquiryCommentBodySchema = z.object({
-    content: z.string().min(1, "content required").max(500_000),
+  const inquiryAttachmentItemSchema = z.object({
+    name: z.string().min(1).max(500),
+    path: z.string().min(1).max(2000),
+    type: z.string().min(1).max(200),
   });
+
+  function inquiryCommentContentMeaningful(html) {
+    const stripped = String(html ?? "")
+      .replace(/<[^>]+>/g, "")
+      .replace(/\s|&nbsp;/gi, "");
+    return stripped.length > 0;
+  }
+
+  const inquiryCommentBodySchema = z
+    .object({
+      content: z.string().max(500_000).default(""),
+      attachments: z.array(inquiryAttachmentItemSchema).max(5).default([]),
+    })
+    .superRefine((data, ctx) => {
+      if (!inquiryCommentContentMeaningful(data.content) && data.attachments.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Add comment text or at least one attachment",
+          path: ["content"],
+        });
+      }
+      data.attachments.forEach((a, i) => {
+        if (a.path.includes("..") || a.path.startsWith("/")) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Invalid storage path",
+            path: ["attachments", i, "path"],
+          });
+        }
+      });
+    });
 
   app.get(
     "/api/admin/inquiries/:id/comments",
@@ -215,9 +250,11 @@ export function registerAdminRoutes(app, { supabaseAdmin }) {
     requireAdmin,
     async (req, res) => {
       const inquiryId = req.params.id;
+      const commentColumns =
+        "id, inquiry_id, admin_id, content, created_at, author_label, attachments";
       const { data, error } = await supabaseAdmin
         .from("inquiry_comments")
-        .select("*")
+        .select(commentColumns)
         .eq("inquiry_id", inquiryId)
         .order("created_at", { ascending: true });
       if (error) {
@@ -248,6 +285,27 @@ export function registerAdminRoutes(app, { supabaseAdmin }) {
         });
         return;
       }
+      const safeDecodePath = (p) => {
+        const s = String(p ?? "").trim();
+        try {
+          return decodeURIComponent(s);
+        } catch {
+          return s;
+        }
+      };
+      const inquiryPrefix = `${safeDecodePath(inquiryId)}/`;
+      for (const a of parsed.data.attachments) {
+        const decoded = safeDecodePath(a.path);
+        if (decoded.includes("..") || decoded.startsWith("/")) {
+          res.status(400).json({ error: "Invalid storage path" });
+          return;
+        }
+        if (!decoded.startsWith(inquiryPrefix)) {
+          res.status(400).json({ error: "Attachment path must belong to this inquiry" });
+          return;
+        }
+      }
+
       const user = req.adminUser;
       const author_label =
         user.email ??
@@ -260,19 +318,22 @@ export function registerAdminRoutes(app, { supabaseAdmin }) {
         admin_id: user.id,
         content: parsed.data.content,
         author_label,
+        attachments: parsed.data.attachments,
       };
+      const commentSelect =
+        "id, inquiry_id, admin_id, content, created_at, author_label, attachments";
       const { data, error } = await supabaseAdmin
         .from("inquiry_comments")
         .insert(row)
-        .select("id, inquiry_id, admin_id, content, created_at, author_label")
+        .select(commentSelect)
         .single();
       if (error) {
-        if (error.message?.includes("author_label") || error.code === "42703") {
+        if (error.message?.includes("author_label")) {
           const { author_label: _a, ...withoutLabel } = row;
           const retry = await supabaseAdmin
             .from("inquiry_comments")
             .insert(withoutLabel)
-            .select("id, inquiry_id, admin_id, content, created_at")
+            .select("id, inquiry_id, admin_id, content, created_at, attachments")
             .single();
           if (retry.error) {
             console.error("[admin] post inquiry comment:", retry.error);
@@ -286,7 +347,101 @@ export function registerAdminRoutes(app, { supabaseAdmin }) {
         res.status(500).json({ error: error.message });
         return;
       }
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[admin] inquiry comment inserted attachments:", data?.attachments);
+      }
       res.status(201).json({ comment: data });
+    },
+  );
+
+  const removeCommentAttachmentBodySchema = z.object({
+    removeAttachmentPath: z.string().min(1).max(2000),
+  });
+
+  app.patch(
+    "/api/admin/inquiries/:inquiryId/comments/:commentId",
+    adminLimiter,
+    requireAdmin,
+    express.json(),
+    async (req, res) => {
+      const inquiryId = req.params.inquiryId;
+      const commentId = req.params.commentId;
+      const parsed = removeCommentAttachmentBodySchema.safeParse(req.body ?? {});
+      if (!parsed.success) {
+        const first = parsed.error.issues[0];
+        res.status(400).json({
+          error: first ? `${first.path.join(".")}: ${first.message}` : "Invalid body",
+        });
+        return;
+      }
+      const removePath = parsed.data.removeAttachmentPath;
+      if (removePath.includes("..") || removePath.startsWith("/")) {
+        res.status(400).json({ error: "Invalid storage path" });
+        return;
+      }
+      if (!removePath.startsWith(`${inquiryId}/`)) {
+        res.status(400).json({ error: "Attachment path must belong to this inquiry" });
+        return;
+      }
+
+      const user = req.adminUser;
+      const { data: comment, error: fetchErr } = await supabaseAdmin
+        .from("inquiry_comments")
+        .select("id, inquiry_id, admin_id, attachments")
+        .eq("id", commentId)
+        .eq("inquiry_id", inquiryId)
+        .maybeSingle();
+
+      if (fetchErr) {
+        console.error("[admin] fetch comment for attachment delete:", fetchErr);
+        res.status(500).json({ error: fetchErr.message });
+        return;
+      }
+      if (!comment) {
+        res.status(404).json({ error: "Comment not found" });
+        return;
+      }
+      if (comment.admin_id !== user.id) {
+        res.status(403).json({ error: "You can only delete attachments from your own comments" });
+        return;
+      }
+
+      const attachments = Array.isArray(comment.attachments) ? comment.attachments : [];
+      const nextAttachments = attachments.filter((a) => a && a.path !== removePath);
+      if (nextAttachments.length === attachments.length) {
+        res.status(400).json({ error: "Attachment not found on this comment" });
+        return;
+      }
+
+      const { data: updated, error: updateErr } = await supabaseAdmin
+        .from("inquiry_comments")
+        .update({ attachments: nextAttachments })
+        .eq("id", commentId)
+        .eq("inquiry_id", inquiryId)
+        .select("id, inquiry_id, admin_id, content, created_at, author_label, attachments")
+        .single();
+
+      if (updateErr) {
+        console.error("[admin] update comment attachments:", updateErr);
+        res.status(500).json({ error: updateErr.message });
+        return;
+      }
+
+      const { error: rmErr } = await supabaseAdmin.storage
+        .from(inquiryAttachmentsBucket)
+        .remove([removePath]);
+      if (rmErr) {
+        console.error("[admin] storage remove attachment:", rmErr);
+        await supabaseAdmin
+          .from("inquiry_comments")
+          .update({ attachments })
+          .eq("id", commentId)
+          .eq("inquiry_id", inquiryId);
+        res.status(500).json({ error: "Could not remove file from storage" });
+        return;
+      }
+
+      res.json({ comment: updated });
     },
   );
 

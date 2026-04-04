@@ -2,12 +2,13 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import * as Dialog from "@radix-ui/react-dialog";
 import { motion } from "framer-motion";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { CheckCheck, Copy, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
-import type { AdminInquiryRow, InquiryCommentRow } from "@/types/admin";
+import type { AdminInquiryRow, InquiryCommentAttachment, InquiryCommentRow } from "@/types/admin";
 import {
   fetchInquiryComments,
+  normalizeInquiryCommentRow,
   patchInquiry,
   postInquiryComment,
 } from "@/lib/adminInquiryApi";
@@ -15,9 +16,22 @@ import { formatAbsoluteDateTime, formatRelativeTime } from "@/lib/formatRelative
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { RichTextEditor } from "@/admin/components/RichTextEditor";
+import RichTextEditor, { type RichTextEditorHandle } from "@/admin/components/RichTextEditor";
 import { inquiryStatusLabel } from "@/lib/inquiryStatusLabel";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
+import { InquiryCommentAttachmentGallery } from "@/admin/components/InquiryCommentAttachmentGallery";
+import { InquiryTimelineHtml } from "@/admin/components/InquiryTimelineHtml";
+import {
+  extractImageUrlsFromHtml,
+  inquiryHtmlToPlainText,
+  sanitizeInquiryHtml,
+} from "@/lib/sanitizeInquiryHtml";
+import { INQUIRY_ATTACHMENT_MAX_FILES, validateAttachmentPick } from "@/lib/inquiryAttachmentLimits";
+import {
+  removeInquiryAttachmentsFromStorage,
+  uploadInquiryAttachment,
+} from "@/lib/inquiryAttachmentUpload";
 
 const STATUSES = ["new", "contacted", "resolved"] as const;
 
@@ -32,6 +46,14 @@ function isHtmlEmpty(html: string): boolean {
   return stripped.length === 0;
 }
 
+function escapeForHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 type TimelineItem =
   | { key: string; kind: "customer"; at: string; author: string; plain: string }
   | { key: string; kind: "comment"; at: string; author: string; html: string; row: InquiryCommentRow };
@@ -40,21 +62,43 @@ function isCustomerBubble(item: TimelineItem): boolean {
   return item.kind === "customer";
 }
 
+type PendingUpload =
+  | { clientId: string; status: "uploading"; name: string; file: File }
+  | { clientId: string; status: "complete"; name: string; path: string; type: string; sizeBytes: number };
+
 export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
   const { t, lang } = useLanguage();
   const qc = useQueryClient();
-  const inquiryId = inquiry?.id ?? null;
+  /** Stable string id for queries, uploads, and API paths (avoids ref-identity churn on refetch). */
+  const inquiryId =
+    inquiry?.id != null && String(inquiry.id).trim() !== "" ? String(inquiry.id).trim() : null;
 
   const [status, setStatus] = useState<string>("new");
   const [draft, setDraft] = useState("");
+  const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
+  const pendingUploadsRef = useRef<PendingUpload[]>([]);
+  pendingUploadsRef.current = pendingUploads;
+  const uploadAbortByClientIdRef = useRef<Map<string, AbortController>>(new Map());
   const timelineScrollRef = useRef<HTMLDivElement>(null);
   const prevTimelineLenRef = useRef(0);
+  const editorRef = useRef<RichTextEditorHandle>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!inquiry) return;
     setStatus((inquiry.status as string) || "new");
+  }, [inquiry?.id, inquiry?.status]);
+
+  /** Only reset the composer when switching inquiries or opening the modal — not when `inquiry` object identity changes. */
+  useEffect(() => {
+    if (!inquiryId || !open) return;
+    for (const ac of uploadAbortByClientIdRef.current.values()) {
+      ac.abort();
+    }
+    uploadAbortByClientIdRef.current.clear();
     setDraft("");
-  }, [inquiry?.id, inquiry, open]);
+    setPendingUploads([]);
+  }, [inquiryId, open]);
 
   useEffect(() => {
     if (!open) prevTimelineLenRef.current = 0;
@@ -69,7 +113,18 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
     queryFn: () => fetchInquiryComments(inquiryId!),
     enabled: open && !!inquiryId,
     retry: false,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
+
+  const quickInserts = useMemo(
+    () => [
+      { label: t("admin.inquiryQuickPhone"), text: t("admin.inquiryQuickPhone") },
+      { label: t("admin.inquiryQuickEmail"), text: t("admin.inquiryQuickEmail") },
+      { label: t("admin.inquiryQuickFollowUp"), text: t("admin.inquiryQuickFollowUp") },
+    ],
+    [t],
+  );
 
   useEffect(() => {
     if (commentsQ.isError && open) {
@@ -128,8 +183,11 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
   }, [open, timeline, commentsQ.isLoading, scrollTimelineToBottom]);
 
   const postMut = useMutation({
-    mutationFn: (html: string) => postInquiryComment(inquiry!.id, html),
-    onMutate: async (html) => {
+    mutationFn: (vars: { content: string; attachments: InquiryCommentAttachment[] }) => {
+      if (!inquiryId) throw new Error("No inquiry");
+      return postInquiryComment(inquiryId, vars);
+    },
+    onMutate: async (vars) => {
       if (!inquiryId) return;
       await qc.cancelQueries({ queryKey: ["inquiry-comments", inquiryId] });
       const prev = qc.getQueryData<InquiryCommentRow[]>(["inquiry-comments", inquiryId]);
@@ -137,9 +195,10 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
         id: `temp-${Date.now()}`,
         inquiry_id: inquiryId,
         admin_id: "optimistic",
-        content: html,
+        content: vars.content,
         created_at: new Date().toISOString(),
         author_label: t("admin.timelineYou"),
+        attachments: vars.attachments.length ? vars.attachments : null,
       };
       qc.setQueryData<InquiryCommentRow[]>(["inquiry-comments", inquiryId], (old) => [
         ...(old ?? []),
@@ -147,37 +206,46 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
       ]);
       return { prev };
     },
-    onError: (err, _html, ctx) => {
+    onError: (err, _vars, ctx) => {
       if (inquiryId && ctx?.prev !== undefined) {
         qc.setQueryData(["inquiry-comments", inquiryId], ctx.prev);
       }
       const msg = err instanceof Error ? err.message : "";
       toast.error(t("admin.commentFailed"), { description: msg });
     },
-    onSuccess: (serverRow) => {
+    onSuccess: (serverRow, variables) => {
       if (!inquiryId) return;
+      let row = normalizeInquiryCommentRow(serverRow);
+      const sent = variables?.attachments ?? [];
+      if (sent.length > 0 && !row.attachments?.length) {
+        row = { ...row, attachments: sent };
+      }
       qc.setQueryData<InquiryCommentRow[]>(["inquiry-comments", inquiryId], (old) => {
         const list = old ?? [];
         const idx = list.findIndex((c) => String(c.id).startsWith("temp-"));
         if (idx === -1) {
-          return [...list.filter((c) => !String(c.id).startsWith("temp-")), serverRow];
+          return [...list.filter((c) => !String(c.id).startsWith("temp-")), row];
         }
         const next = [...list];
-        next[idx] = serverRow;
+        next[idx] = row;
         return next;
       });
+      for (const ac of uploadAbortByClientIdRef.current.values()) {
+        ac.abort();
+      }
+      uploadAbortByClientIdRef.current.clear();
       setDraft("");
+      setPendingUploads([]);
       toast.success(t("admin.commentPosted"));
       void qc.invalidateQueries({ queryKey: ["admin-inquiries"] });
-    },
-    onSettled: () => {
-      if (inquiryId) void qc.invalidateQueries({ queryKey: ["inquiry-comments", inquiryId] });
     },
   });
 
   const patchStatusMut = useMutation({
-    mutationFn: () =>
-      patchInquiry(inquiry!.id, { status: status as "new" | "contacted" | "resolved" }),
+    mutationFn: () => {
+      if (!inquiryId) throw new Error("No inquiry");
+      return patchInquiry(inquiryId, { status: status as "new" | "contacted" | "resolved" });
+    },
     onSuccess: () => {
       toast.success(t("admin.statusSaved"));
       void qc.invalidateQueries({ queryKey: ["admin-inquiries"] });
@@ -187,6 +255,113 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
       toast.error(t("admin.statusSaveFailed"), { description: msg });
     },
   });
+
+  const hasCompleteAttachment = pendingUploads.some((u) => u.status === "complete");
+  const hasUploadingAttachment = pendingUploads.some((u) => u.status === "uploading");
+  const canPostComment = !isHtmlEmpty(draft) || hasCompleteAttachment;
+
+  const onInquiryAttachmentFilesSelected = useCallback(
+    async (picked: File[]) => {
+      if (!inquiryId) return;
+      const files = Array.from(picked);
+      const prev = pendingUploadsRef.current;
+      const v = validateAttachmentPick(
+        prev.map((p) => ({ size: p.status === "complete" ? p.sizeBytes : p.file.size })),
+        files,
+      );
+      if (v.ok === false) {
+        const key =
+          v.error === "max_files"
+            ? "admin.inquiryAttachmentErrMaxFiles"
+            : v.error === "file_too_large"
+              ? "admin.inquiryAttachmentErrFileTooLarge"
+              : "admin.inquiryAttachmentErrTotalTooLarge";
+        toast.error(t(key));
+        return;
+      }
+
+      const entries = v.merged.map((file) => ({
+        clientId: crypto.randomUUID(),
+        file,
+        abort: new AbortController(),
+      }));
+      for (const e of entries) {
+        uploadAbortByClientIdRef.current.set(e.clientId, e.abort);
+      }
+
+      setPendingUploads((p) => [
+        ...p,
+        ...entries.map((e) => ({
+          clientId: e.clientId,
+          status: "uploading" as const,
+          name: e.file.name,
+          file: e.file,
+        })),
+      ]);
+
+      await Promise.all(
+        entries.map(async ({ clientId, file, abort }) => {
+          try {
+            const { path } = await uploadInquiryAttachment(file, inquiryId, { signal: abort.signal });
+            setPendingUploads((list) => {
+              const stillUploading = list.some((u) => u.clientId === clientId && u.status === "uploading");
+              if (!stillUploading) {
+                void removeInquiryAttachmentsFromStorage([path]).catch(() => {});
+                return list;
+              }
+              return list.map((u) =>
+                u.clientId === clientId && u.status === "uploading"
+                  ? {
+                      clientId,
+                      status: "complete" as const,
+                      name: file.name,
+                      path,
+                      type: file.type || "application/octet-stream",
+                      sizeBytes: file.size,
+                    }
+                  : u,
+              );
+            });
+          } catch (err) {
+            if (err instanceof DOMException && err.name === "AbortError") return;
+            const msg = err instanceof Error ? err.message : "";
+            toast.error(t("admin.inquiryAttachmentUploadBatchFailed"), { description: msg });
+            setPendingUploads((list) => list.filter((u) => u.clientId !== clientId));
+          } finally {
+            uploadAbortByClientIdRef.current.delete(clientId);
+          }
+        }),
+      );
+    },
+    [inquiryId, t],
+  );
+
+  const removePendingUpload = useCallback(
+    async (clientId: string) => {
+      const row = pendingUploadsRef.current.find((u) => u.clientId === clientId);
+      const ac = uploadAbortByClientIdRef.current.get(clientId);
+      ac?.abort();
+      uploadAbortByClientIdRef.current.delete(clientId);
+      setPendingUploads((prev) => prev.filter((u) => u.clientId !== clientId));
+      if (row?.status === "complete") {
+        try {
+          await removeInquiryAttachmentsFromStorage([row.path]);
+        } catch {
+          toast.error(t("admin.inquiryAttachmentDeleteFailed"));
+        }
+      }
+    },
+    [t],
+  );
+
+  const copyPlain = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(t("admin.copied"));
+    } catch {
+      toast.error(t("admin.commentFailed"));
+    }
+  };
 
   if (!inquiry) return null;
 
@@ -314,6 +489,29 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
                       <ul className="flex flex-col gap-4">
                         {timeline.map((item) => {
                           const customer = isCustomerBubble(item);
+                          if (import.meta.env.DEV && item.kind === "comment") {
+                            console.log(
+                              "Loading message:",
+                              item.row.id,
+                              "with attachments:",
+                              item.row.attachments,
+                            );
+                          }
+                          const safeHtml =
+                            item.kind === "comment" ? sanitizeInquiryHtml(item.html) : "";
+                          const legacyPreviewUrls =
+                            item.kind === "comment" ? extractImageUrlsFromHtml(item.html) : [];
+                          const hasCommentText =
+                            item.kind === "comment" &&
+                            (!isHtmlEmpty(item.html) || legacyPreviewUrls.length > 0);
+                          const commentAttachments =
+                            item.kind === "comment" && item.row.attachments && item.row.attachments.length > 0
+                              ? item.row.attachments
+                              : null;
+                          const showPosted =
+                            item.kind === "comment" && !String(item.row.id).startsWith("temp-");
+                          const isSending =
+                            item.kind === "comment" && String(item.row.id).startsWith("temp-");
                           return (
                             <li
                               key={item.key}
@@ -321,7 +519,7 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
                             >
                               <div
                                 className={cn(
-                                  "max-w-[min(100%,20rem)] sm:max-w-[min(100%,24rem)]",
+                                  "max-w-[min(100%,22rem)] sm:max-w-[min(100%,26rem)]",
                                   customer
                                     ? "rounded-2xl rounded-tl-md border border-slate-200/80 bg-slate-100 px-3.5 py-2.5 dark:border-white/10 dark:bg-zinc-800/80"
                                     : "rounded-2xl rounded-tr-md border border-primary/25 bg-primary/10 px-3.5 py-2.5 dark:border-primary/30 dark:bg-primary/15",
@@ -329,39 +527,138 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
                               >
                                 <div
                                   className={cn(
-                                    "mb-1.5 flex flex-col gap-0.5",
-                                    customer ? "items-start text-left" : "items-end text-right",
+                                    "mb-1.5 flex items-start justify-between gap-2",
+                                    customer ? "flex-row" : "flex-row-reverse",
                                   )}
                                 >
-                                  <span
+                                  <div
                                     className={cn(
-                                      "text-[11px] font-semibold uppercase tracking-wide",
-                                      customer
-                                        ? "text-slate-600 dark:text-zinc-400"
-                                        : "text-primary dark:text-primary",
+                                      "flex min-w-0 flex-1 flex-col gap-0.5",
+                                      customer ? "items-start text-left" : "items-end text-right",
                                     )}
                                   >
-                                    {customer ? t("admin.timelineCustomer") : item.author}
-                                  </span>
-                                  <span
-                                    className="text-[10px] text-slate-500 dark:text-zinc-500"
-                                    title={formatAbsoluteDateTime(item.at, lang)}
+                                    <span
+                                      className={cn(
+                                        "text-[11px] font-semibold uppercase tracking-wide",
+                                        customer
+                                          ? "text-slate-600 dark:text-zinc-400"
+                                          : "text-primary dark:text-primary",
+                                      )}
+                                    >
+                                      {customer ? t("admin.timelineCustomer") : item.author}
+                                    </span>
+                                    <span
+                                      className="text-[10px] text-slate-500 dark:text-zinc-500"
+                                      title={formatAbsoluteDateTime(item.at, lang)}
+                                    >
+                                      {formatRelativeTime(item.at, lang)}
+                                    </span>
+                                  </div>
+                                  <div
+                                    className={cn(
+                                      "flex shrink-0 items-center gap-0.5",
+                                      customer ? "" : "flex-row-reverse",
+                                    )}
                                   >
-                                    {formatRelativeTime(item.at, lang)}
-                                  </span>
+                                    {!customer && isSending ? (
+                                      <Loader2
+                                        className="h-3.5 w-3.5 shrink-0 animate-spin text-primary/80"
+                                        aria-hidden
+                                      />
+                                    ) : null}
+                                    {!customer && showPosted ? (
+                                      <span
+                                        className="inline-flex"
+                                        title={t("admin.commentPosted")}
+                                        aria-label={t("admin.commentPosted")}
+                                      >
+                                        <CheckCheck
+                                          className="h-3.5 w-3.5 text-primary/70 dark:text-primary/80"
+                                          aria-hidden
+                                        />
+                                      </span>
+                                    ) : null}
+                                    <button
+                                      type="button"
+                                      className="rounded-md p-1 text-slate-500 transition-colors hover:bg-slate-200/80 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-zinc-100"
+                                      aria-label={t("admin.copyMessage")}
+                                      onClick={() =>
+                                        void copyPlain(
+                                          item.kind === "customer"
+                                            ? item.plain
+                                            : inquiryHtmlToPlainText(item.html),
+                                        )
+                                      }
+                                    >
+                                      <Copy className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
                                 </div>
                                 {item.kind === "customer" ? (
                                   <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-800 dark:text-zinc-100">
                                     {item.plain}
                                   </p>
                                 ) : (
-                                  <div
-                                    className={cn(
-                                      "admin-prose inquiry-timeline-html max-w-none text-sm leading-relaxed text-slate-800 dark:text-zinc-100",
-                                      "[&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-4",
-                                    )}
-                                    dangerouslySetInnerHTML={{ __html: item.html }}
-                                  />
+                                  <div className="flex min-w-0 flex-col">
+                                    {legacyPreviewUrls.length > 0 ? (
+                                      <div
+                                        className={cn(
+                                          "mb-2 flex flex-wrap gap-2",
+                                          customer ? "justify-start" : "justify-end",
+                                        )}
+                                      >
+                                        {legacyPreviewUrls.slice(0, 4).map((src) => (
+                                          <a
+                                            key={src}
+                                            href={src}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="block overflow-hidden rounded-lg border border-slate-200/90 dark:border-white/10"
+                                          >
+                                            <img
+                                              src={src}
+                                              alt=""
+                                              className="max-h-24 max-w-[7.5rem] object-cover"
+                                              loading="lazy"
+                                            />
+                                          </a>
+                                        ))}
+                                      </div>
+                                    ) : null}
+                                    <InquiryTimelineHtml
+                                      html={safeHtml}
+                                      className={cn(
+                                        "inquiry-timeline-prose-extras prose prose-sm max-w-none min-w-0 text-left text-sm leading-relaxed text-slate-800 dark:prose-invert dark:text-zinc-100",
+                                        "prose-p:my-2 prose-ul:my-2 prose-ol:my-2",
+                                        "prose-a:text-indigo-600 prose-a:underline prose-a:decoration-indigo-600/80 dark:prose-a:text-indigo-300",
+                                      )}
+                                      onClick={(e) => {
+                                        const el = (e.target as HTMLElement).closest("a");
+                                        if (!el) return;
+                                        const href = el.getAttribute("href");
+                                        if (!href || !href.startsWith("/admin")) return;
+                                        e.preventDefault();
+                                        navigate(href);
+                                        onOpenChange(false);
+                                      }}
+                                    />
+                                    {commentAttachments ? (
+                                      <>
+                                        {hasCommentText ? (
+                                          <div
+                                            className="mt-2 shrink-0 border-t border-slate-200/80 pt-2 dark:border-white/10"
+                                            role="separator"
+                                          />
+                                        ) : null}
+                                        <InquiryCommentAttachmentGallery
+                                          attachments={commentAttachments}
+                                          t={t}
+                                          alignEnd={!customer}
+                                          className={hasCommentText ? "mt-0" : undefined}
+                                        />
+                                      </>
+                                    ) : null}
+                                  </div>
                                 )}
                               </div>
                             </li>
@@ -377,24 +674,101 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
                 <p className="text-sm font-medium leading-none text-slate-900 dark:text-zinc-100">
                   {t("admin.postComment")}
                 </p>
+                <div className="flex flex-wrap gap-2">
+                  {quickInserts.map((q) => (
+                    <Button
+                      key={q.label}
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="h-8 border border-slate-200 bg-white text-xs font-normal text-slate-700 hover:bg-slate-100 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                      onClick={() =>
+                        editorRef.current?.insertContent(`<p>${escapeForHtml(q.text)}</p>`)
+                      }
+                    >
+                      {q.label}
+                    </Button>
+                  ))}
+                </div>
                 <RichTextEditor
+                  ref={editorRef}
                   value={draft}
                   onChange={setDraft}
                   placeholder={t("admin.commentPlaceholder")}
                   variant="minimal"
                   t={t}
+                  attachmentContext={inquiryId ? { inquiryId } : null}
+                  onInquiryAttachmentFilesSelected={onInquiryAttachmentFilesSelected}
+                  attachmentPickerDisabled={
+                    postMut.isPending || pendingUploads.length >= INQUIRY_ATTACHMENT_MAX_FILES
+                  }
                   aria-label={t("admin.postComment")}
                 />
+                {pendingUploads.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-zinc-400">
+                      {t("admin.inquiryAttachmentPendingLabel")}
+                    </p>
+                    <ul className="flex flex-wrap gap-2" aria-label={t("admin.inquiryAttachmentPendingLabel")}>
+                      {pendingUploads.map((u) => (
+                        <li
+                          key={u.clientId}
+                          className="flex max-w-[min(100%,14rem)] shrink-0 items-center gap-1.5 rounded-xl border border-slate-200/90 bg-white px-2.5 py-2 shadow-sm dark:border-white/10 dark:bg-zinc-900/90"
+                        >
+                          {u.status === "uploading" ? (
+                            <Loader2
+                              className="h-4 w-4 shrink-0 animate-spin text-primary"
+                              aria-hidden
+                            />
+                          ) : null}
+                          <div className="min-w-0 flex-1">
+                            <p
+                              className="truncate text-xs font-medium text-slate-800 dark:text-zinc-100"
+                              title={u.name}
+                            >
+                              {u.name}
+                            </p>
+                            {u.status === "uploading" ? (
+                              <p className="text-[10px] text-slate-500 dark:text-zinc-400">
+                                {t("admin.inquiryAttachmentUploading")}
+                              </p>
+                            ) : null}
+                          </div>
+                          <button
+                            type="button"
+                            className="shrink-0 rounded-lg p-1 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-zinc-100"
+                            aria-label={t("admin.inquiryAttachmentRemove")}
+                            onClick={() => void removePendingUpload(u.clientId)}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
                 <Button
                   type="button"
                   className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                  disabled={postMut.isPending || isHtmlEmpty(draft)}
+                  disabled={postMut.isPending || !canPostComment || hasUploadingAttachment}
                   onClick={() => {
-                    if (!inquiry || isHtmlEmpty(draft)) return;
-                    postMut.mutate(draft);
+                    if (!inquiry || !canPostComment || hasUploadingAttachment) return;
+                    postMut.mutate({
+                      content: draft,
+                      attachments: pendingUploads
+                        .filter((u): u is Extract<PendingUpload, { status: "complete" }> => u.status === "complete")
+                        .map(({ name, path, type }) => ({ name, path, type })),
+                    });
                   }}
                 >
-                  {postMut.isPending ? t("admin.postingComment") : t("admin.postComment")}
+                  {postMut.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                      {t("admin.postingComment")}
+                    </>
+                  ) : (
+                    t("admin.postComment")
+                  )}
                 </Button>
               </footer>
             </motion.div>

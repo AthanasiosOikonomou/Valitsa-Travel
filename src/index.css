@@ -972,16 +972,6 @@ body.modal-blur-active .navbar-shell {
     color: rgb(244 244 245);
   }
 
-  .admin-prose .tiptap a {
-    color: hsl(var(--primary));
-    text-decoration: underline;
-    text-underline-offset: 2px;
-  }
-
-  .admin-prose .tiptap a:hover {
-    opacity: 0.9;
-  }
-
   /* TipTap placeholder (empty editor) */
   .admin-prose .tiptap p.is-editor-empty:first-child::before {
     color: rgb(100 116 139);
@@ -995,33 +985,42 @@ body.modal-blur-active .navbar-shell {
     color: rgb(161 161 170);
   }
 
-  .admin-prose .tiptap p {
-    margin: 0.5em 0;
-  }
-  .admin-prose .tiptap ul {
-    list-style: disc;
-    padding-left: 1.25rem;
-  }
-  .admin-prose .tiptap h2 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin: 0.75em 0 0.35em;
-  }
-  .admin-prose .tiptap h3 {
-    font-size: 1rem;
-    font-weight: 600;
-    margin: 0.75em 0 0.35em;
-  }
-
-  .admin-prose .tiptap h2,
-  .admin-prose .tiptap h3 {
-    color: inherit;
-  }
-
-  .admin-prose .tiptap p,
-  .admin-prose .tiptap li,
   .admin-prose .tiptap span[style] {
     color: inherit;
+  }
+
+  /* Timeline HTML: Tailwind Typography (prose) + attachment pill overrides */
+  .inquiry-timeline-prose-extras {
+    word-break: break-word;
+  }
+
+  .inquiry-timeline-prose-extras .inquiry-file-card {
+    margin: 0.35em 0;
+  }
+
+  .inquiry-timeline-prose-extras .inquiry-file-card .inquiry-attachment-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgb(199 210 254);
+    background: rgb(238 242 255 / 0.85);
+    text-decoration: none;
+    font-weight: 500;
+    color: rgb(79 70 229);
+  }
+
+  .dark .inquiry-timeline-prose-extras .inquiry-file-card .inquiry-attachment-link {
+    border-color: rgb(99 102 241 / 0.45);
+    background: rgb(49 46 129 / 0.35);
+    color: rgb(165 180 252);
+  }
+
+  .inquiry-timeline-prose-extras img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
   }
 }
 

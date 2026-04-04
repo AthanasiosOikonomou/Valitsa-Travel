@@ -1,40 +1,70 @@
-import { useEffect } from "react";
+import { forwardRef, useEffect, useImperativeHandle } from "react";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Underline from "@tiptap/extension-underline";
+import Link from "@tiptap/extension-link";
 import { TextStyle } from "@tiptap/extension-text-style/text-style";
 import { FontSize } from "@tiptap/extension-text-style/font-size";
 import { cn } from "@/lib/utils";
 import { RichTextEditorToolbar } from "@/admin/components/RichTextEditorToolbar";
+
+export type RichTextEditorHandle = {
+  insertContent: (html: string) => void;
+  focus: () => void;
+};
 
 type Props = {
   value: string;
   onChange: (html: string) => void;
   placeholder?: string;
   className?: string;
-  /** Minimal: borderless until focus-within; default: always bordered */
   variant?: "default" | "minimal";
   showToolbar?: boolean;
   t: (key: string) => string;
+  /** When set, toolbar shows attachment picker for this inquiry. */
+  attachmentContext?: { inquiryId: string } | null;
+  onInquiryAttachmentFilesSelected?: (files: File[]) => void;
+  attachmentPickerDisabled?: boolean;
   "aria-label"?: string;
 };
 
-export function RichTextEditor({
-  value,
-  onChange,
-  placeholder,
-  className,
-  variant = "default",
-  showToolbar = true,
-  t,
-  ...rest
-}: Props) {
+export const RichTextEditor = forwardRef<RichTextEditorHandle, Props>(function RichTextEditor(
+  {
+    value,
+    onChange,
+    placeholder,
+    className,
+    variant = "default",
+    showToolbar = true,
+    t,
+    attachmentContext = null,
+    onInquiryAttachmentFilesSelected,
+    attachmentPickerDisabled,
+    ...rest
+  },
+  ref,
+) {
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         heading: { levels: [2, 3] },
+        code: false,
+        codeBlock: false,
+        bulletList: { HTMLAttributes: { class: "list-disc pl-5" } },
+        orderedList: { HTMLAttributes: { class: "list-decimal pl-5" } },
+      }),
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        protocols: ["http", "https", "mailto"],
+        defaultProtocol: "https",
+        linkOnPaste: true,
+        HTMLAttributes: {
+          class: "font-medium text-indigo-600 underline decoration-indigo-600/80 underline-offset-2 hover:text-indigo-700 dark:text-indigo-300 dark:decoration-indigo-300/80 dark:hover:text-indigo-200",
+          rel: "noopener noreferrer nofollow",
+        },
       }),
       TextStyle,
       FontSize,
@@ -45,16 +75,17 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         class: cn(
-          "admin-prose max-w-none px-3 py-2 text-sm focus:outline-none",
+          "admin-prose prose prose-sm max-w-none px-3 py-2 text-sm text-slate-900 focus:outline-none dark:prose-invert dark:text-zinc-100",
+          "prose-p:my-2 prose-ul:my-2 prose-ol:my-2",
+          "prose-a:text-indigo-600 prose-a:underline prose-a:decoration-indigo-600/80 dark:prose-a:text-indigo-300",
           variant === "minimal"
             ? cn(
-                "min-h-[120px] rounded-b-xl border-0 border-transparent bg-transparent text-slate-900",
+                "min-h-0 rounded-none border-0 border-transparent bg-transparent",
                 "focus-visible:outline-none",
-                "dark:text-zinc-100",
               )
             : cn(
-                "min-h-[140px] rounded-xl border border-slate-200 bg-white text-slate-900",
-                "focus-visible:ring-2 focus-visible:ring-primary/40 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-100",
+                "min-h-0 rounded-xl border border-slate-200 bg-white",
+                "focus-visible:ring-2 focus-visible:ring-primary/40 dark:border-white/10 dark:bg-zinc-950",
               ),
           className,
         ),
@@ -65,6 +96,19 @@ export function RichTextEditor({
       onChange(ed.getHTML());
     },
   });
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      insertContent: (html: string) => {
+        editor?.chain().focus().insertContent(html).run();
+      },
+      focus: () => {
+        editor?.chain().focus().run();
+      },
+    }),
+    [editor],
+  );
 
   useEffect(() => {
     if (!editor) return;
@@ -78,20 +122,28 @@ export function RichTextEditor({
 
   const shellMinimal = variant === "minimal";
 
+  const shellHeight = showToolbar ? "h-[236px]" : "h-[200px]";
+
   if (!editor) {
     return (
       <div
         className={cn(
-          "overflow-hidden rounded-xl",
+          "flex flex-col overflow-hidden rounded-xl",
+          shellHeight,
           shellMinimal
             ? "border border-transparent bg-slate-50/50 dark:bg-zinc-900/40"
             : "border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-zinc-900/60",
         )}
       >
         {showToolbar ? (
-          <div className="h-9 border-b border-slate-200 dark:border-white/10" aria-hidden />
+          <div
+            className="h-9 shrink-0 border-b border-slate-200 bg-white dark:border-white/10 dark:bg-zinc-950"
+            aria-hidden
+          />
         ) : null}
-        <div className="min-h-[120px] animate-pulse bg-slate-100/80 dark:bg-zinc-800/50" />
+        <div className="min-h-0 flex-1 w-full overflow-y-auto scrollbar-inquiry">
+          <div className="min-h-full animate-pulse bg-slate-100/80 dark:bg-zinc-800/50" />
+        </div>
       </div>
     );
   }
@@ -99,7 +151,8 @@ export function RichTextEditor({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl transition-[box-shadow,border-color]",
+        "flex flex-col overflow-hidden rounded-xl transition-[box-shadow,border-color]",
+        shellHeight,
         shellMinimal
           ? cn(
               "border border-transparent bg-white/80 shadow-none",
@@ -109,8 +162,21 @@ export function RichTextEditor({
           : "border border-slate-200 bg-white dark:border-white/10 dark:bg-zinc-950",
       )}
     >
-      {showToolbar ? <RichTextEditorToolbar editor={editor as Editor} t={t} /> : null}
-      <EditorContent editor={editor} />
+      {showToolbar ? (
+        <RichTextEditorToolbar
+          editor={editor as Editor}
+          t={t}
+          attachmentContext={attachmentContext}
+          onInquiryAttachmentFilesSelected={onInquiryAttachmentFilesSelected}
+          attachmentPickerDisabled={attachmentPickerDisabled}
+        />
+      ) : null}
+      <div className="min-h-0 flex-1 w-full overflow-y-auto overflow-x-hidden scrollbar-inquiry">
+        <EditorContent editor={editor} />
+      </div>
     </div>
   );
-}
+});
+
+export default RichTextEditor;
+

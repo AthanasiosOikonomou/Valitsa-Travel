@@ -1,11 +1,25 @@
+import { useEffect, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
-import { Bold, Italic, Underline as UnderlineIcon, List } from "lucide-react";
+import {
+  Bold,
+  Italic,
+  Link2,
+  List,
+  ListOrdered,
+  Paperclip,
+  Underline as UnderlineIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Props = {
   editor: Editor | null;
   t: (key: string) => string;
   className?: string;
+  attachmentContext?: { inquiryId: string } | null;
+  /** Called when user picks one or more files (no upload here). */
+  onInquiryAttachmentFilesSelected?: (files: File[]) => void;
+  /** Disable paperclip (e.g. queue full or send in progress). */
+  attachmentPickerDisabled?: boolean;
 };
 
 const FONT_SIZES = [
@@ -48,15 +62,75 @@ function ToolbarBtn({
   );
 }
 
-export function RichTextEditorToolbar({ editor, t, className }: Props) {
+export function RichTextEditorToolbar({
+  editor,
+  t,
+  className,
+  attachmentContext,
+  onInquiryAttachmentFilesSelected,
+  attachmentPickerDisabled,
+}: Props) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [, bump] = useState(0);
+
+  useEffect(() => {
+    if (!editor) return;
+    const refresh = () => bump((n) => n + 1);
+    editor.on("selectionUpdate", refresh);
+    editor.on("transaction", refresh);
+    return () => {
+      editor.off("selectionUpdate", refresh);
+      editor.off("transaction", refresh);
+    };
+  }, [editor]);
+
   if (!editor) return null;
 
   const fontSize = (editor.getAttributes("textStyle").fontSize as string | undefined) ?? "";
+  const canSetLink = !editor.state.selection.empty || editor.isActive("link");
+
+  const setLinkFromPrompt = () => {
+    if (editor.state.selection.empty && !editor.isActive("link")) return;
+    const prev = editor.getAttributes("link").href as string | undefined;
+    const raw = window.prompt(t("admin.editor.linkPrompt"), prev ?? "https://");
+    if (raw === null) return;
+    const trimmed = raw.trim();
+    if (trimmed === "") {
+      editor.chain().focus().extendMarkRange("link").unsetLink().run();
+      return;
+    }
+    let href = trimmed;
+    if (!/^https?:\/\//i.test(href) && !/^mailto:/i.test(href)) {
+      href = `https://${href}`;
+    }
+    editor
+      .chain()
+      .focus()
+      .extendMarkRange("link")
+      .setLink({
+        href,
+        target: href.startsWith("mailto:") ? undefined : "_blank",
+      })
+      .run();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("Files selected:", e.target.files);
+    const files = Array.from(e.target.files ?? []);
+    try {
+      if (!files.length || !attachmentContext?.inquiryId) return;
+      const handler = onInquiryAttachmentFilesSelected;
+      if (!handler) return;
+      handler(files);
+    } finally {
+      e.target.value = "";
+    }
+  };
 
   return (
     <div
       className={cn(
-        "flex flex-nowrap items-center gap-1 overflow-x-auto overflow-y-hidden border-b border-slate-200/80 px-1 py-1.5 dark:border-white/10",
+        "z-10 flex shrink-0 flex-nowrap items-center gap-1 overflow-x-auto overflow-y-hidden border-b border-slate-200/80 bg-white px-1 py-1.5 dark:border-white/10 dark:bg-zinc-950",
         "scrollbar-inquiry",
         "sm:flex-wrap sm:overflow-x-visible",
         className,
@@ -86,12 +160,49 @@ export function RichTextEditorToolbar({ editor, t, className }: Props) {
         <UnderlineIcon className="h-4 w-4" />
       </ToolbarBtn>
       <ToolbarBtn
+        label={t("admin.editor.link")}
+        active={editor.isActive("link")}
+        disabled={!canSetLink}
+        onClick={setLinkFromPrompt}
+      >
+        <Link2 className="h-4 w-4" />
+      </ToolbarBtn>
+      <ToolbarBtn
         label={t("admin.editor.bulletList")}
         active={editor.isActive("bulletList")}
         onClick={() => editor.chain().focus().toggleBulletList().run()}
       >
         <List className="h-4 w-4" />
       </ToolbarBtn>
+      <ToolbarBtn
+        label={t("admin.editor.orderedList")}
+        active={editor.isActive("orderedList")}
+        onClick={() => editor.chain().focus().toggleOrderedList().run()}
+      >
+        <ListOrdered className="h-4 w-4" />
+      </ToolbarBtn>
+      {attachmentContext?.inquiryId ? (
+        <>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="application/pdf,image/*"
+            className="sr-only"
+            onChange={handleFileChange}
+            disabled={attachmentPickerDisabled}
+            aria-label={t("admin.editor.attachFile")}
+            tabIndex={-1}
+          />
+          <ToolbarBtn
+            label={t("admin.editor.attachFile")}
+            disabled={attachmentPickerDisabled}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Paperclip className="h-4 w-4" />
+          </ToolbarBtn>
+        </>
+      ) : null}
       <label className="sr-only" htmlFor="rte-font-size">
         {t("admin.editor.fontSize")}
       </label>
