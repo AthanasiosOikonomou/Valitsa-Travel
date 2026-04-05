@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface CaptchaFieldProps {
   onTokenChange: (token: string) => void;
@@ -9,6 +9,13 @@ const TURNSTILE_SCRIPT =
   "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 const RECAPTCHA_SCRIPT =
   "https://www.google.com/recaptcha/api.js?render=explicit";
+
+const NARROW_MQ = "(max-width: 480px)";
+
+function getInitialTurnstileSize(): "compact" | "flexible" {
+  if (typeof window === "undefined") return "flexible";
+  return window.matchMedia(NARROW_MQ).matches ? "compact" : "flexible";
+}
 
 const loadScript = (src: string, id: string) => {
   const existing = document.getElementById(id) as HTMLScriptElement | null;
@@ -44,6 +51,10 @@ const CaptchaField = ({ onTokenChange, error }: CaptchaFieldProps) => {
   const widgetIdRef = useRef<string | number | null>(null);
   const tokenHandlerRef = useRef(onTokenChange);
 
+  const [turnstileSize, setTurnstileSize] = useState<
+    "compact" | "flexible"
+  >(getInitialTurnstileSize);
+
   const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY?.trim();
   const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY?.trim();
 
@@ -56,6 +67,14 @@ const CaptchaField = ({ onTokenChange, error }: CaptchaFieldProps) => {
   useEffect(() => {
     tokenHandlerRef.current = onTokenChange;
   }, [onTokenChange]);
+
+  useEffect(() => {
+    const mq = window.matchMedia(NARROW_MQ);
+    const onChange = () =>
+      setTurnstileSize(mq.matches ? "compact" : "flexible");
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
 
   const emitToken = (token: string) => {
     tokenHandlerRef.current(token);
@@ -82,6 +101,7 @@ const CaptchaField = ({ onTokenChange, error }: CaptchaFieldProps) => {
             "expired-callback": () => emitToken(""),
             "error-callback": () => emitToken(""),
             theme: "auto",
+            size: turnstileSize,
           });
           return;
         }
@@ -122,7 +142,7 @@ const CaptchaField = ({ onTokenChange, error }: CaptchaFieldProps) => {
       widgetIdRef.current = null;
       if (containerRef.current) containerRef.current.innerHTML = "";
     };
-  }, [provider, recaptchaSiteKey, turnstileSiteKey]);
+  }, [provider, recaptchaSiteKey, turnstileSiteKey, turnstileSize]);
 
   if (!provider) {
     return (
@@ -133,8 +153,10 @@ const CaptchaField = ({ onTokenChange, error }: CaptchaFieldProps) => {
   }
 
   return (
-    <div className="space-y-1">
-      <div ref={containerRef} />
+    <div className="space-y-1 pt-2">
+      <div className="flex w-full min-w-0 justify-center overflow-hidden sm:justify-start">
+        <div ref={containerRef} className="w-full min-w-0 max-w-full" />
+      </div>
       {error ? (
         <p className="text-xs text-red-500" role="alert">
           {error}

@@ -21,6 +21,7 @@ interface Window {
         "expired-callback"?: () => void;
         "error-callback"?: () => void;
         theme?: "auto" | "light" | "dark";
+        size?: "normal" | "flexible" | "compact";
       },
     ) => string;
     remove: (widgetId: string) => void;
