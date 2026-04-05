@@ -182,7 +182,16 @@ function normalizeTripPutBody(body) {
       out[key] = normalizeProgramField(out[key]);
     }
   }
-  for (const key of ["included", "included_el", "tags", "tags_el", "transport", "transport_el"]) {
+  for (const key of [
+    "included",
+    "included_el",
+    "not_included",
+    "not_included_el",
+    "tags",
+    "tags_el",
+    "transport",
+    "transport_el",
+  ]) {
     if (key in out) {
       out[key] = normalizeStringArrayField(out[key]);
     }
@@ -211,6 +220,8 @@ const adminTripPutSchema = z
     program_el: z.array(programStepSchema).nullable().optional(),
     included: z.array(z.string()).nullable().optional(),
     included_el: z.array(z.string()).nullable().optional(),
+    not_included: z.array(z.string()).nullable().optional(),
+    not_included_el: z.array(z.string()).nullable().optional(),
     price_num: z.number().nullable().optional(),
     duration_days: z.number().int().nullable().optional(),
     transport: z.array(z.string()).nullable().optional(),
