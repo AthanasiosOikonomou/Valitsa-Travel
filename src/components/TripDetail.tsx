@@ -19,6 +19,7 @@ import {
   toItineraryItem,
 } from "@/components/ItineraryTimeline";
 import { SafeRichTextHtml } from "@/components/SafeRichTextHtml";
+import { isHtmlEmpty } from "@/lib/isHtmlEmpty";
 
 interface TripDetailProps {
   trip: Trip;
@@ -390,10 +391,23 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                   transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
                 >
                   {activeTab === "description" && (
-                    <SafeRichTextHtml
-                      html={String(getDetailField("description") ?? "")}
-                      className="text-body-prose text-lg leading-relaxed text-foreground"
-                    />
+                    <div className="space-y-8">
+                      <SafeRichTextHtml
+                        html={String(getDetailField("description") ?? "")}
+                        className="text-body-prose text-lg leading-relaxed text-foreground"
+                      />
+                      {!isHtmlEmpty(String(getDetailField("trip_notes") ?? "")) ? (
+                        <div className="space-y-4 border-t border-slate-200/90 pt-8 dark:border-white/10">
+                          <h3 className="label-ui text-xs font-semibold uppercase tracking-[0.2em] text-foreground-muted">
+                            {t("detail.tripNotes")}
+                          </h3>
+                          <SafeRichTextHtml
+                            html={String(getDetailField("trip_notes") ?? "")}
+                            className="text-body-prose text-lg leading-relaxed text-foreground"
+                          />
+                        </div>
+                      ) : null}
+                    </div>
                   )}
                   {activeTab === "program" && (
                     <ItineraryTimeline items={programItems} />

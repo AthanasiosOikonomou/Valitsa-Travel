@@ -216,6 +216,8 @@ const adminTripPutSchema = z
     image: z.string().nullable().optional(),
     description: z.string().nullable().optional(),
     description_el: z.string().nullable().optional(),
+    trip_notes: z.string().nullable().optional(),
+    trip_notes_el: z.string().nullable().optional(),
     program: z.array(programStepSchema).nullable().optional(),
     program_el: z.array(programStepSchema).nullable().optional(),
     included: z.array(z.string()).nullable().optional(),

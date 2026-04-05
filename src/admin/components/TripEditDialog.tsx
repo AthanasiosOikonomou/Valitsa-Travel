@@ -3,7 +3,13 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Controller, useForm, useWatch, type FieldErrors } from "react-hook-form";
+import {
+  Controller,
+  useController,
+  useForm,
+  useWatch,
+  type FieldErrors,
+} from "react-hook-form";
 import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabaseClient";
@@ -66,6 +72,7 @@ function buildTripFormSchema(t: (key: string) => string) {
       date_range_el: z.string().trim().min(1, fieldReq),
       departure_city_el: z.string().trim().min(1, fieldReq),
       description_el: z.string().refine((h) => !isHtmlEmpty(h), { message: richReq }),
+      trip_notes_el: z.string(),
       program_el: z
         .array(programStepSchema)
         .min(1, t("admin.tripProgramMinDay"))
@@ -85,6 +92,7 @@ function buildTripFormSchema(t: (key: string) => string) {
 
       title: z.string(),
       description: z.string(),
+      trip_notes: z.string(),
       location: z.string(),
       country: z.string(),
       date_range: z.string(),
@@ -125,6 +133,7 @@ const GREEK_FIELD_ORDER = [
   "date_range_el",
   "departure_city_el",
   "description_el",
+  "trip_notes_el",
   "program_el",
   "included_el",
   "not_included_el",
@@ -137,6 +146,7 @@ const ENGLISH_FIELD_ORDER = [
   "date_range",
   "departure_city",
   "description",
+  "trip_notes",
   "program",
   "included",
   "not_included",
@@ -164,6 +174,7 @@ function buildTripPayload(values: TripFormValues) {
     date_range_el: values.date_range_el.trim(),
     departure_city_el: values.departure_city_el.trim(),
     description_el: values.description_el || null,
+    trip_notes_el: !isHtmlEmpty(values.trip_notes_el) ? values.trip_notes_el : null,
     program_el: formStepsToDbPayload(values.program_el),
     included_el: values.included_el.map((s) => s.trim()).filter(Boolean),
     not_included_el: notIncEl.length > 0 ? notIncEl : null,
@@ -187,6 +198,7 @@ function buildTripPayload(values: TripFormValues) {
       included: null,
       not_included: null,
       tags: null,
+      trip_notes: null,
     };
   }
 
@@ -205,6 +217,7 @@ function buildTripPayload(values: TripFormValues) {
     date_range: values.date_range.trim() || null,
     departure_city: values.departure_city.trim() || null,
     description: !isHtmlEmpty(values.description) ? values.description : null,
+    trip_notes: !isHtmlEmpty(values.trip_notes) ? values.trip_notes : null,
     program: progEn.length > 0 ? formStepsToDbPayload(progEn) : null,
     included: incEn.length > 0 ? incEn : null,
     not_included: notIncEn.length > 0 ? notIncEn : null,
@@ -215,6 +228,7 @@ function buildTripPayload(values: TripFormValues) {
 function deriveEnglishEnabledFromRow(row: Record<string, unknown>): boolean {
   if (String(row.title ?? "").trim()) return true;
   if (!isHtmlEmpty(asHtml(row.description))) return true;
+  if (!isHtmlEmpty(asHtml(row.trip_notes))) return true;
   const programEn = programDbToFormSteps(row.program);
   if (programEn.some((s) => s.title.trim() || !isHtmlEmpty(s.description))) return true;
   const inc = stringListDbToForm(row.included);
@@ -234,6 +248,7 @@ const defaultForm = (): TripFormValues => ({
   date_range_el: "",
   departure_city_el: "",
   description_el: "",
+  trip_notes_el: "",
   program_el: [{ days: "1", title: "", description: "" }],
   included_el: [],
   not_included_el: [],
@@ -242,6 +257,7 @@ const defaultForm = (): TripFormValues => ({
   status: "inactive",
   title: "",
   description: "",
+  trip_notes: "",
   location: "",
   country: "",
   date_range: "",
@@ -297,6 +313,12 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
     defaultValues: defaultForm(),
   });
 
+  const {
+    field: transportModeField,
+    fieldState: { invalid: transportModeInvalid },
+  } = useController({ name: "transport_mode_slugs", control });
+  const { ref: transportModeRef, ...transportModeFieldRest } = transportModeField;
+
   const hasEnglishOn = useWatch({ control, name: "hasEnglish" });
 
   useEffect(() => {
@@ -332,6 +354,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
       date_range_el: String(row.date_range_el ?? ""),
       departure_city_el: String(row.departure_city_el ?? ""),
       description_el: asHtml(row.description_el),
+      trip_notes_el: asHtml(row.trip_notes_el),
       program_el: programEl,
       included_el: stringListDbToForm(row.included_el),
       not_included_el: stringListDbToForm(row.not_included_el),
@@ -340,6 +363,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
       status: statusVal,
       title: String(row.title ?? ""),
       description: asHtml(row.description),
+      trip_notes: asHtml(row.trip_notes),
       location: String(row.location ?? ""),
       country: String(row.country ?? ""),
       date_range: String(row.date_range ?? ""),
@@ -403,7 +427,9 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
           const id =
             name === "description"
               ? "trip-field-description"
-              : name === "program"
+              : name === "trip_notes"
+                ? "trip-field-trip_notes"
+                : name === "program"
                 ? "trip-field-program"
                 : name === "included"
                   ? "trip-field-included"
@@ -676,21 +702,14 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                           id="trip-field-transport_mode_slugs"
                         >
                           <Label htmlFor="trip-transport-el">{t("admin.tripTransportEl")}</Label>
-                          <Controller
-                            name="transport_mode_slugs"
-                            control={control}
-                            render={({ field }) => (
-                              <TransportMultiSelect
-                                ref={field.ref}
-                                id="trip-transport-el"
-                                value={field.value}
-                                onChange={field.onChange}
-                                lang="gr"
-                                placeholder={t("admin.transportPlaceholder")}
-                                menuLabel={t("admin.transportMenu")}
-                                aria-invalid={!!errors.transport_mode_slugs}
-                              />
-                            )}
+                          <TransportMultiSelect
+                            {...transportModeFieldRest}
+                            ref={transportModeRef}
+                            id="trip-transport-el"
+                            lang="gr"
+                            placeholder={t("admin.transportPlaceholder")}
+                            menuLabel={t("admin.transportMenu")}
+                            aria-invalid={transportModeInvalid}
                           />
                           {errors.transport_mode_slugs ? (
                             <p className="mt-1 text-xs text-destructive">
@@ -722,6 +741,21 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                         />
                         {errors.description_el ? (
                           <p className="mt-1 text-xs text-destructive">{errors.description_el.message}</p>
+                        ) : null}
+                      </div>
+                      <div className={fieldClass("trip_notes_el")} id="trip-field-trip_notes_el">
+                        <Label>{t("admin.tripNotesEl")}</Label>
+                        <Controller
+                          name="trip_notes_el"
+                          control={control}
+                          render={({ field }) => (
+                            <div className="mt-1.5">
+                              <RichTextEditor value={field.value} onChange={field.onChange} t={t} />
+                            </div>
+                          )}
+                        />
+                        {errors.trip_notes_el ? (
+                          <p className="mt-1 text-xs text-destructive">{errors.trip_notes_el.message}</p>
                         ) : null}
                       </div>
                       <div className={fieldClass("program_el")} id="trip-field-program_el">
@@ -855,6 +889,28 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                               sectionId="trip-field-country"
                               label={t("admin.tripCountryEn")}
                             />
+                            <div
+                              className={cn(
+                                fieldClass("transport_mode_slugs"),
+                                "space-y-2 sm:col-span-2",
+                              )}
+                              id="trip-field-transport_mode_slugs_en"
+                            >
+                              <Label htmlFor="trip-transport-en">{t("admin.tripTransportEn")}</Label>
+                              <TransportMultiSelect
+                                {...transportModeFieldRest}
+                                id="trip-transport-en"
+                                lang="en"
+                                placeholder={t("admin.transportPlaceholder")}
+                                menuLabel={t("admin.transportMenu")}
+                                aria-invalid={transportModeInvalid}
+                              />
+                              {errors.transport_mode_slugs ? (
+                                <p className="mt-1 text-xs text-destructive">
+                                  {(errors.transport_mode_slugs as { message?: string }).message}
+                                </p>
+                              ) : null}
+                            </div>
                             <EnglishTextField
                               name="date_range"
                               sectionId="trip-field-date_range"
@@ -879,6 +935,21 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                             />
                             {errors.description ? (
                               <p className="mt-1 text-xs text-destructive">{errors.description.message}</p>
+                            ) : null}
+                          </div>
+                          <div className={fieldClass("trip_notes")} id="trip-field-trip_notes">
+                            <Label>{t("admin.tripNotesEn")}</Label>
+                            <Controller
+                              name="trip_notes"
+                              control={control}
+                              render={({ field }) => (
+                                <div className="mt-1.5">
+                                  <RichTextEditor value={field.value} onChange={field.onChange} t={t} />
+                                </div>
+                              )}
+                            />
+                            {errors.trip_notes ? (
+                              <p className="mt-1 text-xs text-destructive">{errors.trip_notes.message}</p>
                             ) : null}
                           </div>
                           <div className={fieldClass("program")} id="trip-field-program">

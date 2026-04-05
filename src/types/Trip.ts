@@ -38,6 +38,8 @@ export type Trip = {
   created_at: string | null;
   description: string | null;
   description_el?: string | null;
+  trip_notes?: string | null;
+  trip_notes_el?: string | null;
 };
 
 /** Flat payload for admin PUT `/api/admin/trips/:id` (matches `adminTripPutSchema`). */
@@ -51,6 +53,8 @@ export type TripUpdate = Partial<{
   image: string | null;
   description: string | null;
   description_el: string | null;
+  trip_notes: string | null;
+  trip_notes_el: string | null;
   program: ProgramItem[] | null;
   program_el: ProgramItem[] | null;
   included: string[] | null;
