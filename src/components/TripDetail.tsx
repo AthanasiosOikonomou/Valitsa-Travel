@@ -20,7 +20,7 @@ import {
 } from "@/components/ItineraryTimeline";
 import { SafeRichTextHtml } from "@/components/SafeRichTextHtml";
 import { isHtmlEmpty } from "@/lib/isHtmlEmpty";
-import { cn } from "@/lib/utils";
+import { buildResponsiveImageSet, cn } from "@/lib/utils";
 
 interface TripDetailProps {
   trip: Trip;
@@ -28,6 +28,8 @@ interface TripDetailProps {
 }
 
 const tabKeys = ["description", "program", "included"] as const;
+
+const gallerySpring = { type: "spring" as const, stiffness: 300, damping: 30 };
 
 const TripDetail = ({ trip, onClose }: TripDetailProps) => {
   const [activeTab, setActiveTab] = useState<string>("description");
@@ -75,12 +77,8 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
     [trip.gallery],
   );
   const mainUrl = trip.image?.trim() || null;
-  const thumbGallery = mainUrl ? galleryUrls : galleryUrls.slice(1);
 
-  const [hoverGalleryIndex, setHoverGalleryIndex] = useState<number | null>(null);
-  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
-
-  const lightboxSlides = useMemo(() => {
+  const canonicalSlides = useMemo(() => {
     const seen = new Set<string>();
     const out: string[] = [];
     if (mainUrl) {
@@ -99,42 +97,66 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
     return out;
   }, [mainUrl, galleryUrls]);
 
+  /** Permutation of canonicalSlides for [main, …thumbs]; empty means use canonicalSlides. */
+  const [galleryOrder, setGalleryOrder] = useState<string[]>([]);
+  const [previewThumbIndex, setPreviewThumbIndex] = useState<number | null>(null);
+
   useEffect(() => {
-    setHoverGalleryIndex(null);
-    setActiveSlideIndex(0);
+    setPreviewThumbIndex(null);
+    setGalleryOrder([]);
   }, [trip.id]);
 
-  useEffect(() => {
-    const n = lightboxSlides.length;
-    if (n === 0) return;
-    setActiveSlideIndex((i) => Math.min(i, n - 1));
-  }, [lightboxSlides]);
+  const displayOrder = useMemo(
+    () => (galleryOrder.length > 0 ? galleryOrder : canonicalSlides),
+    [galleryOrder, canonicalSlides],
+  );
 
   const heroDisplayUrl = useMemo(() => {
-    if (hoverGalleryIndex !== null && galleryUrls[hoverGalleryIndex]) {
-      return galleryUrls[hoverGalleryIndex];
+    if (previewThumbIndex !== null) {
+      const preview = displayOrder[previewThumbIndex + 1];
+      if (preview) return preview;
     }
-    const n = lightboxSlides.length;
-    if (n === 0) return null;
-    const i = Math.min(Math.max(0, activeSlideIndex), n - 1);
-    return lightboxSlides[i];
-  }, [hoverGalleryIndex, galleryUrls, lightboxSlides, activeSlideIndex]);
+    return displayOrder[0] ?? null;
+  }, [previewThumbIndex, displayOrder]);
+
+  const activeCanonicalIndex = useMemo(() => {
+    const main = displayOrder[0];
+    if (!main) return 0;
+    const idx = canonicalSlides.indexOf(main);
+    return idx >= 0 ? idx : 0;
+  }, [canonicalSlides, displayOrder]);
+
+  const withDisplayBase = useCallback(
+    (prev: string[]): string[] => (prev.length > 0 ? prev : [...canonicalSlides]),
+    [canonicalSlides],
+  );
 
   const goPrevSlide = useCallback(() => {
-    setActiveSlideIndex((i) => {
-      const n = lightboxSlides.length;
-      if (n <= 1) return i;
-      return (i - 1 + n) % n;
+    setGalleryOrder((prev) => {
+      const base = withDisplayBase(prev);
+      if (base.length <= 1) return base;
+      const last = base[base.length - 1];
+      return [last, ...base.slice(0, -1)];
     });
-  }, [lightboxSlides]);
+  }, [withDisplayBase]);
 
   const goNextSlide = useCallback(() => {
-    setActiveSlideIndex((i) => {
-      const n = lightboxSlides.length;
-      if (n <= 1) return i;
-      return (i + 1) % n;
+    setGalleryOrder((prev) => {
+      const base = withDisplayBase(prev);
+      if (base.length <= 1) return base;
+      const [first, ...rest] = base;
+      return [...rest, first];
     });
-  }, [lightboxSlides]);
+  }, [withDisplayBase]);
+
+  useEffect(() => {
+    if (canonicalSlides.length === 0) return;
+    for (const src of canonicalSlides) {
+      const { fallbackSrc } = buildResponsiveImageSet(src);
+      const img = new Image();
+      img.src = fallbackSrc;
+    }
+  }, [trip.id, canonicalSlides]);
 
   const firstNameRef = useRef<HTMLInputElement>(null);
   const lastNameRef = useRef<HTMLInputElement>(null);
@@ -373,33 +395,62 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                 aria-roledescription="carousel"
                 aria-label={t("detail.galleryCarouselRegion")}
               >
+                {canonicalSlides.length > 1 ? (
+                  <span className="sr-only" aria-live="polite">
+                    {activeCanonicalIndex + 1} / {canonicalSlides.length}
+                  </span>
+                ) : null}
                 {heroDisplayUrl ? (
                   <>
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        key={heroDisplayUrl}
-                        initial={{ opacity: 0.85 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0.85 }}
-                        transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-                        className="h-full"
-                      >
-                        <ProgressiveImage
-                          src={heroDisplayUrl}
-                          alt={getDetailField("title") ?? ""}
-                          width={1600}
-                          height={1000}
-                          sizes="(max-width: 1024px) 100vw, 58vw"
-                          className="h-full"
-                          imgClassName="object-cover"
-                        />
-                      </motion.div>
-                    </AnimatePresence>
+                    <div className="absolute inset-0">
+                      <AnimatePresence mode="sync">
+                        <motion.div
+                          key={heroDisplayUrl}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={gallerySpring}
+                          className="absolute inset-0"
+                        >
+                          <ProgressiveImage
+                            src={heroDisplayUrl}
+                            alt={getDetailField("title") ?? ""}
+                            width={1600}
+                            height={1000}
+                            sizes="(max-width: 1024px) 100vw, 58vw"
+                            className="h-full w-full"
+                            imgClassName="object-cover"
+                            priority
+                            loading="eager"
+                            fetchPriority="high"
+                            responsiveWidths={[640, 800, 1024, 1280, 1600]}
+                          />
+                        </motion.div>
+                      </AnimatePresence>
+                    </div>
                     <div
                       className="pointer-events-none absolute inset-0 rounded-[2rem] ring-1 ring-inset ring-white/10"
                       aria-hidden
                     />
-                    {lightboxSlides.length > 1 ? (
+                    {canonicalSlides.length > 1 ? (
+                      <div
+                        className="pointer-events-none absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-1.5"
+                        aria-hidden
+                      >
+                        {canonicalSlides.map((_, i) => (
+                          <span
+                            key={`gallery-dot-${i}`}
+                            className={cn(
+                              "h-1.5 w-1.5 rounded-full transition-[transform,background-color] duration-200 ease-out",
+                              i === activeCanonicalIndex
+                                ? "scale-125 bg-white shadow-sm"
+                                : "bg-white/45",
+                            )}
+                          />
+                        ))}
+                      </div>
+                    ) : null}
+                    {canonicalSlides.length > 1 ? (
                       <>
                         <button
                           type="button"
@@ -428,25 +479,36 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                 )}
               </div>
 
-              {thumbGallery.length > 0 && (
+              {displayOrder.length > 1 && (
                 <div className="-mx-1 flex snap-x snap-mandatory gap-2.5 overflow-x-auto overflow-y-hidden pb-1 pt-0.5 sm:mx-0 sm:grid sm:snap-none sm:grid-cols-4 sm:gap-3 sm:overflow-visible md:gap-4">
-                  {thumbGallery.map((url, thumbRowIndex) => {
-                    const galleryIdx = mainUrl ? thumbRowIndex : thumbRowIndex + 1;
-                    const slideIdx = lightboxSlides.indexOf(url);
+                  {displayOrder.slice(1).map((url, thumbRowIndex) => {
+                    const thumbCanonicalIdx = canonicalSlides.indexOf(url);
                     const isActive =
-                      hoverGalleryIndex === galleryIdx ||
-                      (hoverGalleryIndex === null && slideIdx >= 0 && activeSlideIndex === slideIdx);
+                      previewThumbIndex === thumbRowIndex ||
+                      (previewThumbIndex === null &&
+                        thumbCanonicalIdx >= 0 &&
+                        thumbCanonicalIdx === activeCanonicalIndex);
                     return (
                       <button
-                        key={`${url}-${galleryIdx}`}
+                        key={`slot-${thumbRowIndex}`}
                         type="button"
                         onClick={() => {
-                          if (slideIdx >= 0) setActiveSlideIndex(slideIdx);
+                          setPreviewThumbIndex(null);
+                          setGalleryOrder((prev) => {
+                            const base = withDisplayBase(prev);
+                            if (thumbRowIndex + 1 >= base.length) return base;
+                            const next = [...base];
+                            [next[0], next[thumbRowIndex + 1]] = [
+                              next[thumbRowIndex + 1],
+                              next[0],
+                            ];
+                            return next;
+                          });
                         }}
-                        onMouseEnter={() => setHoverGalleryIndex(galleryIdx)}
-                        onMouseLeave={() => setHoverGalleryIndex(null)}
+                        onMouseEnter={() => setPreviewThumbIndex(thumbRowIndex)}
+                        onMouseLeave={() => setPreviewThumbIndex(null)}
                         className={cn(
-                          "group relative aspect-square w-[3.75rem] shrink-0 snap-start overflow-hidden rounded-xl border bg-white/10 shadow-md ring-1 backdrop-blur-md transition [box-shadow:0_6px_24px_rgba(0,0,0,0.1)] dark:bg-white/5 sm:w-full sm:rounded-2xl sm:shadow-lg",
+                          "group relative aspect-square w-[3.75rem] shrink-0 snap-start overflow-hidden rounded-xl border bg-white/10 shadow-md ring-1 backdrop-blur-md transition-[box-shadow,border-color,transform] duration-200 ease-out [box-shadow:0_6px_24px_rgba(0,0,0,0.1)] dark:bg-white/5 sm:w-full sm:rounded-2xl sm:shadow-lg",
                           isActive
                             ? "scale-[1.03] border-primary/80 ring-2 ring-primary/45 ring-offset-2 ring-offset-background"
                             : "border-white/25 ring-white/20 dark:border-white/15 dark:ring-white/10",
@@ -460,11 +522,12 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                           height={256}
                           sizes="80px"
                           className="h-full"
-                          loading="lazy"
-                          imgClassName="scale-100 transition-transform duration-300 ease-out group-hover:scale-[1.06]"
+                          loading="eager"
+                          fetchPriority="low"
+                          imgClassName="scale-100 transition-transform duration-200 ease-out group-hover:scale-[1.06]"
                         />
                         <div
-                          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-white/10 opacity-80 transition-opacity duration-300 group-hover:opacity-100"
+                          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-white/10 opacity-80 transition-opacity duration-200 group-hover:opacity-100"
                           aria-hidden
                         />
                       </button>
