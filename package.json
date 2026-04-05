@@ -47,7 +47,6 @@
     "cors": "^2.8.6",
     "dompurify": "^3.3.3",
     "dotenv": "^17.3.1",
-    "embla-carousel-react": "^8.6.0",
     "express": "^5.2.1",
     "express-rate-limit": "^8.3.1",
     "express-slow-down": "^3.1.0",

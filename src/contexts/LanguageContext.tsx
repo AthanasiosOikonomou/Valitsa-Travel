@@ -93,6 +93,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "detail.galleryPrev": "Previous photo",
     "detail.galleryNext": "Next photo",
     "detail.galleryThumbPin": "Preview or select gallery photo",
+    "detail.galleryCarouselRegion": "Trip photos",
 
     // Archive / Search Page
     "archive.title": "All Trips",
@@ -226,6 +227,11 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripGalleryDropHint": "Drop or select 1–4 images",
     "admin.tripGalleryRemove": "Remove from gallery",
     "admin.tripGalleryRemoveShort": "Remove",
+    "admin.tripGalleryDownload": "Download",
+    "admin.tripGalleryPreviewOpen": "Open full preview",
+    "admin.tripGalleryPreviewClose": "Close preview",
+    "admin.tripGalleryPreviewTitle": "Gallery image",
+    "admin.tripGalleryEmptySlot": "Empty",
     "admin.descriptionEn": "Description (English)",
     "admin.descriptionEl": "Description (Greek)",
     "admin.tripNotesEn": "Trip notes (English)",
@@ -460,6 +466,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "detail.galleryPrev": "Προηγούμενη φωτογραφία",
     "detail.galleryNext": "Επόμενη φωτογραφία",
     "detail.galleryThumbPin": "Προεπισκόπηση ή επιλογή φωτογραφίας συλλογής",
+    "detail.galleryCarouselRegion": "Φωτογραφίες ταξιδιού",
 
     // Archive / Search Page
     "archive.title": "Όλα τα Ταξίδια",
@@ -593,6 +600,11 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripGalleryDropHint": "Αποθέστε ή επιλέξτε έως 4 εικόνες",
     "admin.tripGalleryRemove": "Αφαίρεση από τη συλλογή",
     "admin.tripGalleryRemoveShort": "Αφαίρεση",
+    "admin.tripGalleryDownload": "Λήψη",
+    "admin.tripGalleryPreviewOpen": "Πλήρης προεπισκόπηση",
+    "admin.tripGalleryPreviewClose": "Κλείσιμο προεπισκόπησης",
+    "admin.tripGalleryPreviewTitle": "Εικόνα συλλογής",
+    "admin.tripGalleryEmptySlot": "Κενό",
     "admin.descriptionEn": "Περιγραφή (αγγλικά)",
     "admin.descriptionEl": "Περιγραφή (ελληνικά)",
     "admin.tripNotesEn": "Σημειώσεις ταξιδιού (αγγλικά)",

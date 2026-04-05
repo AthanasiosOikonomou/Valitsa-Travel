@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, MapPin, Clock, Check, XCircle } from "lucide-react";
+import { X, MapPin, Clock, Check, XCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Trip } from "@/types/Trip";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { createInquiry } from "@/lib/inquiries";
@@ -20,7 +20,6 @@ import {
 } from "@/components/ItineraryTimeline";
 import { SafeRichTextHtml } from "@/components/SafeRichTextHtml";
 import { isHtmlEmpty } from "@/lib/isHtmlEmpty";
-import { TripImageLightbox } from "@/components/TripImageLightbox";
 import { cn } from "@/lib/utils";
 
 interface TripDetailProps {
@@ -76,26 +75,10 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
     [trip.gallery],
   );
   const mainUrl = trip.image?.trim() || null;
-  const baseHeroUrl = mainUrl ?? galleryUrls[0] ?? null;
   const thumbGallery = mainUrl ? galleryUrls : galleryUrls.slice(1);
 
   const [hoverGalleryIndex, setHoverGalleryIndex] = useState<number | null>(null);
-  const [pinnedGalleryIndex, setPinnedGalleryIndex] = useState<number | null>(null);
-
-  useEffect(() => {
-    setHoverGalleryIndex(null);
-    setPinnedGalleryIndex(null);
-  }, [trip.id]);
-
-  const heroDisplayUrl = useMemo(() => {
-    if (hoverGalleryIndex !== null && galleryUrls[hoverGalleryIndex]) {
-      return galleryUrls[hoverGalleryIndex];
-    }
-    if (pinnedGalleryIndex !== null && galleryUrls[pinnedGalleryIndex]) {
-      return galleryUrls[pinnedGalleryIndex];
-    }
-    return baseHeroUrl;
-  }, [hoverGalleryIndex, pinnedGalleryIndex, galleryUrls, baseHeroUrl]);
+  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
 
   const lightboxSlides = useMemo(() => {
     const seen = new Set<string>();
@@ -116,17 +99,42 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
     return out;
   }, [mainUrl, galleryUrls]);
 
-  const [galleryOpen, setGalleryOpen] = useState(false);
-  const [galleryIndex, setGalleryIndex] = useState(0);
+  useEffect(() => {
+    setHoverGalleryIndex(null);
+    setActiveSlideIndex(0);
+  }, [trip.id]);
 
-  const openGallery = useCallback(
-    (url: string) => {
-      const idx = lightboxSlides.indexOf(url);
-      setGalleryIndex(idx >= 0 ? idx : 0);
-      setGalleryOpen(true);
-    },
-    [lightboxSlides],
-  );
+  useEffect(() => {
+    const n = lightboxSlides.length;
+    if (n === 0) return;
+    setActiveSlideIndex((i) => Math.min(i, n - 1));
+  }, [lightboxSlides]);
+
+  const heroDisplayUrl = useMemo(() => {
+    if (hoverGalleryIndex !== null && galleryUrls[hoverGalleryIndex]) {
+      return galleryUrls[hoverGalleryIndex];
+    }
+    const n = lightboxSlides.length;
+    if (n === 0) return null;
+    const i = Math.min(Math.max(0, activeSlideIndex), n - 1);
+    return lightboxSlides[i];
+  }, [hoverGalleryIndex, galleryUrls, lightboxSlides, activeSlideIndex]);
+
+  const goPrevSlide = useCallback(() => {
+    setActiveSlideIndex((i) => {
+      const n = lightboxSlides.length;
+      if (n <= 1) return i;
+      return (i - 1 + n) % n;
+    });
+  }, [lightboxSlides]);
+
+  const goNextSlide = useCallback(() => {
+    setActiveSlideIndex((i) => {
+      const n = lightboxSlides.length;
+      if (n <= 1) return i;
+      return (i + 1) % n;
+    });
+  }, [lightboxSlides]);
 
   const firstNameRef = useRef<HTMLInputElement>(null);
   const lastNameRef = useRef<HTMLInputElement>(null);
@@ -358,37 +366,60 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
           >
         <div className="max-w-7xl mx-auto px-6 md:px-10 pt-8 pb-10 md:pb-12 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
           <div className="min-w-0 lg:col-span-7">
-            <div className="mb-10 space-y-4">
-              <div className="relative w-full aspect-[16/10] overflow-hidden rounded-[2rem]">
+            <div className="mb-10 space-y-3 sm:space-y-4">
+              <div
+                className="relative w-full aspect-[16/10] overflow-hidden rounded-[2rem]"
+                role="region"
+                aria-roledescription="carousel"
+                aria-label={t("detail.galleryCarouselRegion")}
+              >
                 {heroDisplayUrl ? (
-                  <button
-                    type="button"
-                    onClick={() => openGallery(heroDisplayUrl)}
-                    className="group relative block h-full w-full cursor-zoom-in text-left"
-                    aria-label={t("detail.galleryOpen")}
-                  >
-                    <motion.div
-                      key={heroDisplayUrl}
-                      initial={{ opacity: 0, scale: 0.99 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                      className="h-full"
-                    >
-                      <ProgressiveImage
-                        src={heroDisplayUrl}
-                        alt={getDetailField("title") ?? ""}
-                        width={1600}
-                        height={1000}
-                        sizes="(max-width: 1024px) 100vw, 58vw"
+                  <>
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={heroDisplayUrl}
+                        initial={{ opacity: 0.85 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0.85 }}
+                        transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
                         className="h-full"
-                        imgClassName="transition-transform duration-500 ease-out group-hover:scale-[1.02]"
-                      />
-                    </motion.div>
+                      >
+                        <ProgressiveImage
+                          src={heroDisplayUrl}
+                          alt={getDetailField("title") ?? ""}
+                          width={1600}
+                          height={1000}
+                          sizes="(max-width: 1024px) 100vw, 58vw"
+                          className="h-full"
+                          imgClassName="object-cover"
+                        />
+                      </motion.div>
+                    </AnimatePresence>
                     <div
                       className="pointer-events-none absolute inset-0 rounded-[2rem] ring-1 ring-inset ring-white/10"
                       aria-hidden
                     />
-                  </button>
+                    {lightboxSlides.length > 1 ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={goPrevSlide}
+                          className="absolute left-2 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-background/85 text-foreground shadow-lg backdrop-blur-md transition hover:bg-background active:scale-95 sm:left-3 sm:h-12 sm:w-12"
+                          aria-label={t("detail.galleryPrev")}
+                        >
+                          <ChevronLeft className="h-6 w-6" aria-hidden />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={goNextSlide}
+                          className="absolute right-2 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-background/85 text-foreground shadow-lg backdrop-blur-md transition hover:bg-background active:scale-95 sm:right-3 sm:h-12 sm:w-12"
+                          aria-label={t("detail.galleryNext")}
+                        >
+                          <ChevronRight className="h-6 w-6" aria-hidden />
+                        </button>
+                      </>
+                    ) : null}
+                  </>
                 ) : (
                   <div
                     className="flex h-full min-h-[12rem] items-center justify-center rounded-[2rem] bg-muted"
@@ -398,24 +429,26 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
               </div>
 
               {thumbGallery.length > 0 && (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+                <div className="-mx-1 flex snap-x snap-mandatory gap-2.5 overflow-x-auto overflow-y-hidden pb-1 pt-0.5 sm:mx-0 sm:grid sm:snap-none sm:grid-cols-4 sm:gap-3 sm:overflow-visible md:gap-4">
                   {thumbGallery.map((url, thumbRowIndex) => {
                     const galleryIdx = mainUrl ? thumbRowIndex : thumbRowIndex + 1;
+                    const slideIdx = lightboxSlides.indexOf(url);
                     const isActive =
-                      hoverGalleryIndex === galleryIdx || pinnedGalleryIndex === galleryIdx;
+                      hoverGalleryIndex === galleryIdx ||
+                      (hoverGalleryIndex === null && slideIdx >= 0 && activeSlideIndex === slideIdx);
                     return (
                       <button
                         key={`${url}-${galleryIdx}`}
                         type="button"
-                        onClick={() =>
-                          setPinnedGalleryIndex((p) => (p === galleryIdx ? null : galleryIdx))
-                        }
+                        onClick={() => {
+                          if (slideIdx >= 0) setActiveSlideIndex(slideIdx);
+                        }}
                         onMouseEnter={() => setHoverGalleryIndex(galleryIdx)}
                         onMouseLeave={() => setHoverGalleryIndex(null)}
                         className={cn(
-                          "group relative aspect-square overflow-hidden rounded-2xl border bg-white/10 shadow-lg ring-1 backdrop-blur-md transition [box-shadow:0_8px_32px_rgba(0,0,0,0.12)] dark:bg-white/5",
+                          "group relative aspect-square w-[3.75rem] shrink-0 snap-start overflow-hidden rounded-xl border bg-white/10 shadow-md ring-1 backdrop-blur-md transition [box-shadow:0_6px_24px_rgba(0,0,0,0.1)] dark:bg-white/5 sm:w-full sm:rounded-2xl sm:shadow-lg",
                           isActive
-                            ? "scale-[1.02] border-primary/80 ring-2 ring-primary/50 ring-offset-2 ring-offset-background"
+                            ? "scale-[1.03] border-primary/80 ring-2 ring-primary/45 ring-offset-2 ring-offset-background"
                             : "border-white/25 ring-white/20 dark:border-white/15 dark:ring-white/10",
                         )}
                         aria-label={t("detail.galleryThumbPin")}
@@ -423,9 +456,9 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                         <ProgressiveImage
                           src={url}
                           alt=""
-                          width={400}
-                          height={400}
-                          sizes="(max-width: 640px) 45vw, 15vw"
+                          width={256}
+                          height={256}
+                          sizes="80px"
                           className="h-full"
                           loading="lazy"
                           imgClassName="scale-100 transition-transform duration-300 ease-out group-hover:scale-[1.06]"
@@ -440,19 +473,6 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                 </div>
               )}
             </div>
-
-            {lightboxSlides.length > 0 && (
-              <TripImageLightbox
-                open={galleryOpen}
-                onClose={() => setGalleryOpen(false)}
-                slides={lightboxSlides}
-                initialIndex={galleryIndex}
-                alt={getDetailField("title") ?? ""}
-                prevLabel={t("detail.galleryPrev")}
-                nextLabel={t("detail.galleryNext")}
-                closeLabel={t("common.close")}
-              />
-            )}
 
             <motion.div
               initial={{ opacity: 0, y: 10, scale: 0.98 }}
