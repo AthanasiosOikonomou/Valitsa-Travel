@@ -1,13 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useScrollLock } from "@/hooks/useScrollLock";
-import {
-  X,
-  Phone,
-  MessageSquare,
-  Send,
-  MessageCircle,
-} from "lucide-react";
+import { X, Phone, MessageSquare, Send, MessageCircle } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { createInquiry } from "@/lib/inquiries";
 import CaptchaField from "@/components/CaptchaField";
@@ -212,234 +206,248 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
                 ref={bodyScrollRef}
                 className="h-full min-h-0 overflow-y-auto overscroll-y-contain"
               >
-            <div className="p-6">
-              {view === "options" && (
-                <div className="space-y-4">
-                  {/* Call Us */}
-                  <a
-                    href="tel:+302101234567"
-                    className="surface-elevated-row flex items-center gap-4 p-5 rounded-2xl bg-card hover:bg-muted/50 transform-gpu [backface-visibility:hidden] will-change-transform group"
-                  >
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <Phone size={20} className="text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm">{t("contact.callUs")}</p>
-                      <p className="text-foreground-muted text-sm">
-                        +30 210 123 4567
-                      </p>
-                    </div>
-                  </a>
+                <div className="p-6">
+                  {view === "options" && (
+                    <div className="space-y-4">
+                      {/* Call Us */}
+                      <a
+                        href="tel:+306937454193"
+                        className="surface-elevated-row flex items-center gap-4 p-5 rounded-2xl bg-card hover:bg-muted/50 transform-gpu [backface-visibility:hidden] will-change-transform group"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <Phone size={20} className="text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm">
+                            {t("contact.callUs")}
+                          </p>
+                          <p className="text-foreground-muted text-sm">
+                            +30 693 7454 193
+                          </p>
+                        </div>
+                      </a>
 
-                  {/* WhatsApp */}
-                  <a
-                    href="https://wa.me/302101234567"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="surface-elevated-row flex items-center gap-4 p-5 rounded-2xl bg-card hover:bg-muted/50 transform-gpu [backface-visibility:hidden] will-change-transform group"
-                  >
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <MessageCircle size={20} className="text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm">
-                        {t("contact.whatsapp")}
-                      </p>
-                      <p className="text-foreground-muted text-sm">
-                        {t("contact.whatsappDesc")}
-                      </p>
-                    </div>
-                  </a>
+                      {/* WhatsApp */}
+                      <a
+                        href="https://wa.me/306937454193"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="surface-elevated-row flex items-center gap-4 p-5 rounded-2xl bg-card hover:bg-muted/50 transform-gpu [backface-visibility:hidden] will-change-transform group"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <MessageCircle size={20} className="text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm">
+                            {t("contact.whatsapp")}
+                          </p>
+                          <p className="text-foreground-muted text-sm">
+                            {t("contact.whatsappDesc")}
+                          </p>
+                        </div>
+                      </a>
 
-                  {/* Viber */}
-                  <a
-                    href="viber://chat?number=%2B302101234567"
-                    className="surface-elevated-row flex items-center gap-4 p-5 rounded-2xl bg-card hover:bg-muted/50 transform-gpu [backface-visibility:hidden] will-change-transform group"
-                  >
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <MessageSquare size={20} className="text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm">{t("contact.viber")}</p>
-                      <p className="text-foreground-muted text-sm">
-                        {t("contact.viberDesc")}
-                      </p>
-                    </div>
-                  </a>
+                      {/* Viber */}
+                      <a
+                        href="viber://chat/?number=%2B306937454193"
+                        className="surface-elevated-row flex items-center gap-4 p-5 rounded-2xl bg-card hover:bg-muted/50 transform-gpu [backface-visibility:hidden] will-change-transform group"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <MessageSquare size={20} className="text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm">
+                            {t("contact.viber")}
+                          </p>
+                          <p className="text-foreground-muted text-sm">
+                            {t("contact.viberDesc")}
+                          </p>
+                        </div>
+                      </a>
 
-                  {/* Send Message */}
-                  <button
-                    onClick={() => setView("form")}
-                    className="surface-elevated-row w-full flex items-center gap-4 p-5 rounded-2xl bg-card hover:bg-muted/50 transform-gpu [backface-visibility:hidden] will-change-transform group text-left"
-                  >
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <MessageSquare size={20} className="text-primary" />
+                      {/* Send Message */}
+                      <button
+                        onClick={() => setView("form")}
+                        className="surface-elevated-row w-full flex items-center gap-4 p-5 rounded-2xl bg-card hover:bg-muted/50 transform-gpu [backface-visibility:hidden] will-change-transform group text-left"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <MessageSquare size={20} className="text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm">
+                            {t("contact.sendMessage")}
+                          </p>
+                          <p className="text-foreground-muted text-sm">
+                            {t("contact.sendMessageDesc")}
+                          </p>
+                        </div>
+                      </button>
                     </div>
-                    <div>
-                      <p className="font-bold text-sm">
-                        {t("contact.sendMessage")}
-                      </p>
-                      <p className="text-foreground-muted text-sm">
-                        {t("contact.sendMessageDesc")}
-                      </p>
-                    </div>
-                  </button>
-                </div>
-              )}
-
-              {view === "form" && (
-                <form onSubmit={handleSubmit} noValidate className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <input
-                        ref={firstNameRef}
-                        placeholder={t("detail.firstName") + " *"}
-                        value={form.firstName}
-                        onChange={(e) => {
-                          setForm({ ...form, firstName: e.target.value });
-                          if (fieldErrors.firstName)
-                            setFieldErrors((p) => ({ ...p, firstName: "" }));
-                        }}
-                        className={`input-elevated w-full px-4 py-3 rounded-xl bg-background text-sm ${
-                          fieldErrors.firstName ? "input-elevated--invalid" : ""
-                        }`}
-                      />
-                      {fieldErrors.firstName && (
-                        <p className="text-xs text-red-500 mt-1">
-                          {fieldErrors.firstName}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <input
-                        ref={lastNameRef}
-                        placeholder={t("detail.lastName") + " *"}
-                        value={form.lastName}
-                        onChange={(e) => {
-                          setForm({ ...form, lastName: e.target.value });
-                          if (fieldErrors.lastName)
-                            setFieldErrors((p) => ({ ...p, lastName: "" }));
-                        }}
-                        className={`input-elevated w-full px-4 py-3 rounded-xl bg-background text-sm ${
-                          fieldErrors.lastName ? "input-elevated--invalid" : ""
-                        }`}
-                      />
-                      {fieldErrors.lastName && (
-                        <p className="text-xs text-red-500 mt-1">
-                          {fieldErrors.lastName}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <input
-                      ref={mobileRef}
-                      inputMode="tel"
-                      placeholder={t("detail.mobile") + " *"}
-                      value={form.mobile}
-                      onChange={(e) => {
-                        setForm({ ...form, mobile: e.target.value });
-                        if (fieldErrors.mobile)
-                          setFieldErrors((p) => ({ ...p, mobile: "" }));
-                      }}
-                      className={`input-elevated w-full px-4 py-3 rounded-xl bg-background text-sm ${
-                        fieldErrors.mobile ? "input-elevated--invalid" : ""
-                      }`}
-                    />
-                    {fieldErrors.mobile && (
-                      <p className="text-xs text-red-500 mt-1">
-                        {fieldErrors.mobile}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <input
-                      ref={emailRef}
-                      inputMode="email"
-                      autoComplete="email"
-                      placeholder={t("detail.email") + " *"}
-                      value={form.email}
-                      onChange={(e) => {
-                        setForm({ ...form, email: e.target.value });
-                        if (fieldErrors.email)
-                          setFieldErrors((p) => ({ ...p, email: "" }));
-                      }}
-                      className={`input-elevated w-full px-4 py-3 rounded-xl bg-background text-sm ${
-                        fieldErrors.email ? "input-elevated--invalid" : ""
-                      }`}
-                    />
-                    {fieldErrors.email && (
-                      <p className="text-xs text-red-500 mt-1">
-                        {fieldErrors.email}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <textarea
-                      ref={messageRef}
-                      placeholder={t("detail.message")}
-                      value={form.message}
-                      onChange={(e) => {
-                        setForm({ ...form, message: e.target.value });
-                        if (fieldErrors.message)
-                          setFieldErrors((p) => ({ ...p, message: "" }));
-                      }}
-                      rows={4}
-                      className={`input-elevated w-full px-4 py-3 rounded-xl bg-background text-sm resize-none ${
-                        fieldErrors.message ? "input-elevated--invalid" : ""
-                      }`}
-                    />
-                    {fieldErrors.message && (
-                      <p className="text-xs text-red-500 mt-1">
-                        {fieldErrors.message}
-                      </p>
-                    )}
-                  </div>
-                  {requiresCaptcha ? (
-                    <CaptchaField
-                      onTokenChange={(token) => {
-                        setCaptchaToken(token);
-                        if (captchaError && token) setCaptchaError("");
-                      }}
-                      error={captchaError}
-                    />
-                  ) : null}
-                  <div className="flex gap-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setView("options");
-                        setFieldErrors({
-                          firstName: "",
-                          lastName: "",
-                          mobile: "",
-                          email: "",
-                          message: "",
-                        });
-                      }}
-                      className="btn-elev-muted px-5 py-3 rounded-xl text-sm font-medium hover:bg-muted transform-gpu [backface-visibility:hidden]"
-                    >
-                      {t("contact.back")}
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isSending}
-                      aria-busy={isSending}
-                      className="btn-elev-inverse flex-1 flex items-center justify-center gap-2 bg-foreground text-background px-5 py-3 rounded-xl text-sm font-bold hover:opacity-90 transform-gpu [backface-visibility:hidden] disabled:opacity-60 disabled:pointer-events-none"
-                    >
-                      <Send size={16} />
-                      {isSending ? t("contact.sending") : t("contact.send")}
-                    </button>
-                  </div>
-                  {error && (
-                    <p className="text-sm text-red-500" role="alert">
-                      {error}
-                    </p>
                   )}
-                </form>
-              )}
 
-            </div>
+                  {view === "form" && (
+                    <form
+                      onSubmit={handleSubmit}
+                      noValidate
+                      className="space-y-4"
+                    >
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <input
+                            ref={firstNameRef}
+                            placeholder={t("detail.firstName") + " *"}
+                            value={form.firstName}
+                            onChange={(e) => {
+                              setForm({ ...form, firstName: e.target.value });
+                              if (fieldErrors.firstName)
+                                setFieldErrors((p) => ({
+                                  ...p,
+                                  firstName: "",
+                                }));
+                            }}
+                            className={`input-elevated w-full px-4 py-3 rounded-xl bg-background text-sm ${
+                              fieldErrors.firstName
+                                ? "input-elevated--invalid"
+                                : ""
+                            }`}
+                          />
+                          {fieldErrors.firstName && (
+                            <p className="text-xs text-red-500 mt-1">
+                              {fieldErrors.firstName}
+                            </p>
+                          )}
+                        </div>
+                        <div>
+                          <input
+                            ref={lastNameRef}
+                            placeholder={t("detail.lastName") + " *"}
+                            value={form.lastName}
+                            onChange={(e) => {
+                              setForm({ ...form, lastName: e.target.value });
+                              if (fieldErrors.lastName)
+                                setFieldErrors((p) => ({ ...p, lastName: "" }));
+                            }}
+                            className={`input-elevated w-full px-4 py-3 rounded-xl bg-background text-sm ${
+                              fieldErrors.lastName
+                                ? "input-elevated--invalid"
+                                : ""
+                            }`}
+                          />
+                          {fieldErrors.lastName && (
+                            <p className="text-xs text-red-500 mt-1">
+                              {fieldErrors.lastName}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <input
+                          ref={mobileRef}
+                          inputMode="tel"
+                          placeholder={t("detail.mobile") + " *"}
+                          value={form.mobile}
+                          onChange={(e) => {
+                            setForm({ ...form, mobile: e.target.value });
+                            if (fieldErrors.mobile)
+                              setFieldErrors((p) => ({ ...p, mobile: "" }));
+                          }}
+                          className={`input-elevated w-full px-4 py-3 rounded-xl bg-background text-sm ${
+                            fieldErrors.mobile ? "input-elevated--invalid" : ""
+                          }`}
+                        />
+                        {fieldErrors.mobile && (
+                          <p className="text-xs text-red-500 mt-1">
+                            {fieldErrors.mobile}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <input
+                          ref={emailRef}
+                          inputMode="email"
+                          autoComplete="email"
+                          placeholder={t("detail.email") + " *"}
+                          value={form.email}
+                          onChange={(e) => {
+                            setForm({ ...form, email: e.target.value });
+                            if (fieldErrors.email)
+                              setFieldErrors((p) => ({ ...p, email: "" }));
+                          }}
+                          className={`input-elevated w-full px-4 py-3 rounded-xl bg-background text-sm ${
+                            fieldErrors.email ? "input-elevated--invalid" : ""
+                          }`}
+                        />
+                        {fieldErrors.email && (
+                          <p className="text-xs text-red-500 mt-1">
+                            {fieldErrors.email}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <textarea
+                          ref={messageRef}
+                          placeholder={t("detail.message")}
+                          value={form.message}
+                          onChange={(e) => {
+                            setForm({ ...form, message: e.target.value });
+                            if (fieldErrors.message)
+                              setFieldErrors((p) => ({ ...p, message: "" }));
+                          }}
+                          rows={4}
+                          className={`input-elevated w-full px-4 py-3 rounded-xl bg-background text-sm resize-none ${
+                            fieldErrors.message ? "input-elevated--invalid" : ""
+                          }`}
+                        />
+                        {fieldErrors.message && (
+                          <p className="text-xs text-red-500 mt-1">
+                            {fieldErrors.message}
+                          </p>
+                        )}
+                      </div>
+                      {requiresCaptcha ? (
+                        <CaptchaField
+                          onTokenChange={(token) => {
+                            setCaptchaToken(token);
+                            if (captchaError && token) setCaptchaError("");
+                          }}
+                          error={captchaError}
+                        />
+                      ) : null}
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setView("options");
+                            setFieldErrors({
+                              firstName: "",
+                              lastName: "",
+                              mobile: "",
+                              email: "",
+                              message: "",
+                            });
+                          }}
+                          className="btn-elev-muted px-5 py-3 rounded-xl text-sm font-medium hover:bg-muted transform-gpu [backface-visibility:hidden]"
+                        >
+                          {t("contact.back")}
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={isSending}
+                          aria-busy={isSending}
+                          className="btn-elev-inverse flex-1 flex items-center justify-center gap-2 bg-foreground text-background px-5 py-3 rounded-xl text-sm font-bold hover:opacity-90 transform-gpu [backface-visibility:hidden] disabled:opacity-60 disabled:pointer-events-none"
+                        >
+                          <Send size={16} />
+                          {isSending ? t("contact.sending") : t("contact.send")}
+                        </button>
+                      </div>
+                      {error && (
+                        <p className="text-sm text-red-500" role="alert">
+                          {error}
+                        </p>
+                      )}
+                    </form>
+                  )}
+                </div>
               </div>
               <ModalScrollUpButton scrollContainerRef={bodyScrollRef} />
             </div>
