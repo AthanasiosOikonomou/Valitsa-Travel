@@ -144,6 +144,10 @@ const ENGLISH_FIELD_ORDER = [
 
 export const ADMIN_TRIP_CREATE_ID = "new";
 
+/** Greek/English tabs: full cell + brand purple active (overrides shared TabsTrigger dark zinc). */
+const TRIP_LANG_TAB_TRIGGER_CLASS =
+  "flex h-full min-h-0 w-full min-w-0 items-center justify-center px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground";
+
 type Props = { tripId: string; open: boolean; onClose: () => void };
 
 function buildTripPayload(values: TripFormValues) {
@@ -615,11 +619,11 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                 </div>
 
                 <Tabs value={tab} onValueChange={setTab} className="mt-8">
-                  <TabsList className="flex h-auto min-h-11 w-full flex-nowrap items-stretch justify-start gap-1 overflow-x-auto overflow-y-hidden scroll-smooth [-webkit-overflow-scrolling:touch] sm:inline-flex sm:h-11 sm:w-auto sm:overflow-visible">
-                    <TabsTrigger className="min-h-11 shrink-0 flex-none px-5 sm:flex-1" value="el">
+                  <TabsList className="grid h-11 w-full grid-cols-2 gap-1 p-1">
+                    <TabsTrigger className={TRIP_LANG_TAB_TRIGGER_CLASS} value="el">
                       {t("admin.tabGreek")}
                     </TabsTrigger>
-                    <TabsTrigger className="min-h-11 shrink-0 flex-none px-5 sm:flex-1" value="en">
+                    <TabsTrigger className={TRIP_LANG_TAB_TRIGGER_CLASS} value="en">
                       {t("admin.tabEnglish")}
                     </TabsTrigger>
                   </TabsList>
