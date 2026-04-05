@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -258,8 +258,20 @@ const defaultForm = (): TripFormValues => ({
 export function TripEditDialog({ tripId, open, onClose }: Props) {
   const qc = useQueryClient();
   const { t } = useLanguage();
-  const [tab, setTab] = useState("el");
+  const [tab, setTab] = useState<"el" | "en">("el");
+  const langTabsScrollAnchorRef = useRef<HTMLDivElement>(null);
   const isCreate = tripId === ADMIN_TRIP_CREATE_ID;
+
+  const handleLangTabChange = useCallback((next: string) => {
+    if (next !== "el" && next !== "en") return;
+    setTab(next);
+    requestAnimationFrame(() => {
+      langTabsScrollAnchorRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }, []);
 
   const schema = useMemo(() => buildTripFormSchema(t), [t]);
 
@@ -618,7 +630,12 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                   </div>
                 </div>
 
-                <Tabs value={tab} onValueChange={setTab} className="mt-8">
+                <div
+                  id="trip-edit-lang-tabs"
+                  ref={langTabsScrollAnchorRef}
+                  className="mt-8 scroll-mt-4"
+                >
+                  <Tabs value={tab} onValueChange={handleLangTabChange}>
                   <TabsList className="grid h-11 w-full grid-cols-2 gap-1 p-1">
                     <TabsTrigger className={TRIP_LANG_TAB_TRIGGER_CLASS} value="el">
                       {t("admin.tabGreek")}
@@ -943,6 +960,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                     </div>
                   </TabsContent>
                 </Tabs>
+                </div>
               </div>
 
               <div className="flex shrink-0 justify-end gap-2 border-t border-slate-200 bg-slate-50/90 px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] dark:border-white/10 dark:bg-zinc-950/80 md:pb-4">
