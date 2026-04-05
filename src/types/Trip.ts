@@ -18,6 +18,8 @@ export type Trip = {
   price_num: number | null;
   duration_days: number | null;
   image: string | null;
+  /** PostgreSQL `text[]`; up to 4 extra photos after `image` (main). */
+  gallery?: string[] | null;
   /** PostgreSQL `text[]`; legacy rows may still be a single string until migrated. */
   transport: string[] | string | null;
   transport_el?: string[] | string | null;
@@ -51,6 +53,7 @@ export type TripUpdate = Partial<{
   country: string | null;
   country_el: string | null;
   image: string | null;
+  gallery: string[] | null;
   description: string | null;
   description_el: string | null;
   trip_notes: string | null;

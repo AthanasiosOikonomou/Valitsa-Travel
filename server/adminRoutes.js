@@ -191,6 +191,7 @@ function normalizeTripPutBody(body) {
     "tags_el",
     "transport",
     "transport_el",
+    "gallery",
   ]) {
     if (key in out) {
       out[key] = normalizeStringArrayField(out[key]);
@@ -214,6 +215,7 @@ const adminTripPutSchema = z
     country: z.string().nullable().optional(),
     country_el: z.string().nullable().optional(),
     image: z.string().nullable().optional(),
+    gallery: z.array(z.string()).max(4).nullable().optional(),
     description: z.string().nullable().optional(),
     description_el: z.string().nullable().optional(),
     trip_notes: z.string().nullable().optional(),

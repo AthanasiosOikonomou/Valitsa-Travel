@@ -30,6 +30,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RichTextEditor } from "@/admin/components/RichTextEditor";
 import { TripImageDropzone } from "@/admin/components/TripImageDropzone";
+import { TripGalleryGrid } from "@/admin/components/TripGalleryGrid";
 import { ProgramTimelineEditor } from "@/admin/components/trip-edit/ProgramTimelineEditor";
 import { StringArrayField } from "@/admin/components/trip-edit/StringArrayField";
 import { TransportMultiSelect } from "@/admin/components/trip-edit/TransportMultiSelect";
@@ -103,6 +104,7 @@ function buildTripFormSchema(t: (key: string) => string) {
       tags: z.array(z.string()),
 
       image: z.string().nullable(),
+      gallery: z.array(z.string()).max(4),
       price_num: z.number().nullable(),
       duration_days: z.number().int().nullable(),
     })
@@ -182,6 +184,10 @@ function buildTripPayload(values: TripFormValues) {
     price_num: coercePayloadNumber(values.price_num),
     duration_days: coercePayloadInt(values.duration_days),
     image: values.image,
+    gallery: (() => {
+      const g = values.gallery.map((s) => s.trim()).filter(Boolean).slice(0, 4);
+      return g.length > 0 ? g : null;
+    })(),
     status: values.status,
   };
 
@@ -267,6 +273,7 @@ const defaultForm = (): TripFormValues => ({
   not_included: [],
   tags: [],
   image: null,
+  gallery: [],
   price_num: null,
   duration_days: null,
 });
@@ -373,6 +380,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
       not_included: stringListDbToForm(row.not_included),
       tags: stringListDbToForm(row.tags),
       image: (row.image as string | null) ?? null,
+      gallery: stringListDbToForm(row.gallery).slice(0, 4),
       price_num: typeof priceRaw === "number" && Number.isFinite(priceRaw) ? priceRaw : null,
       duration_days:
         typeof durRaw === "number" && Number.isFinite(durRaw) ? Math.trunc(durRaw) : null,
@@ -565,7 +573,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
               <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2 sm:col-span-2">
-                    <Label>{t("admin.heroImage")}</Label>
+                    <Label>{t("admin.mainPhotoFeatured")}</Label>
                     <Controller
                       name="image"
                       control={control}
@@ -575,6 +583,22 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                           onChange={field.onChange}
                           hint={t("admin.tripSinglePhotoHint")}
                           removeLabel={t("admin.tripRemoveImage")}
+                        />
+                      )}
+                    />
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label>{t("admin.galleryPhotos")}</Label>
+                    <p className="text-sm text-slate-600 dark:text-zinc-400">{t("admin.galleryPhotosHint")}</p>
+                    <Controller
+                      name="gallery"
+                      control={control}
+                      render={({ field }) => (
+                        <TripGalleryGrid
+                          urls={field.value}
+                          onChange={field.onChange}
+                          dropHint={t("admin.tripGalleryDropHint")}
+                          removeLabel={t("admin.tripGalleryRemove")}
                         />
                       )}
                     />

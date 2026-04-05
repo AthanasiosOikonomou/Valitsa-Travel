@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, Clock, Check, XCircle } from "lucide-react";
 import type { Trip } from "@/types/Trip";
@@ -20,6 +20,7 @@ import {
 } from "@/components/ItineraryTimeline";
 import { SafeRichTextHtml } from "@/components/SafeRichTextHtml";
 import { isHtmlEmpty } from "@/lib/isHtmlEmpty";
+import { TripImageLightbox } from "@/components/TripImageLightbox";
 
 interface TripDetailProps {
   trip: Trip;
@@ -68,6 +69,44 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
     mobile: "",
     message: "",
   });
+
+  const galleryUrls = useMemo(
+    () => (trip.gallery ?? []).map((s) => String(s).trim()).filter(Boolean).slice(0, 4),
+    [trip.gallery],
+  );
+  const mainUrl = trip.image?.trim() || null;
+  const heroUrl = mainUrl ?? galleryUrls[0] ?? null;
+  const thumbGallery = mainUrl ? galleryUrls : galleryUrls.slice(1);
+  const lightboxSlides = useMemo(() => {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    if (mainUrl) {
+      seen.add(mainUrl);
+      out.push(mainUrl);
+    }
+    for (const u of galleryUrls) {
+      if (u && !seen.has(u)) {
+        seen.add(u);
+        out.push(u);
+      }
+    }
+    if (!mainUrl && galleryUrls.length) {
+      return galleryUrls.filter((u, i, a) => a.indexOf(u) === i);
+    }
+    return out;
+  }, [mainUrl, galleryUrls]);
+
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryIndex, setGalleryIndex] = useState(0);
+
+  const openGallery = useCallback(
+    (url: string) => {
+      const idx = lightboxSlides.indexOf(url);
+      setGalleryIndex(idx >= 0 ? idx : 0);
+      setGalleryOpen(true);
+    },
+    [lightboxSlides],
+  );
 
   const firstNameRef = useRef<HTMLInputElement>(null);
   const lastNameRef = useRef<HTMLInputElement>(null);
@@ -299,23 +338,86 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
           >
         <div className="max-w-7xl mx-auto px-6 md:px-10 pt-8 pb-10 md:pb-12 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
           <div className="min-w-0 lg:col-span-7">
-            <div className="relative w-full aspect-[16/10] rounded-[2rem] mb-10 overflow-hidden">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                className="h-full"
-              >
-                <ProgressiveImage
-                  src={trip.image}
-                  alt={getDetailField("title") ?? ""}
-                  width={1600}
-                  height={1000}
-                  sizes="(max-width: 1024px) 100vw, 58vw"
-                  className="h-full"
-                />
-              </motion.div>
+            <div className="mb-10 space-y-4">
+              <div className="relative w-full aspect-[16/10] overflow-hidden rounded-[2rem]">
+                {heroUrl ? (
+                  <button
+                    type="button"
+                    onClick={() => openGallery(heroUrl)}
+                    className="group relative block h-full w-full cursor-zoom-in text-left"
+                    aria-label={t("detail.galleryOpen")}
+                  >
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                      className="h-full"
+                    >
+                      <ProgressiveImage
+                        src={heroUrl}
+                        alt={getDetailField("title") ?? ""}
+                        width={1600}
+                        height={1000}
+                        sizes="(max-width: 1024px) 100vw, 58vw"
+                        className="h-full"
+                        imgClassName="transition-transform duration-500 ease-out group-hover:scale-[1.02]"
+                      />
+                    </motion.div>
+                    <div
+                      className="pointer-events-none absolute inset-0 rounded-[2rem] ring-1 ring-inset ring-white/10"
+                      aria-hidden
+                    />
+                  </button>
+                ) : (
+                  <div
+                    className="flex h-full min-h-[12rem] items-center justify-center rounded-[2rem] bg-muted"
+                    aria-hidden
+                  />
+                )}
+              </div>
+
+              {thumbGallery.length > 0 && (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+                  {thumbGallery.map((url) => (
+                    <button
+                      key={url}
+                      type="button"
+                      onClick={() => openGallery(url)}
+                      className="group relative aspect-square overflow-hidden rounded-2xl border border-white/25 bg-white/10 shadow-lg ring-1 ring-white/20 backdrop-blur-md transition [box-shadow:0_8px_32px_rgba(0,0,0,0.12)] dark:border-white/15 dark:bg-white/5 dark:ring-white/10"
+                      aria-label={t("detail.galleryOpen")}
+                    >
+                      <ProgressiveImage
+                        src={url}
+                        alt=""
+                        width={400}
+                        height={400}
+                        sizes="(max-width: 640px) 45vw, 15vw"
+                        className="h-full"
+                        loading="lazy"
+                        imgClassName="scale-100 transition-transform duration-300 ease-out group-hover:scale-[1.06]"
+                      />
+                      <div
+                        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-white/10 opacity-80 transition-opacity duration-300 group-hover:opacity-100"
+                        aria-hidden
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
+
+            {lightboxSlides.length > 0 && (
+              <TripImageLightbox
+                open={galleryOpen}
+                onClose={() => setGalleryOpen(false)}
+                slides={lightboxSlides}
+                initialIndex={galleryIndex}
+                alt={getDetailField("title") ?? ""}
+                prevLabel={t("detail.galleryPrev")}
+                nextLabel={t("detail.galleryNext")}
+                closeLabel={t("common.close")}
+              />
+            )}
 
             <motion.div
               initial={{ opacity: 0, y: 10, scale: 0.98 }}

@@ -89,6 +89,9 @@ const translations: Record<Lang, Record<string, string>> = {
     "detail.program": "Program",
     "detail.included": "Included",
     "detail.notIncluded": "Not included",
+    "detail.galleryOpen": "Open photo gallery",
+    "detail.galleryPrev": "Previous photo",
+    "detail.galleryNext": "Next photo",
 
     // Archive / Search Page
     "archive.title": "All Trips",
@@ -215,6 +218,12 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.titleEn": "Title (English)",
     "admin.titleEl": "Title (Greek)",
     "admin.heroImage": "Hero image",
+    "admin.mainPhotoFeatured": "Main Photo (Featured)",
+    "admin.galleryPhotos": "Gallery Photos",
+    "admin.galleryPhotosHint":
+      "Up to four additional images, shown in order. Use the X on a thumbnail to remove it.",
+    "admin.tripGalleryDropHint": "Drop or click to add",
+    "admin.tripGalleryRemove": "Remove from gallery",
     "admin.descriptionEn": "Description (English)",
     "admin.descriptionEl": "Description (Greek)",
     "admin.tripNotesEn": "Trip notes (English)",
@@ -230,7 +239,8 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripSaveFailed": "Could not save trip",
     "admin.tabGreek": "Ελληνικά",
     "admin.tabEnglish": "English",
-    "admin.tripSinglePhotoHint": "Only one photo is allowed per trip. Remove the current image to upload a different one.",
+    "admin.tripSinglePhotoHint":
+      "Only one main (featured) photo per trip. Remove it to upload a different one.",
     "admin.tripRemoveImage": "Remove image",
     "admin.tripFieldRequired": "This field is required.",
     "admin.tripRichFieldRequired": "This section cannot be empty.",
@@ -444,6 +454,9 @@ const translations: Record<Lang, Record<string, string>> = {
     "detail.program": "Πρόγραμμα",
     "detail.included": "Περιλαμβάνονται",
     "detail.notIncluded": "Δεν περιλαμβάνονται",
+    "detail.galleryOpen": "Άνοιγμα συλλογής φωτογραφιών",
+    "detail.galleryPrev": "Προηγούμενη φωτογραφία",
+    "detail.galleryNext": "Επόμενη φωτογραφία",
 
     // Archive / Search Page
     "archive.title": "Όλα τα Ταξίδια",
@@ -570,6 +583,12 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.titleEn": "Τίτλος (αγγλικά)",
     "admin.titleEl": "Τίτλος (ελληνικά)",
     "admin.heroImage": "Κύρια εικόνα",
+    "admin.mainPhotoFeatured": "Κύρια φωτογραφία (προβεβλημένη)",
+    "admin.galleryPhotos": "Φωτογραφίες συλλογής",
+    "admin.galleryPhotosHint":
+      "Έως τέσσερις επιπλέον εικόνες, με τη σειρά. Χρησιμοποιήστε το X για αφαίρεση.",
+    "admin.tripGalleryDropHint": "Αποθέστε ή κάντε κλικ για προσθήκη",
+    "admin.tripGalleryRemove": "Αφαίρεση από τη συλλογή",
     "admin.descriptionEn": "Περιγραφή (αγγλικά)",
     "admin.descriptionEl": "Περιγραφή (ελληνικά)",
     "admin.tripNotesEn": "Σημειώσεις ταξιδιού (αγγλικά)",
@@ -585,7 +604,8 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripSaveFailed": "Αποτυχία αποθήκευσης ταξιδιού",
     "admin.tabGreek": "Ελληνικά",
     "admin.tabEnglish": "English",
-    "admin.tripSinglePhotoHint": "Επιτρέπεται μόνο μία φωτογραφία ανά ταξίδι.",
+    "admin.tripSinglePhotoHint":
+      "Μόνο μία κύρια (προβεβλημένη) φωτογραφία ανά ταξίδι. Αφαιρέστε την για να ανεβάσετε άλλη.",
     "admin.tripRemoveImage": "Αφαίρεση εικόνας",
     "admin.tripFieldRequired": "Υποχρεωτικό πεδίο.",
     "admin.tripRichFieldRequired": "Αυτή η ενότητα δεν μπορεί να είναι κενή.",
