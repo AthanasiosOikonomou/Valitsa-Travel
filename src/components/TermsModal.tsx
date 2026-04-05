@@ -139,7 +139,7 @@ const TermsModal = ({ open, onClose }: TermsModalProps) => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed inset-0 z-[120] flex items-center justify-center px-4 pb-4 pt-14 sm:pt-16 backdrop-blur-md bg-black/50 overflow-hidden overscroll-none"
+          className="fixed inset-0 z-[120] flex items-center justify-center overflow-hidden overscroll-none bg-black/50 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,calc(env(safe-area-inset-top)+4rem))] backdrop-blur-md"
           onClick={onClose}
         >
           <motion.div
@@ -147,7 +147,7 @@ const TermsModal = ({ open, onClose }: TermsModalProps) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, y: 12 }}
             transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-            className="surface-elevated bg-card rounded-3xl w-full max-w-3xl overflow-hidden transform-gpu [backface-visibility:hidden] mt-[-60px] shadow-lg"
+            className="surface-elevated flex max-h-[min(85vh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-8rem))] w-full max-w-3xl flex-col overflow-hidden rounded-3xl bg-card shadow-lg transform-gpu [backface-visibility:hidden] lg:mt-[-1.5rem]"
             onClick={(event) => event.stopPropagation()}
           >
             <Helmet prioritizeSeoTags>
@@ -165,7 +165,7 @@ const TermsModal = ({ open, onClose }: TermsModalProps) => {
               <meta name="twitter:description" content={seoDescription} />
             </Helmet>
 
-            <div className="flex items-center justify-between p-6 border-b border-border">
+            <div className="flex shrink-0 items-center justify-between border-b border-border p-6">
               <h2 className="text-lg md:text-xl font-bold">{modalTitle}</h2>
               <button
                 onClick={onClose}
@@ -176,10 +176,10 @@ const TermsModal = ({ open, onClose }: TermsModalProps) => {
               </button>
             </div>
 
-            <div className="relative max-h-[62vh]">
+            <div className="relative flex min-h-0 flex-1 flex-col">
               <div
                 ref={scrollRef}
-                className="max-h-[62vh] overflow-y-auto overscroll-y-contain p-6 md:p-7 space-y-6 text-sm md:text-[0.95rem] leading-relaxed text-foreground-muted"
+                className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-y-contain p-6 text-sm leading-relaxed text-foreground-muted md:p-7 md:text-[0.95rem]"
               >
               <section className="space-y-2">
                 <h3 className="font-bold text-foreground">
