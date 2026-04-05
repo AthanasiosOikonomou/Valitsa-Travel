@@ -25,6 +25,7 @@ import TripDetail from "@/components/TripDetail";
 import ContactModal from "@/components/ContactModal";
 import Seo from "@/components/Seo";
 import TermsModal from "@/components/TermsModal";
+import { SiteFooter } from "@/components/SiteFooter";
 import { Slider } from "@/components/ui/slider";
 import {
   areTripFilterStatesEqual,
@@ -1073,38 +1074,10 @@ const TripsContent = () => {
       <TermsModal open={termsOpen} onClose={() => setTermsOpen(false)} />
       <ContactModal open={contactOpen} onClose={() => setContactOpen(false)} />
 
-      <footer className="border-t border-border/70 py-16 px-6 md:px-10">
-        <div className="premium-panel max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 rounded-[1.8rem] px-6 py-8 md:px-8">
-          <img
-            src={
-              darkMode
-                ? "/branding/navbar/logo-dark.svg"
-                : "/branding/navbar/logo-light.svg"
-            }
-            alt={t("nav.brand")}
-            className="h-8 w-auto"
-            width={200}
-            height={60}
-            loading="lazy"
-            decoding="async"
-          />
-          <div className="flex items-center gap-6">
-            <a
-              href="#"
-              onClick={(event) => {
-                event.preventDefault();
-                setTermsOpen(true);
-              }}
-              className="text-foreground-muted text-sm hover:text-foreground transition-colors"
-            >
-              {t("nav.terms")}
-            </a>
-            <p className="text-foreground-muted text-sm">
-              {t("footer.rights")}
-            </p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter
+        darkMode={darkMode}
+        onTermsClick={() => setTermsOpen(true)}
+      />
     </div>
   );
 };

@@ -182,6 +182,8 @@ const translations: Record<Lang, Record<string, string>> = {
 
     // Footer
     "footer.rights": "© 2026 Valitsa Travel. All rights reserved.",
+    "footer.devCreditPrefix": "Design & Development by: ",
+    "footer.devName": "Athanasios Oikonomou",
 
     // Admin
     "admin.language": "Language",
@@ -555,6 +557,8 @@ const translations: Record<Lang, Record<string, string>> = {
 
     // Footer
     "footer.rights": "© 2026 Valitsa Travel. Με επιφύλαξη παντός δικαιώματος.",
+    "footer.devCreditPrefix": "Σχεδιασμός & Υλοποίηση: ",
+    "footer.devName": "Athanasios Oikonomou",
 
     // Admin
     "admin.language": "Γλώσσα",
