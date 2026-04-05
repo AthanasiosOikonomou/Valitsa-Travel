@@ -92,6 +92,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "detail.galleryOpen": "Open photo gallery",
     "detail.galleryPrev": "Previous photo",
     "detail.galleryNext": "Next photo",
+    "detail.galleryThumbPin": "Preview or select gallery photo",
 
     // Archive / Search Page
     "archive.title": "All Trips",
@@ -222,8 +223,9 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.galleryPhotos": "Gallery Photos",
     "admin.galleryPhotosHint":
       "Up to four additional images, shown in order. Use the X on a thumbnail to remove it.",
-    "admin.tripGalleryDropHint": "Drop or click to add",
+    "admin.tripGalleryDropHint": "Drop or select 1–4 images",
     "admin.tripGalleryRemove": "Remove from gallery",
+    "admin.tripGalleryRemoveShort": "Remove",
     "admin.descriptionEn": "Description (English)",
     "admin.descriptionEl": "Description (Greek)",
     "admin.tripNotesEn": "Trip notes (English)",
@@ -457,6 +459,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "detail.galleryOpen": "Άνοιγμα συλλογής φωτογραφιών",
     "detail.galleryPrev": "Προηγούμενη φωτογραφία",
     "detail.galleryNext": "Επόμενη φωτογραφία",
+    "detail.galleryThumbPin": "Προεπισκόπηση ή επιλογή φωτογραφίας συλλογής",
 
     // Archive / Search Page
     "archive.title": "Όλα τα Ταξίδια",
@@ -587,8 +590,9 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.galleryPhotos": "Φωτογραφίες συλλογής",
     "admin.galleryPhotosHint":
       "Έως τέσσερις επιπλέον εικόνες, με τη σειρά. Χρησιμοποιήστε το X για αφαίρεση.",
-    "admin.tripGalleryDropHint": "Αποθέστε ή κάντε κλικ για προσθήκη",
+    "admin.tripGalleryDropHint": "Αποθέστε ή επιλέξτε έως 4 εικόνες",
     "admin.tripGalleryRemove": "Αφαίρεση από τη συλλογή",
+    "admin.tripGalleryRemoveShort": "Αφαίρεση",
     "admin.descriptionEn": "Περιγραφή (αγγλικά)",
     "admin.descriptionEl": "Περιγραφή (ελληνικά)",
     "admin.tripNotesEn": "Σημειώσεις ταξιδιού (αγγλικά)",

@@ -21,6 +21,7 @@ import {
 import { SafeRichTextHtml } from "@/components/SafeRichTextHtml";
 import { isHtmlEmpty } from "@/lib/isHtmlEmpty";
 import { TripImageLightbox } from "@/components/TripImageLightbox";
+import { cn } from "@/lib/utils";
 
 interface TripDetailProps {
   trip: Trip;
@@ -75,8 +76,27 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
     [trip.gallery],
   );
   const mainUrl = trip.image?.trim() || null;
-  const heroUrl = mainUrl ?? galleryUrls[0] ?? null;
+  const baseHeroUrl = mainUrl ?? galleryUrls[0] ?? null;
   const thumbGallery = mainUrl ? galleryUrls : galleryUrls.slice(1);
+
+  const [hoverGalleryIndex, setHoverGalleryIndex] = useState<number | null>(null);
+  const [pinnedGalleryIndex, setPinnedGalleryIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    setHoverGalleryIndex(null);
+    setPinnedGalleryIndex(null);
+  }, [trip.id]);
+
+  const heroDisplayUrl = useMemo(() => {
+    if (hoverGalleryIndex !== null && galleryUrls[hoverGalleryIndex]) {
+      return galleryUrls[hoverGalleryIndex];
+    }
+    if (pinnedGalleryIndex !== null && galleryUrls[pinnedGalleryIndex]) {
+      return galleryUrls[pinnedGalleryIndex];
+    }
+    return baseHeroUrl;
+  }, [hoverGalleryIndex, pinnedGalleryIndex, galleryUrls, baseHeroUrl]);
+
   const lightboxSlides = useMemo(() => {
     const seen = new Set<string>();
     const out: string[] = [];
@@ -340,21 +360,22 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
           <div className="min-w-0 lg:col-span-7">
             <div className="mb-10 space-y-4">
               <div className="relative w-full aspect-[16/10] overflow-hidden rounded-[2rem]">
-                {heroUrl ? (
+                {heroDisplayUrl ? (
                   <button
                     type="button"
-                    onClick={() => openGallery(heroUrl)}
+                    onClick={() => openGallery(heroDisplayUrl)}
                     className="group relative block h-full w-full cursor-zoom-in text-left"
                     aria-label={t("detail.galleryOpen")}
                   >
                     <motion.div
-                      initial={{ opacity: 0, scale: 0.98 }}
+                      key={heroDisplayUrl}
+                      initial={{ opacity: 0, scale: 0.99 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                       className="h-full"
                     >
                       <ProgressiveImage
-                        src={heroUrl}
+                        src={heroDisplayUrl}
                         alt={getDetailField("title") ?? ""}
                         width={1600}
                         height={1000}
@@ -378,30 +399,44 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
 
               {thumbGallery.length > 0 && (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-                  {thumbGallery.map((url) => (
-                    <button
-                      key={url}
-                      type="button"
-                      onClick={() => openGallery(url)}
-                      className="group relative aspect-square overflow-hidden rounded-2xl border border-white/25 bg-white/10 shadow-lg ring-1 ring-white/20 backdrop-blur-md transition [box-shadow:0_8px_32px_rgba(0,0,0,0.12)] dark:border-white/15 dark:bg-white/5 dark:ring-white/10"
-                      aria-label={t("detail.galleryOpen")}
-                    >
-                      <ProgressiveImage
-                        src={url}
-                        alt=""
-                        width={400}
-                        height={400}
-                        sizes="(max-width: 640px) 45vw, 15vw"
-                        className="h-full"
-                        loading="lazy"
-                        imgClassName="scale-100 transition-transform duration-300 ease-out group-hover:scale-[1.06]"
-                      />
-                      <div
-                        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-white/10 opacity-80 transition-opacity duration-300 group-hover:opacity-100"
-                        aria-hidden
-                      />
-                    </button>
-                  ))}
+                  {thumbGallery.map((url, thumbRowIndex) => {
+                    const galleryIdx = mainUrl ? thumbRowIndex : thumbRowIndex + 1;
+                    const isActive =
+                      hoverGalleryIndex === galleryIdx || pinnedGalleryIndex === galleryIdx;
+                    return (
+                      <button
+                        key={`${url}-${galleryIdx}`}
+                        type="button"
+                        onClick={() =>
+                          setPinnedGalleryIndex((p) => (p === galleryIdx ? null : galleryIdx))
+                        }
+                        onMouseEnter={() => setHoverGalleryIndex(galleryIdx)}
+                        onMouseLeave={() => setHoverGalleryIndex(null)}
+                        className={cn(
+                          "group relative aspect-square overflow-hidden rounded-2xl border bg-white/10 shadow-lg ring-1 backdrop-blur-md transition [box-shadow:0_8px_32px_rgba(0,0,0,0.12)] dark:bg-white/5",
+                          isActive
+                            ? "scale-[1.02] border-primary/80 ring-2 ring-primary/50 ring-offset-2 ring-offset-background"
+                            : "border-white/25 ring-white/20 dark:border-white/15 dark:ring-white/10",
+                        )}
+                        aria-label={t("detail.galleryThumbPin")}
+                      >
+                        <ProgressiveImage
+                          src={url}
+                          alt=""
+                          width={400}
+                          height={400}
+                          sizes="(max-width: 640px) 45vw, 15vw"
+                          className="h-full"
+                          loading="lazy"
+                          imgClassName="scale-100 transition-transform duration-300 ease-out group-hover:scale-[1.06]"
+                        />
+                        <div
+                          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-white/10 opacity-80 transition-opacity duration-300 group-hover:opacity-100"
+                          aria-hidden
+                        />
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>

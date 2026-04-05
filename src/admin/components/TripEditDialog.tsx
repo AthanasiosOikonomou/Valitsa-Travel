@@ -598,7 +598,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                           urls={field.value}
                           onChange={field.onChange}
                           dropHint={t("admin.tripGalleryDropHint")}
-                          removeLabel={t("admin.tripGalleryRemove")}
+                          removeButtonLabel={t("admin.tripGalleryRemoveShort")}
                         />
                       )}
                     />
