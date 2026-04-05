@@ -1,4 +1,11 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useState,
+  type ReactNode,
+} from "react";
+import { readStoredLang, writeStoredLang } from "@/lib/languageStorage";
 
 export type Lang = "en" | "gr";
 
@@ -768,7 +775,12 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 );
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-  const [lang, setLang] = useState<Lang>("gr");
+  const [lang, setLangState] = useState<Lang>(() => readStoredLang() ?? "gr");
+
+  const setLang = useCallback((next: Lang) => {
+    setLangState(next);
+    writeStoredLang(next);
+  }, []);
 
   const t = (key: string) => translations[lang][key] ?? key;
 

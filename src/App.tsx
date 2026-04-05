@@ -70,8 +70,8 @@ const App = () => (
     <MotionConfig reducedMotion="user">
       <NextThemesProvider
         attribute="class"
-        defaultTheme="system"
-        enableSystem
+        defaultTheme="light"
+        enableSystem={false}
         storageKey={THEME_STORAGE_KEY}
         disableTransitionOnChange
       >

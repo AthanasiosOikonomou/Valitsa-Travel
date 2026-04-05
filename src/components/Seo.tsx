@@ -34,7 +34,7 @@ const Seo = ({
   type = "website",
   noindex = false,
   keywords,
-  lang = "en",
+  lang = "gr",
   structuredData,
 }: SeoProps) => {
   const canonicalUrl = toAbsoluteUrl(path);
