@@ -26,6 +26,8 @@ const TRIP_LIST_FIELDS = [
   "program_el",
   "included",
   "included_el",
+  "not_included",
+  "not_included_el",
 ];
 
 export interface TripFilters {

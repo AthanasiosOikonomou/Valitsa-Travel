@@ -11,7 +11,9 @@ type UnauthorizedHandler = () => void;
 let adminUnauthorizedHandler: UnauthorizedHandler | null = null;
 
 /** Registered from AdminSessionSync (inside LanguageProvider) for 401/403 API responses. */
-export function setAdminUnauthorizedHandler(handler: UnauthorizedHandler | null) {
+export function setAdminUnauthorizedHandler(
+  handler: UnauthorizedHandler | null,
+) {
   adminUnauthorizedHandler = handler;
 }
 
@@ -32,7 +34,10 @@ function triggerAdminUnauthorized() {
 /**
  * Authenticated fetch for /api/admin/*. Attaches Bearer token; on 401/403 runs global sign-out + redirect.
  */
-export async function adminFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
+export async function adminFetch(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+): Promise<Response> {
   const token = await getAccessToken();
   if (!token) {
     triggerAdminUnauthorized();
@@ -70,7 +75,10 @@ export async function uploadTripImage(file: File): Promise<{ url: string }> {
   return res.json() as Promise<{ url: string }>;
 }
 
-export async function patchTripFeatured(tripId: string, is_featured: boolean): Promise<void> {
+export async function patchTripFeatured(
+  tripId: string,
+  is_featured: boolean,
+): Promise<void> {
   const res = await adminFetch(`/api/admin/trips/${tripId}`, {
     method: "PATCH",
     body: JSON.stringify({ is_featured }),
@@ -81,7 +89,10 @@ export async function patchTripFeatured(tripId: string, is_featured: boolean): P
   }
 }
 
-export async function putTrip(tripId: string, payload: TripUpdate): Promise<void> {
+export async function putTrip(
+  tripId: string,
+  payload: TripUpdate,
+): Promise<void> {
   const res = await adminFetch(`/api/admin/trips/${tripId}`, {
     method: "PUT",
     body: JSON.stringify(payload),

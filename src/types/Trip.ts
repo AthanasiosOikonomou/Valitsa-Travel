@@ -33,6 +33,8 @@ export type Trip = {
   tags_el?: string[] | null;
   program_el?: ProgramItem[] | unknown[] | null;
   included_el?: string[] | null;
+  not_included: string[] | null;
+  not_included_el?: string[] | null;
   created_at: string | null;
   description: string | null;
   description_el?: string | null;
@@ -53,6 +55,8 @@ export type TripUpdate = Partial<{
   program_el: ProgramItem[] | null;
   included: string[] | null;
   included_el: string[] | null;
+  not_included: string[] | null;
+  not_included_el: string[] | null;
   price_num: number | null;
   duration_days: number | null;
   transport: string[] | null;

@@ -77,6 +77,7 @@ function buildTripFormSchema(t: (key: string) => string) {
         .array(z.string())
         .min(1, fieldReq)
         .refine((arr) => arr.some((s) => s.trim().length > 0), { message: t("admin.tripIncludedMin") }),
+      not_included_el: z.array(z.string()),
       tags_el: z.array(z.string()),
 
       hasEnglish: z.boolean(),
@@ -90,6 +91,7 @@ function buildTripFormSchema(t: (key: string) => string) {
       departure_city: z.string(),
       program: z.array(programStepSchema),
       included: z.array(z.string()),
+      not_included: z.array(z.string()),
       tags: z.array(z.string()),
 
       image: z.string().nullable(),
@@ -125,6 +127,7 @@ const GREEK_FIELD_ORDER = [
   "description_el",
   "program_el",
   "included_el",
+  "not_included_el",
 ] as const satisfies readonly (keyof TripFormValues)[];
 
 const ENGLISH_FIELD_ORDER = [
@@ -136,6 +139,7 @@ const ENGLISH_FIELD_ORDER = [
   "description",
   "program",
   "included",
+  "not_included",
 ] as const satisfies readonly (keyof TripFormValues)[];
 
 export const ADMIN_TRIP_CREATE_ID = "new";
@@ -144,6 +148,7 @@ type Props = { tripId: string; open: boolean; onClose: () => void };
 
 function buildTripPayload(values: TripFormValues) {
   const tagsEl = values.tags_el.map((s) => s.trim()).filter(Boolean);
+  const notIncEl = values.not_included_el.map((s) => s.trim()).filter(Boolean);
   const slugs = values.transport_mode_slugs;
   const titleEl = values.title_el.trim();
   const base = {
@@ -157,6 +162,7 @@ function buildTripPayload(values: TripFormValues) {
     description_el: values.description_el || null,
     program_el: formStepsToDbPayload(values.program_el),
     included_el: values.included_el.map((s) => s.trim()).filter(Boolean),
+    not_included_el: notIncEl.length > 0 ? notIncEl : null,
     tags_el: tagsEl,
     price_num: coercePayloadNumber(values.price_num),
     duration_days: coercePayloadInt(values.duration_days),
@@ -175,6 +181,7 @@ function buildTripPayload(values: TripFormValues) {
       description: null,
       program: null,
       included: null,
+      not_included: null,
       tags: null,
     };
   }
@@ -184,6 +191,7 @@ function buildTripPayload(values: TripFormValues) {
     (s) => s.title.trim().length > 0 || !isHtmlEmpty(s.description),
   );
   const incEn = values.included.map((s) => s.trim()).filter(Boolean);
+  const notIncEn = values.not_included.map((s) => s.trim()).filter(Boolean);
   const tagsEn = values.tags.map((s) => s.trim()).filter(Boolean);
   return {
     ...base,
@@ -195,6 +203,7 @@ function buildTripPayload(values: TripFormValues) {
     description: !isHtmlEmpty(values.description) ? values.description : null,
     program: progEn.length > 0 ? formStepsToDbPayload(progEn) : null,
     included: incEn.length > 0 ? incEn : null,
+    not_included: notIncEn.length > 0 ? notIncEn : null,
     tags: tagsEn.length > 0 ? tagsEn : null,
   };
 }
@@ -223,6 +232,7 @@ const defaultForm = (): TripFormValues => ({
   description_el: "",
   program_el: [{ days: "1", title: "", description: "" }],
   included_el: [],
+  not_included_el: [],
   tags_el: [],
   hasEnglish: false,
   status: "inactive",
@@ -234,6 +244,7 @@ const defaultForm = (): TripFormValues => ({
   departure_city: "",
   program: [{ days: "1", title: "", description: "" }],
   included: [],
+  not_included: [],
   tags: [],
   image: null,
   price_num: null,
@@ -307,6 +318,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
       description_el: asHtml(row.description_el),
       program_el: programEl,
       included_el: stringListDbToForm(row.included_el),
+      not_included_el: stringListDbToForm(row.not_included_el),
       tags_el: stringListDbToForm(row.tags_el),
       hasEnglish: deriveEnglishEnabledFromRow(row),
       status: statusVal,
@@ -318,6 +330,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
       departure_city: String(row.departure_city ?? ""),
       program: programEn,
       included: stringListDbToForm(row.included),
+      not_included: stringListDbToForm(row.not_included),
       tags: stringListDbToForm(row.tags),
       image: (row.image as string | null) ?? null,
       price_num: typeof priceRaw === "number" && Number.isFinite(priceRaw) ? priceRaw : null,
@@ -378,7 +391,9 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                 ? "trip-field-program"
                 : name === "included"
                   ? "trip-field-included"
-                  : `trip-field-${name}`;
+                  : name === "not_included"
+                    ? "trip-field-not_included"
+                    : `trip-field-${name}`;
           document.getElementById(id)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
           return;
         }
@@ -727,6 +742,26 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                           </p>
                         ) : null}
                       </div>
+                      <div className={fieldClass("not_included_el")} id="trip-field-not_included_el">
+                        <Label>{t("admin.tripNotIncludedEl")}</Label>
+                        <Controller
+                          name="not_included_el"
+                          control={control}
+                          render={({ field }) => (
+                            <StringArrayField
+                              className="mt-1.5"
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder={t("admin.tripArrayHint")}
+                            />
+                          )}
+                        />
+                        {errors.not_included_el ? (
+                          <p className="mt-1 text-xs text-destructive">
+                            {(errors.not_included_el as { message?: string }).message}
+                          </p>
+                        ) : null}
+                      </div>
                       <div className="space-y-2">
                         <Label>{t("admin.tripTagsEl")}</Label>
                         <Controller
@@ -861,6 +896,26 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                             {errors.included ? (
                               <p className="mt-1 text-xs text-destructive">
                                 {(errors.included as { message?: string }).message}
+                              </p>
+                            ) : null}
+                          </div>
+                          <div className={fieldClass("not_included")} id="trip-field-not_included">
+                            <Label>{t("admin.tripNotIncludedEn")}</Label>
+                            <Controller
+                              name="not_included"
+                              control={control}
+                              render={({ field }) => (
+                                <StringArrayField
+                                  className="mt-1.5"
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  placeholder={t("admin.tripArrayHint")}
+                                />
+                              )}
+                            />
+                            {errors.not_included ? (
+                              <p className="mt-1 text-xs text-destructive">
+                                {(errors.not_included as { message?: string }).message}
                               </p>
                             ) : null}
                           </div>

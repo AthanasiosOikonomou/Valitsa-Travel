@@ -87,6 +87,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "detail.description": "Description",
     "detail.program": "Program",
     "detail.included": "Included",
+    "detail.notIncluded": "Not included",
 
     // Archive / Search Page
     "archive.title": "All Trips",
@@ -268,6 +269,8 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripIncludedEl": "What's included (Greek)",
     "admin.tripTagsEl": "Tags (Greek)",
     "admin.tripIncludedEn": "What's included (English)",
+    "admin.tripNotIncludedEl": "Not included (Greek)",
+    "admin.tripNotIncludedEn": "Not included (English)",
     "admin.tripTagsEn": "Tags (English)",
     "admin.tripArrayHint": "Type and press Enter",
     "admin.tripProgramMinDay": "Add at least one itinerary day.",
@@ -436,6 +439,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "detail.description": "Περιγραφή",
     "detail.program": "Πρόγραμμα",
     "detail.included": "Περιλαμβάνονται",
+    "detail.notIncluded": "Δεν περιλαμβάνονται",
 
     // Archive / Search Page
     "archive.title": "Όλα τα Ταξίδια",
@@ -617,6 +621,8 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripIncludedEl": "Περιλαμβάνονται (ελληνικά)",
     "admin.tripTagsEl": "Ετικέτες (ελληνικά)",
     "admin.tripIncludedEn": "Περιλαμβάνονται (αγγλικά)",
+    "admin.tripNotIncludedEl": "Δεν περιλαμβάνονται (ελληνικά)",
+    "admin.tripNotIncludedEn": "Δεν περιλαμβάνονται (αγγλικά)",
     "admin.tripTagsEn": "Ετικέτες (αγγλικά)",
     "admin.tripArrayHint": "Πληκτρολογήστε και Enter",
     "admin.tripProgramMinDay": "Προσθέστε τουλάχιστον μία ημέρα στο πρόγραμμα.",

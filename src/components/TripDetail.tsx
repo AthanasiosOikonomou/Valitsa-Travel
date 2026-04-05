@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, MapPin, Clock, Check } from "lucide-react";
+import { X, MapPin, Clock, Check, XCircle } from "lucide-react";
 import type { Trip } from "@/types/Trip";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { createInquiry } from "@/lib/inquiries";
@@ -208,6 +208,12 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
     trip.included,
   );
 
+  const displayNotIncluded = pickLocalizedStringList(
+    lang,
+    trip.not_included_el,
+    trip.not_included,
+  );
+
   const programItems = programSource
     .map((raw) => toItineraryItem(raw))
     .filter((item) => item.title || item.description);
@@ -393,20 +399,45 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                     <ItineraryTimeline items={programItems} />
                   )}
                   {activeTab === "included" && (
-                    <ul className="space-y-3.5">
-                      {displayIncluded.map((item, i) => (
-                        <li
-                          key={i}
-                          className="flex gap-3.5 items-start rounded-[1.15rem] border border-fuchsia-100/70 bg-gradient-to-r from-fuchsia-50/65 via-white to-white px-4 py-3.5 text-[0.92rem] leading-7 tracking-[-0.008em] text-foreground-muted dark:border-fuchsia-900/30 dark:from-fuchsia-950/20 dark:via-card dark:to-card"
-                        >
-                          <Check
-                            size={16}
-                            className="text-primary shrink-0 mt-1"
-                          />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="space-y-8">
+                      <ul className="space-y-3.5">
+                        {displayIncluded.map((item, i) => (
+                          <li
+                            key={i}
+                            className="flex gap-3.5 items-start rounded-[1.15rem] border border-fuchsia-100/70 bg-gradient-to-r from-fuchsia-50/65 via-white to-white px-4 py-3.5 text-[0.92rem] leading-7 tracking-[-0.008em] text-foreground-muted dark:border-fuchsia-900/30 dark:from-fuchsia-950/20 dark:via-card dark:to-card"
+                          >
+                            <Check
+                              size={16}
+                              className="text-primary shrink-0 mt-1"
+                            />
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                      {displayNotIncluded.length > 0 ? (
+                        <div className="space-y-3.5">
+                          <p className="text-sm font-semibold text-foreground">
+                            {t("detail.notIncluded")}
+                          </p>
+                          <ul className="space-y-3.5">
+                            {displayNotIncluded.map((item, i) => (
+                              <li
+                                key={`ni-${i}`}
+                                className="flex gap-3.5 items-start rounded-[1.15rem] border border-red-200/80 bg-gradient-to-r from-red-50/80 via-white to-white px-4 py-3.5 text-[0.92rem] leading-7 tracking-[-0.008em] text-foreground-muted dark:border-red-900/35 dark:from-red-950/25 dark:via-card dark:to-card"
+                              >
+                                <XCircle
+                                  size={16}
+                                  className="text-destructive shrink-0 mt-1"
+                                  strokeWidth={2.25}
+                                  aria-hidden
+                                />
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                    </div>
                   )}
                 </motion.div>
               </AnimatePresence>
