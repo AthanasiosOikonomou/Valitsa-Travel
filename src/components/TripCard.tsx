@@ -6,6 +6,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import ProgressiveImage from "@/components/ProgressiveImage";
 import { SafeRichTextHtml } from "@/components/SafeRichTextHtml";
 import { formatTripDuration, formatTripPrice } from "@/lib/tripDisplay";
+import { SeasonalTripBadge } from "@/components/SeasonalTripBadge";
 
 interface TripCardProps {
   trip: Trip;
@@ -89,6 +90,10 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
                 {formatTripDuration(trip.duration_days, lang)}
               </span>
             </div>
+
+            {trip.is_seasonal && trip.seasonal_name?.trim() ? (
+              <SeasonalTripBadge seasonKey={trip.seasonal_name} />
+            ) : null}
 
             <div className="absolute inset-x-4 bottom-4 z-20 rounded-2xl border border-white/20 bg-black/40 p-4 shadow-xl backdrop-blur-md transition-all [transition-duration:560ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-2">
               <div className="flex flex-col h-full">

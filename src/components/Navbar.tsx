@@ -1,10 +1,12 @@
 import { Moon, Sun, Globe } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ContactModal from "@/components/ContactModal";
 import { prefetchTripsRoute } from "@/lib/routePrefetch";
+import { fetchSeasonalNavItems } from "@/lib/seasonalNavApi";
 import { showTrips } from "@/lib/showTrips";
 
 interface NavbarProps {
@@ -29,6 +31,12 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
   const { pathname, search } = useLocation();
   const navigate = useNavigate();
 
+  const { data: seasonalItems = [] } = useQuery({
+    queryKey: ["seasonal-nav"],
+    queryFn: fetchSeasonalNavItems,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const scrollToPageTop = () => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     document.documentElement.scrollTop = 0;
@@ -51,6 +59,22 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
     // will reset filters automatically once initialFilterState recomputes.
     navigate(`/trips${targetSearch}`);
 
+    setMenuOpen(false);
+  };
+
+  const handleSeasonalClick = (seasonKey: string) => {
+    const params = new URLSearchParams(search);
+    const targetSearch = `?seasonal=${encodeURIComponent(seasonKey)}`;
+
+    if (pathname === "/trips" && params.get("seasonal") === seasonKey) {
+      window.dispatchEvent(new Event("valitsa:reset-trips-filters"));
+      window.dispatchEvent(new Event("valitsa:scroll-trips-top"));
+      scrollToPageTop();
+      setMenuOpen(false);
+      return;
+    }
+
+    navigate(`/trips${targetSearch}`);
     setMenuOpen(false);
   };
 
@@ -122,8 +146,12 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
         className="fixed top-2 sm:top-0 left-0 right-0 z-[100] px-2 py-3 sm:px-4 md:px-8 md:py-4 transform-gpu [backface-visibility:hidden]"
       >
-        <div className="premium-panel navbar-shell mx-auto flex w-full max-w-7xl items-center justify-between rounded-[1.75rem] px-3 py-2.5 sm:px-4 md:px-6 md:py-4 bg-white/70 dark:bg-slate-900/65 backdrop-blur-md transform-gpu [backface-visibility:hidden]">
-          <Link to="/" className="shrink-0" aria-label={t("nav.brand")}>
+        <div className="premium-panel navbar-shell mx-auto grid w-full max-w-screen-2xl grid-cols-[1fr_auto] items-center gap-3 rounded-[1.75rem] px-3 py-2.5 sm:px-4 md:px-6 md:py-4 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-4 bg-white/70 dark:bg-slate-900/65 backdrop-blur-md transform-gpu [backface-visibility:hidden]">
+          <Link
+            to="/"
+            className="shrink-0 justify-self-start"
+            aria-label={t("nav.brand")}
+          >
             <img
               src={
                 darkMode
@@ -137,24 +165,41 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
             />
           </Link>
 
-          {/* Desktop categories */}
+          {/* Desktop categories + seasonal — full middle column; horizontal scroll if needed (no center-clip) */}
           {showTrips ? (
-            <div className="hidden lg:flex items-center gap-1">
-              {navCategories.map((cat) => (
-                <button
-                  key={cat.key}
-                  onClick={() => handleCategoryClick(cat.filter)}
-                  onMouseEnter={prefetchTripsRoute}
-                  onFocus={prefetchTripsRoute}
-                  className="px-4 py-2.5 rounded-full text-sm font-medium text-foreground-muted hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]"
-                >
-                  {t(cat.key)}
-                </button>
-              ))}
+            <div className="hidden min-w-0 w-full lg:flex">
+              <div className="flex min-w-0 w-full flex-row flex-nowrap items-center justify-start gap-[clamp(0.5rem,1.5vw,2rem)] overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:thin]">
+                {navCategories.map((cat) => (
+                  <button
+                    key={cat.key}
+                    type="button"
+                    onClick={() => handleCategoryClick(cat.filter)}
+                    onMouseEnter={prefetchTripsRoute}
+                    onFocus={prefetchTripsRoute}
+                    className="shrink-0 whitespace-nowrap rounded-full px-3 py-2.5 text-sm font-medium text-foreground-muted hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] sm:px-4"
+                  >
+                    {t(cat.key)}
+                  </button>
+                ))}
+                {seasonalItems.map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => handleSeasonalClick(item.key)}
+                    onMouseEnter={prefetchTripsRoute}
+                    onFocus={prefetchTripsRoute}
+                    className="shrink-0 whitespace-nowrap rounded-full px-3 py-2.5 text-sm font-medium text-foreground-muted hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] sm:px-4"
+                  >
+                    {lang === "gr" ? item.label_el : item.label_en}
+                  </button>
+                ))}
+              </div>
             </div>
-          ) : null}
+          ) : (
+            <div className="hidden min-w-0 lg:block" aria-hidden />
+          )}
 
-          <div className="flex shrink-0 gap-1.5 sm:gap-2 items-center">
+          <div className="flex shrink-0 gap-1.5 sm:gap-2 items-center justify-self-end">
             <button
               onClick={() => setLang(lang === "en" ? "gr" : "en")}
               className="premium-outline-button p-2.5 sm:p-3 flex items-center gap-1 text-sm"
@@ -256,10 +301,23 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
                 ? navCategories.map((cat) => (
                     <button
                       key={cat.key}
+                      type="button"
                       onClick={() => handleCategoryClick(cat.filter)}
                       className="px-4 py-3 rounded-2xl text-sm font-medium text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] text-left"
                     >
                       {t(cat.key)}
+                    </button>
+                  ))
+                : null}
+              {showTrips
+                ? seasonalItems.map((item) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => handleSeasonalClick(item.key)}
+                      className="px-4 py-3 rounded-2xl text-sm font-medium text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] text-left"
+                    >
+                      {lang === "gr" ? item.label_el : item.label_en}
                     </button>
                   ))
                 : null}

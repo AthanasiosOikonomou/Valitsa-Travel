@@ -203,6 +203,12 @@ function normalizeTripPutBody(body) {
   if ("duration_days" in out) {
     out.duration_days = normalizeDurationDaysField(out.duration_days);
   }
+  if (out.is_seasonal === false) {
+    out.seasonal_name = null;
+  }
+  if (out.is_seasonal === true && (out.seasonal_name === "" || out.seasonal_name === undefined)) {
+    out.seasonal_name = null;
+  }
   return out;
 }
 
@@ -238,6 +244,8 @@ const adminTripPutSchema = z
     tags_el: z.array(z.string()).nullable().optional(),
     is_featured: z.boolean().nullable().optional(),
     status: z.enum(["active", "inactive"]).optional(),
+    is_seasonal: z.boolean().optional(),
+    seasonal_name: z.string().nullable().optional(),
   })
   .strict();
 
@@ -385,6 +393,153 @@ export function registerAdminRoutes(app, { supabaseAdmin }) {
       const { error } = await supabaseAdmin.from("trips").update(updates).eq("id", id);
       if (error) {
         console.error("[admin] put trip:", error);
+        res.status(500).json({ error: error.message });
+        return;
+      }
+      res.json({ ok: true });
+    },
+  );
+
+  const seasonalKeySlug = z
+    .string()
+    .min(1)
+    .max(80)
+    .regex(/^[a-z0-9_-]+$/, "seasonal_key must be lowercase alphanumeric with _ or -");
+
+  const seasonalConfigPostSchema = z
+    .object({
+      seasonal_key: seasonalKeySlug,
+      nav_label_el: z.string().min(1).max(200),
+      nav_label_en: z.string().min(1).max(200),
+      display_order: z.number().int(),
+      is_active: z.boolean(),
+    })
+    .strict();
+
+  const seasonalConfigPutSchema = z
+    .object({
+      nav_label_el: z.string().min(1).max(200).optional(),
+      nav_label_en: z.string().min(1).max(200).optional(),
+      display_order: z.number().int().optional(),
+      is_active: z.boolean().optional(),
+    })
+    .strict()
+    .refine((o) => Object.keys(o).length > 0, { message: "No fields to update" });
+
+  app.get(
+    "/api/admin/seasonal-configs",
+    adminLimiter,
+    requireAdmin,
+    async (req, res) => {
+      if (!supabaseAdmin) {
+        res.status(503).json({ error: "Supabase is not configured on the server." });
+        return;
+      }
+      const { data: configs, error: cErr } = await supabaseAdmin
+        .from("seasonal_configs")
+        .select(
+          "seasonal_key, nav_label_el, nav_label_en, display_order, is_active, created_at",
+        )
+        .order("display_order", { ascending: true })
+        .order("seasonal_key", { ascending: true });
+      if (cErr) {
+        // 42P01 = undefined_table only — do not treat missing columns (42703) as "table missing"
+        if (cErr.code === "42P01") {
+          res.status(503).json({ error: "seasonal_configs table is not available." });
+          return;
+        }
+        console.error("[admin] seasonal-configs list:", cErr);
+        res.status(500).json({ error: cErr.message });
+        return;
+      }
+      const { data: tripRows, error: tErr } = await supabaseAdmin
+        .from("trips")
+        .select("seasonal_name");
+      if (tErr) {
+        console.error("[admin] seasonal-configs trips:", tErr);
+        res.status(500).json({ error: tErr.message });
+        return;
+      }
+      const keySet = new Set((configs ?? []).map((c) => c.seasonal_key));
+      const distinct = new Set();
+      for (const row of tripRows ?? []) {
+        const n = row.seasonal_name;
+        if (n == null) continue;
+        const s = String(n).trim();
+        if (s) distinct.add(s);
+      }
+      const orphanSeasonalNames = [...distinct].filter((k) => !keySet.has(k)).sort();
+      res.json({ configs: configs ?? [], orphanSeasonalNames });
+    },
+  );
+
+  app.post(
+    "/api/admin/seasonal-configs",
+    adminLimiter,
+    requireAdmin,
+    express.json(),
+    async (req, res) => {
+      if (!supabaseAdmin) {
+        res.status(503).json({ error: "Supabase is not configured on the server." });
+        return;
+      }
+      const parsed = seasonalConfigPostSchema.safeParse(req.body ?? {});
+      if (!parsed.success) {
+        const first = parsed.error.issues[0];
+        res.status(400).json({
+          error: first ? `${first.path.join(".")}: ${first.message}` : "Invalid body",
+        });
+        return;
+      }
+      const row = { ...parsed.data };
+      const { error } = await supabaseAdmin.from("seasonal_configs").insert(row);
+      if (error) {
+        if (error.code === "42P01") {
+          res.status(503).json({ error: "seasonal_configs table is not available." });
+          return;
+        }
+        console.error("[admin] post seasonal-config:", error);
+        res.status(500).json({ error: error.message });
+        return;
+      }
+      res.status(201).json({ ok: true });
+    },
+  );
+
+  app.put(
+    "/api/admin/seasonal-configs/:key",
+    adminLimiter,
+    requireAdmin,
+    express.json(),
+    async (req, res) => {
+      if (!supabaseAdmin) {
+        res.status(503).json({ error: "Supabase is not configured on the server." });
+        return;
+      }
+      const keyParse = seasonalKeySlug.safeParse(req.params.key ?? "");
+      if (!keyParse.success) {
+        res.status(400).json({ error: "Invalid seasonal key" });
+        return;
+      }
+      const parsed = seasonalConfigPutSchema.safeParse(req.body ?? {});
+      if (!parsed.success) {
+        const first = parsed.error.issues[0];
+        res.status(400).json({
+          error: first ? `${first.path.join(".")}: ${first.message}` : "Invalid body",
+        });
+        return;
+      }
+      const updates = { ...parsed.data };
+      const { error } = await supabaseAdmin
+        .from("seasonal_configs")
+        .update(updates)
+        .eq("seasonal_key", keyParse.data);
+      if (error) {
+        if (error.code === "42P01") {
+          res.status(503).json({ error: "seasonal_configs table is not available." });
+          return;
+        }
+        console.error("[admin] put seasonal-config:", error);
         res.status(500).json({ error: error.message });
         return;
       }

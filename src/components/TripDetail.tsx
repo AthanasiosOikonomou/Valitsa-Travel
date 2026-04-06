@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, MapPin, Clock, Check, XCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  X,
+  MapPin,
+  Clock,
+  Check,
+  XCircle,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import type { Trip } from "@/types/Trip";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { createInquiry } from "@/lib/inquiries";
@@ -73,7 +81,11 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
   });
 
   const galleryUrls = useMemo(
-    () => (trip.gallery ?? []).map((s) => String(s).trim()).filter(Boolean).slice(0, 4),
+    () =>
+      (trip.gallery ?? [])
+        .map((s) => String(s).trim())
+        .filter(Boolean)
+        .slice(0, 4),
     [trip.gallery],
   );
   const mainUrl = trip.image?.trim() || null;
@@ -99,7 +111,9 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
 
   /** Permutation of canonicalSlides for [main, …thumbs]; empty means use canonicalSlides. */
   const [galleryOrder, setGalleryOrder] = useState<string[]>([]);
-  const [previewThumbIndex, setPreviewThumbIndex] = useState<number | null>(null);
+  const [previewThumbIndex, setPreviewThumbIndex] = useState<number | null>(
+    null,
+  );
 
   useEffect(() => {
     setPreviewThumbIndex(null);
@@ -127,7 +141,8 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
   }, [canonicalSlides, displayOrder]);
 
   const withDisplayBase = useCallback(
-    (prev: string[]): string[] => (prev.length > 0 ? prev : [...canonicalSlides]),
+    (prev: string[]): string[] =>
+      prev.length > 0 ? prev : [...canonicalSlides],
     [canonicalSlides],
   );
 
@@ -261,8 +276,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
       setCaptchaToken("");
       toast.success(t("contact.sent"), { description: t("contact.sentDesc") });
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : t("detail.sendFailed");
+      const msg = err instanceof Error ? err.message : t("detail.sendFailed");
       setError(msg);
       toast.error(t("detail.sendFailed"), { description: msg });
     } finally {
@@ -357,523 +371,574 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
         onClick={onClose}
       >
         <div className="flex min-h-0 flex-1 items-center justify-center">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.98, y: 12 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-        className="surface-elevated relative flex max-h-full min-h-0 w-full max-w-7xl flex-col overflow-hidden rounded-[2rem] bg-background shadow-lg transform-gpu [backface-visibility:hidden]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onClose();
-          }}
-          className="pointer-events-auto absolute right-[max(1rem,env(safe-area-inset-right))] top-[max(1rem,env(safe-area-inset-top))] z-50 inline-flex min-h-[44px] min-w-[44px] cursor-pointer touch-manipulation items-center justify-center rounded-full border-0 bg-white/80 p-3 shadow-sm backdrop-blur-sm transition-transform duration-elev ease-material hover:scale-105 hover:bg-gray-100 active:scale-95 dark:bg-zinc-900/80 dark:hover:bg-zinc-800"
-          style={{ WebkitTapHighlightColor: "transparent" }}
-          aria-label={t("common.close")}
-        >
-          <X
-            size={20}
-            className="shrink-0 text-gray-800 dark:text-zinc-100"
-            strokeWidth={2.25}
-            aria-hidden
-          />
-        </button>
-        <div className="relative flex min-h-0 flex-1 flex-col">
-          <div
-            ref={panelRef}
-            className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain rounded-[2rem]"
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="surface-elevated relative flex max-h-full min-h-0 w-full max-w-7xl flex-col overflow-hidden rounded-[2rem] bg-background shadow-lg transform-gpu [backface-visibility:hidden]"
+            onClick={(e) => e.stopPropagation()}
           >
-        <div className="max-w-7xl mx-auto px-6 md:px-10 pt-8 pb-10 md:pb-12 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
-          <div className="min-w-0 lg:col-span-7">
-            <div className="mb-10 space-y-3 sm:space-y-4">
-              <div
-                className="relative w-full aspect-[16/10] overflow-hidden rounded-[2rem]"
-                role="region"
-                aria-roledescription="carousel"
-                aria-label={t("detail.galleryCarouselRegion")}
-              >
-                {canonicalSlides.length > 1 ? (
-                  <span className="sr-only" aria-live="polite">
-                    {activeCanonicalIndex + 1} / {canonicalSlides.length}
-                  </span>
-                ) : null}
-                {heroDisplayUrl ? (
-                  <>
-                    <div className="absolute inset-0">
-                      <AnimatePresence mode="sync">
-                        <motion.div
-                          key={heroDisplayUrl}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          transition={gallerySpring}
-                          className="absolute inset-0"
-                        >
-                          <ProgressiveImage
-                            src={heroDisplayUrl}
-                            alt={getDetailField("title") ?? ""}
-                            width={1600}
-                            height={1000}
-                            sizes="(max-width: 1024px) 100vw, 58vw"
-                            className="h-full w-full"
-                            imgClassName="object-cover"
-                            priority
-                            loading="eager"
-                            fetchPriority="high"
-                            responsiveWidths={[640, 800, 1024, 1280, 1600]}
-                          />
-                        </motion.div>
-                      </AnimatePresence>
-                    </div>
-                    <div
-                      className="pointer-events-none absolute inset-0 rounded-[2rem] ring-1 ring-inset ring-white/10"
-                      aria-hidden
-                    />
-                    {canonicalSlides.length > 1 ? (
-                      <div
-                        className="pointer-events-none absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-1.5"
-                        aria-hidden
-                      >
-                        {canonicalSlides.map((_, i) => (
-                          <span
-                            key={`gallery-dot-${i}`}
-                            className={cn(
-                              "h-1.5 w-1.5 rounded-full transition-[transform,background-color] duration-200 ease-out",
-                              i === activeCanonicalIndex
-                                ? "scale-125 bg-white shadow-sm"
-                                : "bg-white/45",
-                            )}
-                          />
-                        ))}
-                      </div>
-                    ) : null}
-                    {canonicalSlides.length > 1 ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={goPrevSlide}
-                          className="absolute left-2 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-background/85 text-foreground shadow-lg backdrop-blur-md transition hover:bg-background active:scale-95 sm:left-3 sm:h-12 sm:w-12"
-                          aria-label={t("detail.galleryPrev")}
-                        >
-                          <ChevronLeft className="h-6 w-6" aria-hidden />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={goNextSlide}
-                          className="absolute right-2 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-background/85 text-foreground shadow-lg backdrop-blur-md transition hover:bg-background active:scale-95 sm:right-3 sm:h-12 sm:w-12"
-                          aria-label={t("detail.galleryNext")}
-                        >
-                          <ChevronRight className="h-6 w-6" aria-hidden />
-                        </button>
-                      </>
-                    ) : null}
-                  </>
-                ) : (
-                  <div
-                    className="flex h-full min-h-[12rem] items-center justify-center rounded-[2rem] bg-muted"
-                    aria-hidden
-                  />
-                )}
-              </div>
-
-              {displayOrder.length > 1 && (
-                <div className="-mx-1 flex snap-x snap-mandatory gap-2.5 overflow-x-auto overflow-y-hidden pb-1 pt-0.5 sm:mx-0 sm:grid sm:snap-none sm:grid-cols-4 sm:gap-3 sm:overflow-visible md:gap-4">
-                  {displayOrder.slice(1).map((url, thumbRowIndex) => {
-                    const thumbCanonicalIdx = canonicalSlides.indexOf(url);
-                    const isActive =
-                      previewThumbIndex === thumbRowIndex ||
-                      (previewThumbIndex === null &&
-                        thumbCanonicalIdx >= 0 &&
-                        thumbCanonicalIdx === activeCanonicalIndex);
-                    return (
-                      <button
-                        key={`slot-${thumbRowIndex}`}
-                        type="button"
-                        onClick={() => {
-                          setPreviewThumbIndex(null);
-                          setGalleryOrder((prev) => {
-                            const base = withDisplayBase(prev);
-                            if (thumbRowIndex + 1 >= base.length) return base;
-                            const next = [...base];
-                            [next[0], next[thumbRowIndex + 1]] = [
-                              next[thumbRowIndex + 1],
-                              next[0],
-                            ];
-                            return next;
-                          });
-                        }}
-                        onMouseEnter={() => setPreviewThumbIndex(thumbRowIndex)}
-                        onMouseLeave={() => setPreviewThumbIndex(null)}
-                        className={cn(
-                          "group relative aspect-square w-[3.75rem] shrink-0 snap-start overflow-hidden rounded-xl border bg-white/10 shadow-md ring-1 backdrop-blur-md transition-[box-shadow,border-color,transform] duration-200 ease-out [box-shadow:0_6px_24px_rgba(0,0,0,0.1)] dark:bg-white/5 sm:w-full sm:rounded-2xl sm:shadow-lg",
-                          isActive
-                            ? "scale-[1.03] border-primary/80 ring-2 ring-primary/45 ring-offset-2 ring-offset-background"
-                            : "border-white/25 ring-white/20 dark:border-white/15 dark:ring-white/10",
-                        )}
-                        aria-label={t("detail.galleryThumbPin")}
-                      >
-                        <ProgressiveImage
-                          src={url}
-                          alt=""
-                          width={256}
-                          height={256}
-                          sizes="80px"
-                          className="h-full"
-                          loading="eager"
-                          fetchPriority="low"
-                          imgClassName="scale-100 transition-transform duration-200 ease-out group-hover:scale-[1.06]"
-                        />
-                        <div
-                          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-white/10 opacity-80 transition-opacity duration-200 group-hover:opacity-100"
-                          aria-hidden
-                        />
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 10, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{
-                delay: 0.12,
-                duration: 0.3,
-                ease: [0.22, 1, 0.36, 1],
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
               }}
+              className="pointer-events-auto absolute right-[max(1rem,env(safe-area-inset-right))] top-[max(1rem,env(safe-area-inset-top))] z-50 inline-flex min-h-[44px] min-w-[44px] cursor-pointer touch-manipulation items-center justify-center rounded-full border-0 bg-white/80 p-3 shadow-sm backdrop-blur-sm transition-transform duration-elev ease-material hover:scale-105 hover:bg-gray-100 active:scale-95 dark:bg-zinc-900/80 dark:hover:bg-zinc-800"
+              style={{ WebkitTapHighlightColor: "transparent" }}
+              aria-label={t("common.close")}
             >
-              <div className="flex items-center gap-4 text-foreground-muted text-sm mb-4">
-                <span className="flex items-center gap-1.5">
-                  <MapPin size={14} /> {getDetailField("location")}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Clock size={14} />{" "}
-                  {formatTripDuration(trip.duration_days, lang)}
-                </span>
-              </div>
-
-              <h2 className="text-4xl md:text-5xl text-display mb-6">
-                {getDetailField("title")}
-              </h2>
-
-              <div className="flex gap-2 flex-wrap mb-10">
-                {displayTags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="px-4 py-2 bg-muted rounded-full text-sm font-medium"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-
-              {/* Tabs */}
+              <X
+                size={20}
+                className="shrink-0 text-gray-800 dark:text-zinc-100"
+                strokeWidth={2.25}
+                aria-hidden
+              />
+            </button>
+            <div className="relative flex min-h-0 flex-1 flex-col">
               <div
-                ref={tabsRowRef}
-                className="mb-8 flex w-full min-w-0 flex-nowrap items-end justify-between border-b border-border px-2 sm:px-4"
+                ref={panelRef}
+                className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain rounded-[2rem]"
               >
-                {tabKeys.map((tab) => (
-                  <button
-                    key={tab}
-                    type="button"
-                    onClick={() => handleTabClick(tab)}
-                    className={`relative shrink-0 whitespace-nowrap px-1 py-2.5 text-center text-xs font-semibold transition-colors duration-250 sm:px-3 sm:py-3 sm:text-sm md:px-4 ${
-                      activeTab === tab
-                        ? "text-foreground"
-                        : "text-foreground-muted hover:text-foreground"
-                    }`}
-                  >
-                    {t(`detail.${tab}`)}
-                    {activeTab === tab && (
-                      <motion.div
-                        layoutId="tab-indicator"
-                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"
-                        transition={{
-                          duration: 0.25,
-                          ease: [0.22, 1, 0.36, 1],
-                        }}
-                      />
-                    )}
-                  </button>
-                ))}
-              </div>
-
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={`${activeTab}-${lang}`}
-                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -8, scale: 0.98 }}
-                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  {activeTab === "description" && (
-                    <div className="space-y-8">
-                      <SafeRichTextHtml
-                        html={String(getDetailField("description") ?? "")}
-                        className="text-body-prose text-lg leading-relaxed text-foreground"
-                      />
-                      {!isHtmlEmpty(String(getDetailField("trip_notes") ?? "")) ? (
-                        <div className="space-y-4 border-t border-slate-200/90 pt-8 dark:border-white/10">
-                          <h3 className="label-ui text-xs font-semibold uppercase tracking-[0.2em] text-foreground-muted">
-                            {t("detail.tripNotes")}
-                          </h3>
-                          <SafeRichTextHtml
-                            html={String(getDetailField("trip_notes") ?? "")}
-                            className="text-body-prose text-lg leading-relaxed text-foreground"
-                          />
-                        </div>
-                      ) : null}
-                    </div>
-                  )}
-                  {activeTab === "program" && (
-                    <ItineraryTimeline items={programItems} />
-                  )}
-                  {activeTab === "included" && (
-                    <div className="space-y-8">
-                      <ul className="space-y-3.5">
-                        {displayIncluded.map((item, i) => (
-                          <li
-                            key={i}
-                            className="flex gap-3.5 items-start rounded-[1.15rem] border border-fuchsia-100/70 bg-gradient-to-r from-fuchsia-50/65 via-white to-white px-4 py-3.5 text-[0.92rem] leading-7 tracking-[-0.008em] text-foreground-muted dark:border-fuchsia-900/30 dark:from-fuchsia-950/20 dark:via-card dark:to-card"
-                          >
-                            <Check
-                              size={16}
-                              className="text-primary shrink-0 mt-1"
+                <div className="max-w-7xl mx-auto px-6 md:px-10 pt-8 pb-10 md:pb-12 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
+                  <div className="min-w-0 lg:col-span-7">
+                    <div className="mb-10 space-y-3 sm:space-y-4">
+                      <div
+                        className="relative w-full aspect-[16/10] overflow-hidden rounded-[2rem]"
+                        role="region"
+                        aria-roledescription="carousel"
+                        aria-label={t("detail.galleryCarouselRegion")}
+                      >
+                        {canonicalSlides.length > 1 ? (
+                          <span className="sr-only" aria-live="polite">
+                            {activeCanonicalIndex + 1} /{" "}
+                            {canonicalSlides.length}
+                          </span>
+                        ) : null}
+                        {heroDisplayUrl ? (
+                          <>
+                            <div className="absolute inset-0">
+                              <AnimatePresence mode="sync">
+                                <motion.div
+                                  key={heroDisplayUrl}
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  exit={{ opacity: 0 }}
+                                  transition={gallerySpring}
+                                  className="absolute inset-0"
+                                >
+                                  <ProgressiveImage
+                                    src={heroDisplayUrl}
+                                    alt={getDetailField("title") ?? ""}
+                                    width={1600}
+                                    height={1000}
+                                    sizes="(max-width: 1024px) 100vw, 58vw"
+                                    className="h-full w-full"
+                                    imgClassName="object-cover"
+                                    priority
+                                    loading="eager"
+                                    fetchPriority="high"
+                                    responsiveWidths={[
+                                      640, 800, 1024, 1280, 1600,
+                                    ]}
+                                  />
+                                </motion.div>
+                              </AnimatePresence>
+                            </div>
+                            <div
+                              className="pointer-events-none absolute inset-0 rounded-[2rem] ring-1 ring-inset ring-white/10"
+                              aria-hidden
                             />
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                      {displayNotIncluded.length > 0 ? (
-                        <div className="space-y-3.5">
-                          <p className="text-sm font-semibold text-foreground">
-                            {t("detail.notIncluded")}
-                          </p>
-                          <ul className="space-y-3.5">
-                            {displayNotIncluded.map((item, i) => (
-                              <li
-                                key={`ni-${i}`}
-                                className="flex gap-3.5 items-start rounded-[1.15rem] border border-red-200/80 bg-gradient-to-r from-red-50/80 via-white to-white px-4 py-3.5 text-[0.92rem] leading-7 tracking-[-0.008em] text-foreground-muted dark:border-red-900/35 dark:from-red-950/25 dark:via-card dark:to-card"
+                            {canonicalSlides.length > 1 ? (
+                              <div
+                                className="pointer-events-none absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-1.5"
+                                aria-hidden
                               >
-                                <XCircle
-                                  size={16}
-                                  className="text-destructive shrink-0 mt-1"
-                                  strokeWidth={2.25}
+                                {canonicalSlides.map((_, i) => (
+                                  <span
+                                    key={`gallery-dot-${i}`}
+                                    className={cn(
+                                      "h-1.5 w-1.5 rounded-full transition-[transform,background-color] duration-200 ease-out",
+                                      i === activeCanonicalIndex
+                                        ? "scale-125 bg-white shadow-sm"
+                                        : "bg-white/45",
+                                    )}
+                                  />
+                                ))}
+                              </div>
+                            ) : null}
+                            {canonicalSlides.length > 1 ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={goPrevSlide}
+                                  className="absolute left-2 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-background/85 text-foreground shadow-lg backdrop-blur-md transition hover:bg-background active:scale-95 sm:left-3 sm:h-12 sm:w-12"
+                                  aria-label={t("detail.galleryPrev")}
+                                >
+                                  <ChevronLeft
+                                    className="h-6 w-6"
+                                    aria-hidden
+                                  />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={goNextSlide}
+                                  className="absolute right-2 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-background/85 text-foreground shadow-lg backdrop-blur-md transition hover:bg-background active:scale-95 sm:right-3 sm:h-12 sm:w-12"
+                                  aria-label={t("detail.galleryNext")}
+                                >
+                                  <ChevronRight
+                                    className="h-6 w-6"
+                                    aria-hidden
+                                  />
+                                </button>
+                              </>
+                            ) : null}
+                          </>
+                        ) : (
+                          <div
+                            className="flex h-full min-h-[12rem] items-center justify-center rounded-[2rem] bg-muted"
+                            aria-hidden
+                          />
+                        )}
+                      </div>
+
+                      {displayOrder.length > 1 && (
+                        <div className="-mx-1 flex snap-x snap-mandatory gap-2.5 overflow-x-auto overflow-y-hidden pb-1 pt-0.5 sm:mx-0 sm:grid sm:snap-none sm:grid-cols-4 sm:gap-3 sm:overflow-visible md:gap-4">
+                          {displayOrder.slice(1).map((url, thumbRowIndex) => {
+                            const thumbCanonicalIdx =
+                              canonicalSlides.indexOf(url);
+                            const isActive =
+                              previewThumbIndex === thumbRowIndex ||
+                              (previewThumbIndex === null &&
+                                thumbCanonicalIdx >= 0 &&
+                                thumbCanonicalIdx === activeCanonicalIndex);
+                            return (
+                              <button
+                                key={`slot-${thumbRowIndex}`}
+                                type="button"
+                                onClick={() => {
+                                  setPreviewThumbIndex(null);
+                                  setGalleryOrder((prev) => {
+                                    const base = withDisplayBase(prev);
+                                    if (thumbRowIndex + 1 >= base.length)
+                                      return base;
+                                    const next = [...base];
+                                    [next[0], next[thumbRowIndex + 1]] = [
+                                      next[thumbRowIndex + 1],
+                                      next[0],
+                                    ];
+                                    return next;
+                                  });
+                                }}
+                                onMouseEnter={() =>
+                                  setPreviewThumbIndex(thumbRowIndex)
+                                }
+                                onMouseLeave={() => setPreviewThumbIndex(null)}
+                                className={cn(
+                                  "group relative aspect-square w-[3.75rem] shrink-0 snap-start overflow-hidden rounded-xl border bg-white/10 shadow-md ring-1 backdrop-blur-md transition-[box-shadow,border-color,transform] duration-200 ease-out [box-shadow:0_6px_24px_rgba(0,0,0,0.1)] dark:bg-white/5 sm:w-full sm:rounded-2xl sm:shadow-lg",
+                                  isActive
+                                    ? "scale-[1.03] border-primary/80 ring-2 ring-primary/45 ring-offset-2 ring-offset-background"
+                                    : "border-white/25 ring-white/20 dark:border-white/15 dark:ring-white/10",
+                                )}
+                                aria-label={t("detail.galleryThumbPin")}
+                              >
+                                <ProgressiveImage
+                                  src={url}
+                                  alt=""
+                                  width={256}
+                                  height={256}
+                                  sizes="80px"
+                                  className="h-full"
+                                  loading="eager"
+                                  fetchPriority="low"
+                                  imgClassName="scale-100 transition-transform duration-200 ease-out group-hover:scale-[1.06]"
+                                />
+                                <div
+                                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-white/10 opacity-80 transition-opacity duration-200 group-hover:opacity-100"
                                   aria-hidden
                                 />
-                                {item}
-                              </li>
-                            ))}
-                          </ul>
+                              </button>
+                            );
+                          })}
                         </div>
-                      ) : null}
-                    </div>
-                  )}
-                </motion.div>
-              </AnimatePresence>
-            </motion.div>
-          </div>
-
-          {/* Right column — sticky form */}
-          <div className="lg:col-span-5">
-            <div className="lg:sticky lg:top-6">
-              <motion.div
-                initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{
-                  delay: 0.16,
-                  duration: 0.28,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
-                className="surface-elevated bg-card p-8 md:p-10 rounded-[2rem] shadow-md transform-gpu [backface-visibility:hidden]"
-              >
-                <div className="flex justify-between items-start mb-8">
-                  <div>
-                    <p className="label-ui text-foreground-muted mb-1">
-                      {t("detail.startingFrom")}
-                    </p>
-                    <p className="text-3xl font-bold">
-                      {formatTripPrice(trip.price_num, lang)}
-                    </p>
-                  </div>
-                  <span className="label-ui text-primary bg-primary/10 px-3 py-1.5 rounded-full">
-                    {formatTripDuration(trip.duration_days, lang)}
-                  </span>
-                </div>
-
-                <h3 className="text-xl font-bold mb-6">
-                  {t("detail.expressInterest")}
-                </h3>
-
-                {submitted ? (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                    className="text-center py-12"
-                  >
-                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                      <Check size={28} className="text-primary" />
-                    </div>
-                    <p className="font-semibold text-lg mb-1">
-                      {t("detail.inquirySent")}
-                    </p>
-                    <p className="text-foreground-muted text-sm">
-                      {t("detail.inquiryMsg")}
-                    </p>
-                  </motion.div>
-                ) : (
-                  <form
-                    onSubmit={handleSubmit}
-                    noValidate
-                    className="space-y-4"
-                  >
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <input
-                          ref={firstNameRef}
-                          maxLength={100}
-                          value={formData.firstName}
-                          onChange={(e) => {
-                            updateField("firstName", e.target.value);
-                            if (fieldErrors.firstName)
-                              setFieldErrors((p) => ({ ...p, firstName: "" }));
-                          }}
-                          className={`input-elevated w-full bg-muted p-4 rounded-2xl text-sm placeholder:text-muted-foreground ${
-                            fieldErrors.firstName ? "input-elevated--invalid" : ""
-                          }`}
-                          placeholder={t("detail.firstName") + " *"}
-                        />
-                        {fieldErrors.firstName && (
-                          <p className="text-xs text-red-500 mt-1">
-                            {fieldErrors.firstName}
-                          </p>
-                        )}
-                      </div>
-                      <div>
-                        <input
-                          ref={lastNameRef}
-                          maxLength={100}
-                          value={formData.lastName}
-                          onChange={(e) => {
-                            updateField("lastName", e.target.value);
-                            if (fieldErrors.lastName)
-                              setFieldErrors((p) => ({ ...p, lastName: "" }));
-                          }}
-                          className={`input-elevated w-full bg-muted p-4 rounded-2xl text-sm placeholder:text-muted-foreground ${
-                            fieldErrors.lastName ? "input-elevated--invalid" : ""
-                          }`}
-                          placeholder={t("detail.lastName") + " *"}
-                        />
-                        {fieldErrors.lastName && (
-                          <p className="text-xs text-red-500 mt-1">
-                            {fieldErrors.lastName}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      <input
-                        ref={emailRef}
-                        inputMode="email"
-                        autoComplete="email"
-                        maxLength={255}
-                        value={formData.email}
-                        onChange={(e) => {
-                          updateField("email", e.target.value);
-                          if (fieldErrors.email)
-                            setFieldErrors((p) => ({ ...p, email: "" }));
-                        }}
-                        className={`input-elevated w-full bg-muted p-4 rounded-2xl text-sm placeholder:text-muted-foreground ${
-                          fieldErrors.email ? "input-elevated--invalid" : ""
-                        }`}
-                        placeholder={t("detail.email") + " *"}
-                      />
-                      {fieldErrors.email && (
-                        <p className="text-xs text-red-500 mt-1">
-                          {fieldErrors.email}
-                        </p>
                       )}
                     </div>
-                    <div>
-                      <input
-                        ref={mobileRef}
-                        inputMode="tel"
-                        maxLength={20}
-                        value={formData.mobile}
-                        onChange={(e) => {
-                          updateField("mobile", e.target.value);
-                          if (fieldErrors.mobile)
-                            setFieldErrors((p) => ({ ...p, mobile: "" }));
-                        }}
-                        className={`input-elevated w-full bg-muted p-4 rounded-2xl text-sm placeholder:text-muted-foreground ${
-                          fieldErrors.mobile ? "input-elevated--invalid" : ""
-                        }`}
-                        placeholder={t("detail.mobile") + " *"}
-                      />
-                      {fieldErrors.mobile && (
-                        <p className="text-xs text-red-500 mt-1">
-                          {fieldErrors.mobile}
-                        </p>
-                      )}
-                    </div>
-                    <textarea
-                      ref={messageRef}
-                      maxLength={1000}
-                      value={formData.message}
-                      onChange={(e) => {
-                        updateField("message", e.target.value);
-                        if (fieldErrors.message)
-                          setFieldErrors((p) => ({ ...p, message: "" }));
+
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{
+                        delay: 0.12,
+                        duration: 0.3,
+                        ease: [0.22, 1, 0.36, 1],
                       }}
-                      className={`input-elevated w-full bg-muted p-4 rounded-2xl text-sm placeholder:text-muted-foreground h-28 resize-none ${
-                        fieldErrors.message ? "input-elevated--invalid" : ""
-                      }`}
-                      placeholder={t("detail.message") + " *"}
-                    />
-                    {fieldErrors.message && (
-                      <p className="text-xs text-red-500 mt-1">
-                        {fieldErrors.message}
-                      </p>
-                    )}
-                    {requiresCaptcha ? (
-                      <CaptchaField
-                        onTokenChange={(token) => {
-                          setCaptchaToken(token);
-                          if (captchaError && token) setCaptchaError("");
-                        }}
-                        error={captchaError}
-                      />
-                    ) : null}
-                    <button
-                      type="submit"
-                      disabled={isSending}
-                      aria-busy={isSending}
-                      className="btn-elev-primary w-full bg-primary text-primary-foreground py-4 rounded-2xl font-bold text-sm hover:bg-primary/90 min-h-[56px] disabled:opacity-60 disabled:pointer-events-none"
                     >
-                      {isSending
-                        ? t("detail.sending")
-                        : t("detail.sendInquiry")}
-                    </button>
-                    {error && (
-                      <p className="text-sm text-red-500" role="alert">
-                        {error}
-                      </p>
-                    )}
-                  </form>
-                )}
-              </motion.div>
+                      <div className="flex items-center gap-4 text-foreground-muted text-sm mb-4">
+                        <span className="flex items-center gap-1.5">
+                          <MapPin size={14} /> {getDetailField("location")}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <Clock size={14} />{" "}
+                          {formatTripDuration(trip.duration_days, lang)}
+                        </span>
+                      </div>
+
+                      <h2 className="text-4xl md:text-5xl text-display mb-6">
+                        {getDetailField("title")}
+                      </h2>
+
+                      <div className="flex gap-2 flex-wrap mb-10">
+                        {displayTags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="px-4 py-2 bg-muted rounded-full text-sm font-medium"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* Tabs */}
+                      <div
+                        ref={tabsRowRef}
+                        className="mb-8 flex w-full min-w-0 flex-nowrap items-end justify-between border-b border-border px-2 sm:px-4"
+                      >
+                        {tabKeys.map((tab) => (
+                          <button
+                            key={tab}
+                            type="button"
+                            onClick={() => handleTabClick(tab)}
+                            className={`relative shrink-0 whitespace-nowrap px-1 py-2.5 text-center text-xs font-semibold transition-colors duration-250 sm:px-3 sm:py-3 sm:text-sm md:px-4 ${
+                              activeTab === tab
+                                ? "text-foreground"
+                                : "text-foreground-muted hover:text-foreground"
+                            }`}
+                          >
+                            {t(`detail.${tab}`)}
+                            {activeTab === tab && (
+                              <motion.div
+                                layoutId="tab-indicator"
+                                className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"
+                                transition={{
+                                  duration: 0.25,
+                                  ease: [0.22, 1, 0.36, 1],
+                                }}
+                              />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={`${activeTab}-${lang}`}
+                          initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                          transition={{
+                            duration: 0.22,
+                            ease: [0.22, 1, 0.36, 1],
+                          }}
+                        >
+                          {activeTab === "description" && (
+                            <div className="space-y-8">
+                              <SafeRichTextHtml
+                                html={String(
+                                  getDetailField("description") ?? "",
+                                )}
+                                className="text-body-prose text-lg leading-relaxed text-foreground"
+                              />
+                              {!isHtmlEmpty(
+                                String(getDetailField("trip_notes") ?? ""),
+                              ) ? (
+                                <div className="space-y-4 border-t border-slate-200/90 pt-8 dark:border-white/10">
+                                  <h3 className="label-ui text-xs font-semibold uppercase tracking-[0.2em] text-foreground-muted">
+                                    {t("detail.tripNotes")}
+                                  </h3>
+                                  <SafeRichTextHtml
+                                    html={String(
+                                      getDetailField("trip_notes") ?? "",
+                                    )}
+                                    className="text-body-prose text-lg leading-relaxed text-foreground"
+                                  />
+                                </div>
+                              ) : null}
+                            </div>
+                          )}
+                          {activeTab === "program" && (
+                            <ItineraryTimeline items={programItems} />
+                          )}
+                          {activeTab === "included" && (
+                            <div className="space-y-8">
+                              <ul className="space-y-3.5">
+                                {displayIncluded.map((item, i) => (
+                                  <li
+                                    key={i}
+                                    className="flex gap-3.5 items-start rounded-[1.15rem] border border-fuchsia-100/70 bg-gradient-to-r from-fuchsia-50/65 via-white to-white px-4 py-3.5 text-[0.92rem] leading-7 tracking-[-0.008em] text-foreground-muted dark:border-fuchsia-900/30 dark:from-fuchsia-950/20 dark:via-card dark:to-card"
+                                  >
+                                    <Check
+                                      size={16}
+                                      className="text-primary shrink-0 mt-1"
+                                    />
+                                    {item}
+                                  </li>
+                                ))}
+                              </ul>
+                              {displayNotIncluded.length > 0 ? (
+                                <div className="space-y-3.5">
+                                  <p className="text-sm font-semibold text-foreground">
+                                    {t("detail.notIncluded")}
+                                  </p>
+                                  <ul className="space-y-3.5">
+                                    {displayNotIncluded.map((item, i) => (
+                                      <li
+                                        key={`ni-${i}`}
+                                        className="flex gap-3.5 items-start rounded-[1.15rem] border border-red-200/80 bg-gradient-to-r from-red-50/80 via-white to-white px-4 py-3.5 text-[0.92rem] leading-7 tracking-[-0.008em] text-foreground-muted dark:border-red-900/35 dark:from-red-950/25 dark:via-card dark:to-card"
+                                      >
+                                        <XCircle
+                                          size={16}
+                                          className="text-destructive shrink-0 mt-1"
+                                          strokeWidth={2.25}
+                                          aria-hidden
+                                        />
+                                        {item}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              ) : null}
+                            </div>
+                          )}
+                        </motion.div>
+                      </AnimatePresence>
+                    </motion.div>
+                  </div>
+
+                  {/* Right column — sticky form */}
+                  <div className="lg:col-span-5">
+                    <div className="lg:sticky lg:top-6">
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{
+                          delay: 0.16,
+                          duration: 0.28,
+                          ease: [0.22, 1, 0.36, 1],
+                        }}
+                        className="surface-elevated bg-card p-8 md:p-10 rounded-[2rem] shadow-md transform-gpu [backface-visibility:hidden]"
+                      >
+                        <div className="flex justify-between items-start mb-8">
+                          <div>
+                            <p className="label-ui text-foreground-muted mb-1">
+                              {t("detail.startingFrom")}
+                            </p>
+                            <p className="text-3xl font-bold">
+                              {formatTripPrice(trip.price_num, lang)}
+                            </p>
+                          </div>
+                          <span className="label-ui text-primary bg-primary/10 px-3 py-1.5 rounded-full">
+                            {formatTripDuration(trip.duration_days, lang)}
+                          </span>
+                        </div>
+
+                        <h3 className="text-xl font-bold mb-6">
+                          {t("detail.expressInterest")}
+                        </h3>
+
+                        {submitted ? (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{
+                              duration: 0.22,
+                              ease: [0.22, 1, 0.36, 1],
+                            }}
+                            className="text-center py-12"
+                          >
+                            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                              <Check size={28} className="text-primary" />
+                            </div>
+                            <p className="font-semibold text-lg mb-1">
+                              {t("detail.inquirySent")}
+                            </p>
+                            <p className="text-foreground-muted text-sm">
+                              {t("detail.inquiryMsg")}
+                            </p>
+                          </motion.div>
+                        ) : (
+                          <form
+                            onSubmit={handleSubmit}
+                            noValidate
+                            className="space-y-4"
+                          >
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <input
+                                  ref={firstNameRef}
+                                  maxLength={100}
+                                  value={formData.firstName}
+                                  onChange={(e) => {
+                                    updateField("firstName", e.target.value);
+                                    if (fieldErrors.firstName)
+                                      setFieldErrors((p) => ({
+                                        ...p,
+                                        firstName: "",
+                                      }));
+                                  }}
+                                  className={`input-elevated w-full bg-muted p-4 rounded-2xl text-sm placeholder:text-muted-foreground ${
+                                    fieldErrors.firstName
+                                      ? "input-elevated--invalid"
+                                      : ""
+                                  }`}
+                                  placeholder={t("detail.firstName") + " *"}
+                                />
+                                {fieldErrors.firstName && (
+                                  <p className="text-xs text-red-500 mt-1">
+                                    {fieldErrors.firstName}
+                                  </p>
+                                )}
+                              </div>
+                              <div>
+                                <input
+                                  ref={lastNameRef}
+                                  maxLength={100}
+                                  value={formData.lastName}
+                                  onChange={(e) => {
+                                    updateField("lastName", e.target.value);
+                                    if (fieldErrors.lastName)
+                                      setFieldErrors((p) => ({
+                                        ...p,
+                                        lastName: "",
+                                      }));
+                                  }}
+                                  className={`input-elevated w-full bg-muted p-4 rounded-2xl text-sm placeholder:text-muted-foreground ${
+                                    fieldErrors.lastName
+                                      ? "input-elevated--invalid"
+                                      : ""
+                                  }`}
+                                  placeholder={t("detail.lastName") + " *"}
+                                />
+                                {fieldErrors.lastName && (
+                                  <p className="text-xs text-red-500 mt-1">
+                                    {fieldErrors.lastName}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div>
+                              <input
+                                ref={emailRef}
+                                inputMode="email"
+                                autoComplete="email"
+                                maxLength={255}
+                                value={formData.email}
+                                onChange={(e) => {
+                                  updateField("email", e.target.value);
+                                  if (fieldErrors.email)
+                                    setFieldErrors((p) => ({
+                                      ...p,
+                                      email: "",
+                                    }));
+                                }}
+                                className={`input-elevated w-full bg-muted p-4 rounded-2xl text-sm placeholder:text-muted-foreground ${
+                                  fieldErrors.email
+                                    ? "input-elevated--invalid"
+                                    : ""
+                                }`}
+                                placeholder={t("detail.email") + " *"}
+                              />
+                              {fieldErrors.email && (
+                                <p className="text-xs text-red-500 mt-1">
+                                  {fieldErrors.email}
+                                </p>
+                              )}
+                            </div>
+                            <div>
+                              <input
+                                ref={mobileRef}
+                                inputMode="tel"
+                                maxLength={20}
+                                value={formData.mobile}
+                                onChange={(e) => {
+                                  updateField("mobile", e.target.value);
+                                  if (fieldErrors.mobile)
+                                    setFieldErrors((p) => ({
+                                      ...p,
+                                      mobile: "",
+                                    }));
+                                }}
+                                className={`input-elevated w-full bg-muted p-4 rounded-2xl text-sm placeholder:text-muted-foreground ${
+                                  fieldErrors.mobile
+                                    ? "input-elevated--invalid"
+                                    : ""
+                                }`}
+                                placeholder={t("detail.mobile") + " *"}
+                              />
+                              {fieldErrors.mobile && (
+                                <p className="text-xs text-red-500 mt-1">
+                                  {fieldErrors.mobile}
+                                </p>
+                              )}
+                            </div>
+                            <textarea
+                              ref={messageRef}
+                              maxLength={1000}
+                              value={formData.message}
+                              onChange={(e) => {
+                                updateField("message", e.target.value);
+                                if (fieldErrors.message)
+                                  setFieldErrors((p) => ({
+                                    ...p,
+                                    message: "",
+                                  }));
+                              }}
+                              className={`input-elevated w-full bg-muted p-4 rounded-2xl text-sm placeholder:text-muted-foreground h-28 resize-none ${
+                                fieldErrors.message
+                                  ? "input-elevated--invalid"
+                                  : ""
+                              }`}
+                              placeholder={t("detail.message") + " *"}
+                            />
+                            {fieldErrors.message && (
+                              <p className="text-xs text-red-500 mt-1">
+                                {fieldErrors.message}
+                              </p>
+                            )}
+                            {requiresCaptcha ? (
+                              <CaptchaField
+                                onTokenChange={(token) => {
+                                  setCaptchaToken(token);
+                                  if (captchaError && token)
+                                    setCaptchaError("");
+                                }}
+                                error={captchaError}
+                              />
+                            ) : null}
+                            <button
+                              type="submit"
+                              disabled={isSending}
+                              aria-busy={isSending}
+                              className="btn-elev-primary w-full bg-primary text-primary-foreground py-4 rounded-2xl font-bold text-sm hover:bg-primary/90 min-h-[56px] disabled:opacity-60 disabled:pointer-events-none"
+                            >
+                              {isSending
+                                ? t("detail.sending")
+                                : t("detail.sendInquiry")}
+                            </button>
+                            {error && (
+                              <p className="text-sm text-red-500" role="alert">
+                                {error}
+                              </p>
+                            )}
+                          </form>
+                        )}
+                      </motion.div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <ModalScrollUpButton scrollContainerRef={panelRef} />
             </div>
-          </div>
-        </div>
-          </div>
-          <ModalScrollUpButton scrollContainerRef={panelRef} />
-        </div>
-      </motion.div>
+          </motion.div>
         </div>
       </div>
     </motion.div>

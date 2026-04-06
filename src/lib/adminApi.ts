@@ -1,6 +1,31 @@
 import { supabase } from "@/lib/supabaseClient";
 import type { TripUpdate } from "@/types/Trip";
 
+export type SeasonalConfigRow = {
+  seasonal_key: string;
+  nav_label_el: string;
+  nav_label_en: string;
+  display_order: number;
+  is_active: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type SeasonalConfigPayload = {
+  seasonal_key: string;
+  nav_label_el: string;
+  nav_label_en: string;
+  display_order: number;
+  is_active: boolean;
+};
+
+export type SeasonalConfigUpdate = {
+  nav_label_el?: string;
+  nav_label_en?: string;
+  display_order?: number;
+  is_active?: boolean;
+};
+
 export async function getAccessToken(): Promise<string | null> {
   const { data } = await supabase.auth.getSession();
   return data.session?.access_token ?? null;
@@ -115,4 +140,46 @@ export async function postTrip(payload: TripUpdate): Promise<{ id: string }> {
   const j = (await res.json()) as { id?: string };
   if (!j.id) throw new Error("Create failed: no id");
   return { id: j.id };
+}
+
+export async function getAdminSeasonalConfigs(): Promise<{
+  configs: SeasonalConfigRow[];
+  orphanSeasonalNames: string[];
+}> {
+  const res = await adminFetch("/api/admin/seasonal-configs");
+  if (!res.ok) {
+    const j = (await res.json().catch(() => ({}))) as { error?: string };
+    const detail = j.error?.trim() || res.statusText || "Request failed";
+    throw new Error(`${detail} (HTTP ${res.status})`);
+  }
+  return res.json() as Promise<{
+    configs: SeasonalConfigRow[];
+    orphanSeasonalNames: string[];
+  }>;
+}
+
+export async function postSeasonalConfig(payload: SeasonalConfigPayload): Promise<void> {
+  const res = await adminFetch("/api/admin/seasonal-configs", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const j = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(j.error ?? "Failed to create seasonal config");
+  }
+}
+
+export async function putSeasonalConfig(
+  seasonalKey: string,
+  updates: SeasonalConfigUpdate,
+): Promise<void> {
+  const encoded = encodeURIComponent(seasonalKey);
+  const res = await adminFetch(`/api/admin/seasonal-configs/${encoded}`, {
+    method: "PUT",
+    body: JSON.stringify(updates),
+  });
+  if (!res.ok) {
+    const j = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(j.error ?? "Failed to update seasonal config");
+  }
 }

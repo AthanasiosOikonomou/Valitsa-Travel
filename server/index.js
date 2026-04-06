@@ -157,6 +157,16 @@ const trackClickLimiter = rateLimit({
   },
 });
 
+const seasonalNavLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: "Too many requests. Please try again later.",
+  },
+});
+
 const inquiryRoutes = ["/api/send-inquiry", "/send-inquiry"];
 
 app.use(inquiryRoutes, inquiryLimiter, inquirySpeedLimiter);
@@ -309,7 +319,8 @@ const smtpEnvelopeFromAuth = (toList) =>
       }
     : {};
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || "";
+const supabaseUrl =
+  process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const supabaseAdmin =
   supabaseUrl && supabaseServiceKey
@@ -317,6 +328,16 @@ const supabaseAdmin =
         auth: { persistSession: false, autoRefreshToken: false },
       })
     : null;
+
+if (
+  !supabaseAdmin &&
+  !isProduction &&
+  process.env.NODE_ENV !== "test"
+) {
+  console.warn(
+    "[api] Supabase service client not configured: set VITE_SUPABASE_URL or SUPABASE_URL plus SUPABASE_SERVICE_ROLE_KEY in .env or server/.env. Admin DB routes return 503 until configured.",
+  );
+}
 
 const inquiriesDbEnabled = Boolean(supabaseAdmin);
 
@@ -329,7 +350,7 @@ const persistInquiry = async ({
 }) => {
   if (!supabaseAdmin) {
     console.warn(
-      "[inquiries] Supabase not configured — set VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env or server/.env. Email is still sent; the row is not saved.",
+      "[inquiries] Supabase not configured — set VITE_SUPABASE_URL or SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env or server/.env. Email is still sent; the row is not saved.",
     );
     return;
   }
@@ -399,6 +420,50 @@ app.get(["/api/health", "/health"], (_req, res) => {
   res.json({ ok: true, inquiries_db: inquiriesDbEnabled });
 });
 
+app.get("/api/seasonal-nav", seasonalNavLimiter, async (_req, res) => {
+  if (!supabaseAdmin) {
+    res.json({ items: [] });
+    return;
+  }
+  try {
+    const { data: configs, error: cErr } = await supabaseAdmin
+      .from("seasonal_configs")
+      .select("seasonal_key, nav_label_el, nav_label_en, display_order")
+      .eq("is_active", true)
+      .order("display_order", { ascending: true })
+      .order("seasonal_key", { ascending: true });
+    if (cErr) {
+      if (cErr.code === "42P01" || cErr.message?.includes("does not exist")) {
+        res.json({ items: [] });
+        return;
+      }
+      throw cErr;
+    }
+    const items = [];
+    for (const row of configs ?? []) {
+      const key = row.seasonal_key;
+      const { count, error: tErr } = await supabaseAdmin
+        .from("trips")
+        .select("id", { count: "exact", head: true })
+        .eq("seasonal_name", key)
+        .eq("is_seasonal", true)
+        .or("status.eq.active,status.is.null");
+      if (tErr) throw tErr;
+      if ((count ?? 0) > 0) {
+        items.push({
+          key,
+          label_el: row.nav_label_el,
+          label_en: row.nav_label_en,
+        });
+      }
+    }
+    res.json({ items });
+  } catch (err) {
+    console.error("[seasonal-nav]", err);
+    res.json({ items: [] });
+  }
+});
+
 app.post("/api/track-click", trackClickLimiter, async (req, res) => {
   const parsed = trackClickSchema.safeParse(req.body ?? {});
   if (!parsed.success) {
@@ -415,7 +480,7 @@ app.post("/api/track-click", trackClickLimiter, async (req, res) => {
   if (!supabaseAdmin) {
     res.status(503).json({
       error:
-        "Analytics is not configured. Set VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
+        "Analytics is not configured. Set VITE_SUPABASE_URL or SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
     });
     return;
   }

@@ -3,6 +3,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import {
   Controller,
   useController,
@@ -13,7 +14,7 @@ import {
 import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabaseClient";
-import { postTrip, putTrip } from "@/lib/adminApi";
+import { getAdminSeasonalConfigs, postTrip, putTrip } from "@/lib/adminApi";
 import { isHtmlEmpty } from "@/lib/isHtmlEmpty";
 import {
   formStepsToDbPayload,
@@ -107,8 +108,17 @@ function buildTripFormSchema(t: (key: string) => string) {
       gallery: z.array(z.string()).max(4),
       price_num: z.number().nullable(),
       duration_days: z.number().int().nullable(),
+      is_seasonal: z.boolean(),
+      seasonal_name: z.string().nullable(),
     })
     .superRefine((data, ctx) => {
+      if (data.is_seasonal && (!data.seasonal_name || !String(data.seasonal_name).trim())) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: t("admin.tripSeasonalRequired"),
+          path: ["seasonal_name"],
+        });
+      }
       if (!data.hasEnglish) return;
       if (!data.title.trim()) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: fieldReq, path: ["title"] });
@@ -183,6 +193,11 @@ function buildTripPayload(values: TripFormValues) {
     tags_el: tagsEl,
     price_num: coercePayloadNumber(values.price_num),
     duration_days: coercePayloadInt(values.duration_days),
+    is_seasonal: values.is_seasonal,
+    seasonal_name:
+      values.is_seasonal && values.seasonal_name?.trim()
+        ? values.seasonal_name.trim()
+        : null,
     image: values.image,
     gallery: (() => {
       const g = values.gallery.map((s) => s.trim()).filter(Boolean).slice(0, 4);
@@ -276,10 +291,13 @@ const defaultForm = (): TripFormValues => ({
   gallery: [],
   price_num: null,
   duration_days: null,
+  is_seasonal: false,
+  seasonal_name: null,
 });
 
 export function TripEditDialog({ tripId, open, onClose }: Props) {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const { t } = useLanguage();
   const [tab, setTab] = useState<"el" | "en">("el");
   const langTabsScrollAnchorRef = useRef<HTMLDivElement>(null);
@@ -308,11 +326,18 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
     enabled: open && !!tripId && !isCreate,
   });
 
+  const seasonalConfigsQ = useQuery({
+    queryKey: ["admin-seasonal-configs"],
+    queryFn: getAdminSeasonalConfigs,
+    enabled: open,
+  });
+
   const {
     control,
     handleSubmit,
     reset,
     setFocus,
+    setValue,
     getValues,
     formState: { errors },
   } = useForm<TripFormValues>({
@@ -327,6 +352,10 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
   const { ref: transportModeRef, ...transportModeFieldRest } = transportModeField;
 
   const hasEnglishOn = useWatch({ control, name: "hasEnglish" });
+  const isSeasonalOn = useWatch({ control, name: "is_seasonal" });
+
+  const activeSeasonalConfigs =
+    seasonalConfigsQ.data?.configs.filter((c) => c.is_active) ?? [];
 
   useEffect(() => {
     if (open) setTab("el");
@@ -384,6 +413,11 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
       price_num: typeof priceRaw === "number" && Number.isFinite(priceRaw) ? priceRaw : null,
       duration_days:
         typeof durRaw === "number" && Number.isFinite(durRaw) ? Math.trunc(durRaw) : null,
+      is_seasonal: Boolean(row.is_seasonal),
+      seasonal_name:
+        row.seasonal_name != null && String(row.seasonal_name).trim()
+          ? String(row.seasonal_name).trim()
+          : null,
     });
   }, [q.data, reset]);
 
@@ -399,6 +433,8 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
     onSuccess: () => {
       toast.success(t("admin.tripSaved"));
       void qc.invalidateQueries({ queryKey: ["admin-trips"] });
+      void qc.invalidateQueries({ queryKey: ["admin-seasonal-configs"] });
+      void qc.invalidateQueries({ queryKey: ["seasonal-nav"] });
       if (!isCreate) {
         void qc.invalidateQueries({ queryKey: ["admin-trip", tripId] });
       }
@@ -677,6 +713,83 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                         </div>
                       )}
                     />
+                  </div>
+                  <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 sm:col-span-2 dark:border-white/10 dark:bg-zinc-950/50">
+                    {seasonalConfigsQ.isError ? (
+                      <p className="text-xs text-destructive" role="alert">
+                        {seasonalConfigsQ.error instanceof Error
+                          ? seasonalConfigsQ.error.message
+                          : String(seasonalConfigsQ.error)}
+                      </p>
+                    ) : null}
+                    <div className="flex flex-row flex-wrap items-center justify-between gap-3">
+                      <p className="text-sm font-medium text-slate-900 dark:text-zinc-100">
+                        {t("admin.tripIsSeasonal")}
+                      </p>
+                      <Controller
+                        name="is_seasonal"
+                        control={control}
+                        render={({ field }) => (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-slate-600 dark:text-zinc-300">
+                              {field.value ? t("admin.tripStatusActive") : t("admin.tripStatusInactive")}
+                            </span>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={(on) => {
+                                field.onChange(on);
+                                if (!on) setValue("seasonal_name", null);
+                              }}
+                              aria-label={t("admin.tripIsSeasonal")}
+                            />
+                          </div>
+                        )}
+                      />
+                    </div>
+                    {isSeasonalOn ? (
+                      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+                        <div className={cn(fieldClass("seasonal_name"), "min-w-0 flex-1 space-y-2")}>
+                          <Label htmlFor="trip-seasonal-name">{t("admin.tripSeasonalName")}</Label>
+                          <Controller
+                            name="seasonal_name"
+                            control={control}
+                            render={({ field }) => (
+                              <select
+                                id="trip-seasonal-name"
+                                className={cn(
+                                  tripInputClass,
+                                  "flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 shadow-sm",
+                                )}
+                                value={field.value ?? ""}
+                                onChange={(e) =>
+                                  field.onChange(e.target.value ? e.target.value : null)
+                                }
+                              >
+                                <option value="">{t("admin.tripSeasonalPlaceholder")}</option>
+                                {activeSeasonalConfigs.map((c) => (
+                                  <option key={c.seasonal_key} value={c.seasonal_key}>
+                                    {c.nav_label_el} · {c.nav_label_en}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                          />
+                          {errors.seasonal_name ? (
+                            <p className="mt-1 text-xs text-destructive">
+                              {errors.seasonal_name.message}
+                            </p>
+                          ) : null}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="shrink-0"
+                          onClick={() => navigate("/admin/navigation")}
+                        >
+                          {t("admin.tripAddSeasonNav")}
+                        </Button>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
 

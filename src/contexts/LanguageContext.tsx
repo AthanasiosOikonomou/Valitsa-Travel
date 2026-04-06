@@ -77,6 +77,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "card.moreDuration": "More {duration} Trips",
     "card.moreType": "More {type} Trips",
     "card.trip": "Trip",
+    "card.seasonalFallback": "Seasonal",
 
     // Trip Detail
     "detail.startingFrom": "Starting from",
@@ -204,6 +205,46 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.widgetInquiriesHint": "Open inquiry inbox",
     "admin.tripsTitle": "Trips",
     "admin.tripsSubtitle": "Manage listings and analytics.",
+    "admin.navigationTitle": "Navigation",
+    "admin.navigationSubtitle": "Seasonal labels and navbar order.",
+    "admin.navigationOrphansHeading": "Keys from trips without a config yet",
+    "admin.navigationOrphansHint":
+      "These seasonal keys are stored on trips but are not in the nav config yet. Add labels to show them in the navbar.",
+    "admin.navigationOrphansEmpty":
+      "No orphan seasonal keys. All trip values have a matching config.",
+    "admin.navigationConfigsHeading": "Seasonal configs",
+    "admin.navigationConfigsEmpty":
+      "No seasonal configs yet. Use Add New Season above, or add labels for a trip key in the section below.",
+    "admin.navigationAddSeasonButton": "Add New Season",
+    "admin.navigationNewSeasonTitle": "New season",
+    "admin.navigationNewSeasonDesc":
+      "Create a seasonal key and labels for the navbar and trip editor.",
+    "admin.navigationNewSeasonKey": "Unique key (slug)",
+    "admin.navigationNewSeasonKeyPlaceholder": "summer-2026",
+    "admin.navigationKeyInvalid":
+      "Use lowercase letters, numbers, hyphens, or underscores only. No spaces.",
+    "admin.navigationKey": "Key",
+    "admin.navigationLabelEl": "Label (Greek)",
+    "admin.navigationLabelEn": "Label (English)",
+    "admin.navigationDisplayOrder": "Display order",
+    "admin.navigationActive": "Active",
+    "admin.navigationCreate": "Create config",
+    "admin.navigationSave": "Save",
+    "admin.navigationCreated": "Config created",
+    "admin.navigationUpdated": "Config updated",
+    "admin.navigationSaveFailed": "Could not save config",
+    "admin.navigationLoadErrorTitle": "Could not load navigation settings",
+    "admin.navigationLoadErrorHint":
+      "If this persists, check the API logs. For missing tables, run the SQL migration in Supabase (see hint below when applicable).",
+    "admin.navigationLoadErrorHintTableMissing":
+      "Your Supabase credentials are working. The seasonal tables are not created yet. In Supabase: SQL → New query → paste the file supabase/migrations/20260406120000_seasonal_navigation.sql from this repository → Run. Then refresh this page.",
+    "admin.navigationLoadErrorHintEnv":
+      "The API cannot use Supabase: set VITE_SUPABASE_URL or SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in the project root .env or server/.env, then restart the Node API (npm run dev or node server/index.js).",
+    "admin.tripIsSeasonal": "Seasonal trip",
+    "admin.tripSeasonalName": "Season",
+    "admin.tripSeasonalPlaceholder": "Choose a season",
+    "admin.tripSeasonalRequired": "Select a season when seasonal mode is on.",
+    "admin.tripAddSeasonNav": "Add new season",
     "admin.leadsTitle": "Inquiries",
     "admin.leadsSubtitle": "Inquiries and follow-ups.",
     "admin.catalog": "Catalog",
@@ -304,7 +345,8 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripTagsEn": "Tags (English)",
     "admin.tripArrayHint": "Type and press Enter",
     "admin.tripProgramMinDay": "Add at least one itinerary day.",
-    "admin.tripProgramNeedsContent": "Add a title or description for at least one day.",
+    "admin.tripProgramNeedsContent":
+      "Add a title or description for at least one day.",
     "admin.tripIncludedMin": "Add at least one included item.",
     "admin.inbox": "Inbox",
     "admin.inquiry": "Inquiry",
@@ -321,8 +363,10 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.signingIn": "Signing in…",
     "admin.signIn": "Sign in",
     "admin.unauthorizedToast": "Unauthorized: admin access required",
-    "admin.sessionExpiredToast": "Your session has expired. Please sign in again.",
-    "admin.forbiddenAccessToast": "Access denied. Admin privileges are required. You have been signed out.",
+    "admin.sessionExpiredToast":
+      "Your session has expired. Please sign in again.",
+    "admin.forbiddenAccessToast":
+      "Access denied. Admin privileges are required. You have been signed out.",
     "admin.signInFailed": "Sign in failed",
     "admin.close": "Close",
     "admin.activityFeed": "Activity",
@@ -353,7 +397,8 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.editor.attachFailed": "Upload failed. Please try again.",
     "admin.inquiryAttachmentDownload": "Download",
     "admin.inquiryAttachmentLinkLoading": "Preparing link…",
-    "admin.inquiryAttachmentDownloadFailed": "Could not open the file. Please try again.",
+    "admin.inquiryAttachmentDownloadFailed":
+      "Could not open the file. Please try again.",
     "admin.inquiryAttachmentPreviewTitle": "Preview",
     "admin.inquiryAttachmentPreviewTooltip": "Preview",
     "admin.inquiryAttachmentPreviewDownloadAria": "Download attachment",
@@ -365,14 +410,18 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.inquiryAttachmentPendingLabel": "Pending attachments",
     "admin.inquiryAttachmentRemove": "Remove",
     "admin.inquiryAttachmentUploading": "Uploading…",
-    "admin.inquiryAttachmentErrMaxFiles": "You can attach up to 5 files per comment.",
-    "admin.inquiryAttachmentErrFileTooLarge": "Each file must be at most 10 MB.",
-    "admin.inquiryAttachmentErrTotalTooLarge": "Total size of attachments must be at most 50 MB.",
+    "admin.inquiryAttachmentErrMaxFiles":
+      "You can attach up to 5 files per comment.",
+    "admin.inquiryAttachmentErrFileTooLarge":
+      "Each file must be at most 10 MB.",
+    "admin.inquiryAttachmentErrTotalTooLarge":
+      "Total size of attachments must be at most 50 MB.",
     "admin.inquiryAttachmentAddMore": "Add more files",
     "admin.inquiryAttachmentRemovePending": "Remove from queue",
     "admin.inquiryAttachmentDeleteSaved": "Delete attachment",
     "admin.inquiryAttachmentUploadProgress": "Upload progress",
-    "admin.inquiryAttachmentUploadBatchFailed": "Upload failed. Please try again.",
+    "admin.inquiryAttachmentUploadBatchFailed":
+      "Upload failed. Please try again.",
     "admin.inquiryAttachmentDeleteFailed": "Could not delete the attachment.",
     "admin.inquiryQuickPhone": "Called by phone",
     "admin.inquiryQuickEmail": "Offer email sent",
@@ -452,6 +501,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "card.moreDuration": "Περισσότερα {duration} Ταξίδια",
     "card.moreType": "Περισσότερα {type} Ταξίδια",
     "card.trip": "Ταξίδι",
+    "card.seasonalFallback": "Εποχιακό",
 
     // Trip Detail
     "detail.startingFrom": "Από",
@@ -579,6 +629,46 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.widgetInquiriesHint": "Άνοιγμα εισερχομένων",
     "admin.tripsTitle": "Ταξίδια",
     "admin.tripsSubtitle": "Διαχείριση καταχωρίσεων και αναλυτικών.",
+    "admin.navigationTitle": "Πλοήγηση",
+    "admin.navigationSubtitle": "Ετικέτες εποχών και σειρά στη μπάρα.",
+    "admin.navigationOrphansHeading": "Κλειδιά από ταξίδια χωρίς ρύθμιση ακόμα",
+    "admin.navigationOrphansHint":
+      "Αυτά τα κλειδιά υπάρχουν σε ταξίδια αλλά όχι στη ρύθμιση πλοήγησης. Προσθέστε ετικέτες για εμφάνιση στη μπάρα.",
+    "admin.navigationOrphansEmpty": "Δεν υπάρχουν ορφανά εποχιακά κλειδιά.",
+    "admin.navigationConfigsHeading": "Ρυθμίσεις εποχών",
+    "admin.navigationConfigsEmpty":
+      "Δεν υπάρχουν ρυθμίσεις. Χρησιμοποιήστε «Προσθήκη Νέας Εποχής» παραπάνω ή προσθέστε ετικέτες για κλειδί ταξιδιού στην ενότητα παρακάτω.",
+    "admin.navigationAddSeasonButton": "Προσθήκη Νέας Εποχής",
+    "admin.navigationNewSeasonTitle": "Νέα εποχή",
+    "admin.navigationNewSeasonDesc":
+      "Δημιουργία κλειδιού εποχής και ετικετών για τη μπάρα και το επεξεργαστή ταξιδιών.",
+    "admin.navigationNewSeasonKey": "Μοναδικό κλειδί (slug)",
+    "admin.navigationNewSeasonKeyPlaceholder": "summer-2026",
+    "admin.navigationKeyInvalid":
+      "Χρησιμοποιήστε μόνο πεζά γράμματα, αριθμούς, παύλες ή κάτω παύλες. Χωρίς κενά.",
+    "admin.navigationKey": "Κλειδί",
+    "admin.navigationLabelEl": "Ετικέτα (ελληνικά)",
+    "admin.navigationLabelEn": "Ετικέτα (αγγλικά)",
+    "admin.navigationDisplayOrder": "Σειρά εμφάνισης",
+    "admin.navigationActive": "Ενεργό",
+    "admin.navigationCreate": "Δημιουργία",
+    "admin.navigationSave": "Αποθήκευση",
+    "admin.navigationCreated": "Η ρύθμιση δημιουργήθηκε",
+    "admin.navigationUpdated": "Η ρύθμιση ενημερώθηκε",
+    "admin.navigationSaveFailed": "Αποτυχία αποθήκευσης",
+    "admin.navigationLoadErrorTitle": "Αποτυχία φόρτωσης ρυθμίσεων πλοήγησης",
+    "admin.navigationLoadErrorHint":
+      "Αν συνεχίζει, ελέγξτε τα logs του API. Για ελλιπείς πίνακες, εκτελέστε το SQL migration στο Supabase.",
+    "admin.navigationLoadErrorHintTableMissing":
+      "Τα διαπιστευτήρια Supabase λειτουργούν. Οι εποχιακοί πίνακες δεν έχουν δημιουργηθεί ακόμα. Στο Supabase: SQL → Νέο ερώτημα → επικολλήστε το αρχείο supabase/migrations/20260406120000_seasonal_navigation.sql από αυτό το repo → Εκτέλεση. Μετά ανανεώστε τη σελίδα.",
+    "admin.navigationLoadErrorHintEnv":
+      "Το API δεν μπορεί να χρησιμοποιήσει το Supabase: ορίστε VITE_SUPABASE_URL ή SUPABASE_URL και SUPABASE_SERVICE_ROLE_KEY στο .env στη ρίζα ή στο server/.env και επανεκκινήστε το Node API.",
+    "admin.tripIsSeasonal": "Εποχιακό ταξίδι",
+    "admin.tripSeasonalName": "Εποχή",
+    "admin.tripSeasonalPlaceholder": "Επιλέξτε εποχή",
+    "admin.tripSeasonalRequired":
+      "Επιλέξτε εποχή όταν είναι ενεργή η εποχιακή λειτουργία.",
+    "admin.tripAddSeasonNav": "Νέα εποχή",
     "admin.leadsTitle": "Αιτήματα",
     "admin.leadsSubtitle": "Αιτήματα και παρακολούθηση.",
     "admin.catalog": "Κατάλογος",
@@ -679,8 +769,10 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripTagsEn": "Ετικέτες (αγγλικά)",
     "admin.tripArrayHint": "Πληκτρολογήστε και Enter",
     "admin.tripProgramMinDay": "Προσθέστε τουλάχιστον μία ημέρα στο πρόγραμμα.",
-    "admin.tripProgramNeedsContent": "Συμπληρώστε τίτλο ή περιγραφή για τουλάχιστον μία ημέρα.",
-    "admin.tripIncludedMin": "Προσθέστε τουλάχιστον ένα στοιχείο «περιλαμβάνονται».",
+    "admin.tripProgramNeedsContent":
+      "Συμπληρώστε τίτλο ή περιγραφή για τουλάχιστον μία ημέρα.",
+    "admin.tripIncludedMin":
+      "Προσθέστε τουλάχιστον ένα στοιχείο «περιλαμβάνονται».",
     "admin.inbox": "Εισερχόμενα",
     "admin.inquiry": "Αίτημα",
     "admin.from": "Από",
@@ -697,8 +789,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.signIn": "Σύνδεση",
     "admin.unauthorizedToast":
       "Μη εξουσιοδοτημένος: απαιτείται ρόλος διαχειριστή",
-    "admin.sessionExpiredToast":
-      "Η συνεδρία σας έληξε. Συνδεθείτε ξανά.",
+    "admin.sessionExpiredToast": "Η συνεδρία σας έληξε. Συνδεθείτε ξανά.",
     "admin.forbiddenAccessToast":
       "Μη εξουσιοδοτημένη πρόσβαση. Έχετε αποσυνδεθεί.",
     "admin.signInFailed": "Η σύνδεση απέτυχε",
@@ -728,30 +819,36 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.editor.linkPrompt": "Επικολλήστε ή πληκτρολογήστε URL",
     "admin.editor.attachFile": "Επισύναψη αρχείου",
     "admin.editor.attachUploaded": "Το αρχείο προστέθηκε",
-    "admin.editor.attachFailed": "Η μεταφόρτωση απέτυχε. Παρακαλώ δοκιμάστε ξανά.",
+    "admin.editor.attachFailed":
+      "Η μεταφόρτωση απέτυχε. Παρακαλώ δοκιμάστε ξανά.",
     "admin.inquiryAttachmentDownload": "Λήψη",
     "admin.inquiryAttachmentLinkLoading": "Προετοιμασία συνδέσμου…",
-    "admin.inquiryAttachmentDownloadFailed": "Δεν ήταν δυνατό το άνοιγμα του αρχείου. Δοκιμάστε ξανά.",
+    "admin.inquiryAttachmentDownloadFailed":
+      "Δεν ήταν δυνατό το άνοιγμα του αρχείου. Δοκιμάστε ξανά.",
     "admin.inquiryAttachmentPreviewTitle": "Προεπισκόπηση",
     "admin.inquiryAttachmentPreviewTooltip": "Προεπισκόπηση",
     "admin.inquiryAttachmentPreviewDownloadAria": "Λήψη συνημμένου",
     "admin.inquiryAttachmentPreviewCloseAria": "Κλείσιμο προεπισκόπησης",
     "admin.inquiryAttachmentPreviewPrevAria": "Προηγούμενο συνημμένο",
     "admin.inquiryAttachmentPreviewNextAria": "Επόμενο συνημμένο",
-    "admin.inquiryAttachmentPreviewLoadFailed": "Δεν ήταν δυνατή η φόρτωση της προεπισκόπησης.",
+    "admin.inquiryAttachmentPreviewLoadFailed":
+      "Δεν ήταν δυνατή η φόρτωση της προεπισκόπησης.",
     "admin.inquiryAttachmentGalleryLabel": "Συνημμένα αρχεία",
     "admin.inquiryAttachmentPendingLabel": "Συνημμένα προς αποστολή",
     "admin.inquiryAttachmentRemove": "Αφαίρεση",
     "admin.inquiryAttachmentUploading": "Μεταφόρτωση…",
     "admin.inquiryAttachmentErrMaxFiles": "Μέχρι 5 αρχεία ανά σχόλιο.",
     "admin.inquiryAttachmentErrFileTooLarge": "Κάθε αρχείο έως 10 MB.",
-    "admin.inquiryAttachmentErrTotalTooLarge": "Συνολικό μέγεθος συνημμένων έως 50 MB.",
+    "admin.inquiryAttachmentErrTotalTooLarge":
+      "Συνολικό μέγεθος συνημμένων έως 50 MB.",
     "admin.inquiryAttachmentAddMore": "Προσθήκη περισσότερων",
     "admin.inquiryAttachmentRemovePending": "Κατάργηση από την ουρά",
     "admin.inquiryAttachmentDeleteSaved": "Κατάργηση συνημμένου",
     "admin.inquiryAttachmentUploadProgress": "Πρόοδος μεταφόρτωσης",
-    "admin.inquiryAttachmentUploadBatchFailed": "Η μεταφόρτωση απέτυχε. Δοκιμάστε ξανά.",
-    "admin.inquiryAttachmentDeleteFailed": "Δεν ήταν δυνατή η κατάργηση του συνημμένου.",
+    "admin.inquiryAttachmentUploadBatchFailed":
+      "Η μεταφόρτωση απέτυχε. Δοκιμάστε ξανά.",
+    "admin.inquiryAttachmentDeleteFailed":
+      "Δεν ήταν δυνατή η κατάργηση του συνημμένου.",
     "admin.inquiryQuickPhone": "Επικοινώνησα τηλεφωνικά",
     "admin.inquiryQuickEmail": "Στάλθηκε email προσφοράς",
     "admin.inquiryQuickFollowUp": "Προγραμματίστηκε επανεπικοινωνία",

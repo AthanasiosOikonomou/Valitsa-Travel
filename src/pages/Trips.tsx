@@ -22,6 +22,7 @@ import type { Trip } from "@/types/Trip";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useResolvedDarkMode } from "@/hooks/useResolvedDarkMode";
 import TripDetail from "@/components/TripDetail";
+import { SeasonalTripBadge } from "@/components/SeasonalTripBadge";
 import ContactModal from "@/components/ContactModal";
 import Seo from "@/components/Seo";
 import TermsModal from "@/components/TermsModal";
@@ -193,6 +194,7 @@ const TripsContent = () => {
   };
 
   const activeFilter = searchParams.get("filter");
+  const seasonalParam = (searchParams.get("seasonal") ?? "").trim();
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [termsOpen, setTermsOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
@@ -290,6 +292,14 @@ const TripsContent = () => {
       : "luxury travel packages, curated tours, destinations, yacht charters, private estates, cultural experiences, destination travel";
 
   const scopedTrips = useMemo(() => {
+    if (seasonalParam) {
+      return trips.filter(
+        (trip) =>
+          Boolean(trip.is_seasonal) &&
+          trip.seasonal_name != null &&
+          String(trip.seasonal_name) === seasonalParam,
+      );
+    }
     if (activeFilter === "internal") {
       return trips.filter((trip) => trip.country === "Greece");
     }
@@ -297,7 +307,7 @@ const TripsContent = () => {
       return trips.filter((trip) => trip.country !== "Greece");
     }
     return trips;
-  }, [activeFilter, trips]);
+  }, [activeFilter, seasonalParam, trips]);
 
   // Helper to get the correct field based on language
   const getField = (trip, field) => {
@@ -384,10 +394,11 @@ const TripsContent = () => {
     [filterMetadata.globalPriceBounds, filterState, lang, scopedTrips],
   );
   const preservedDurations = useMemo(() => {
+    if (seasonalParam) return [] as number[];
     if (activeFilter === "daily") return [1];
     if (activeFilter === "twoday") return [2];
     return [] as number[];
-  }, [activeFilter]);
+  }, [activeFilter, seasonalParam]);
   const normalizedFilterState = useMemo(
     () =>
       sanitizeTripFilterState(
@@ -633,7 +644,7 @@ const TripsContent = () => {
   const resetFilters = () => {
     setSelectedTrip(null);
     setMobileFiltersOpen(false);
-    navigate("/trips", { replace: true });
+    navigate({ pathname: "/trips", search: "" }, { replace: true });
     dispatch({
       type: "replace",
       value: createInitialTripFilterState(scopedTrips, filterMetadata, null),
@@ -1141,6 +1152,9 @@ const TripResultCard = ({
               </span>
             ))}
         </div>
+        {trip.is_seasonal && trip.seasonal_name?.trim() ? (
+          <SeasonalTripBadge seasonKey={trip.seasonal_name} />
+        ) : null}
       </div>
 
       <div className="flex-1 p-5 md:p-6 flex flex-col justify-between min-h-0">

@@ -28,6 +28,8 @@ const TRIP_LIST_FIELDS = [
   "included_el",
   "not_included",
   "not_included_el",
+  "is_seasonal",
+  "seasonal_name",
 ];
 
 export interface TripFilters {

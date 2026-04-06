@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { Inbox, LayoutDashboard, Map, Sparkles } from "lucide-react";
+import { Compass, Inbox, LayoutDashboard, Map, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -28,6 +28,10 @@ export function AdminNavLinks({ onNavigate, className }: NavLinksProps) {
       <NavLink to="/admin/trips" className={navLinkClassName} onClick={() => onNavigate?.()}>
         <Map className="h-4 w-4 opacity-80" aria-hidden />
         {t("admin.tripsTitle")}
+      </NavLink>
+      <NavLink to="/admin/navigation" className={navLinkClassName} onClick={() => onNavigate?.()}>
+        <Compass className="h-4 w-4 opacity-80" aria-hidden />
+        {t("admin.navigationTitle")}
       </NavLink>
       <NavLink to="/admin/leads" className={navLinkClassName} onClick={() => onNavigate?.()}>
         <Inbox className="h-4 w-4 opacity-80" aria-hidden />

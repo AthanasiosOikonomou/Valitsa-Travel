@@ -14,6 +14,7 @@
     "start:api": "node server/index.js",
     "start:passenger": "node passenger_entry.cjs",
     "verify:deploy": "node scripts/verify-passenger-deploy.mjs",
+    "check:supabase-env": "node scripts/check-supabase-api-env.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "dev:client": "vite"

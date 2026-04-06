@@ -3,16 +3,18 @@ import react from "@vitejs/plugin-react";
 import dotenv from "dotenv";
 import path from "path";
 
-// Match server/index.js so API_PORT in server/.env is visible here (fixes /api proxy → wrong port → 404).
+// Match server/index.js port resolution (PORT || API_PORT || 8787) so /api proxy hits the same process.
 dotenv.config({ path: path.join(__dirname, ".env") });
 dotenv.config({ path: path.join(__dirname, "server/.env") });
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const prod = mode === "production";
+  const apiListenPort =
+    process.env.PORT || process.env.API_PORT || "8787";
   const apiDevTarget =
     process.env.VITE_API_PROXY_TARGET ??
-    `http://127.0.0.1:${process.env.API_PORT ?? "8787"}`;
+    `http://127.0.0.1:${apiListenPort}`;
 
   const logApiProxyPlugin = {
     name: "valitsa-log-api-proxy",
@@ -30,7 +32,7 @@ export default defineConfig(({ mode }) => {
     host: "localhost",
     port: 5180,
     strictPort: false,
-    // Forward /api to Express (npm run dev:api on API_PORT, default 8787) so fetch('/api/...') works in dev.
+    // Forward /api to Express (same port as server: PORT || API_PORT || 8787) so fetch('/api/...') works in dev.
     proxy: {
       "/api": {
         target: apiDevTarget,
