@@ -439,24 +439,11 @@ app.get("/api/seasonal-nav", seasonalNavLimiter, async (_req, res) => {
       }
       throw cErr;
     }
-    const items = [];
-    for (const row of configs ?? []) {
-      const key = row.seasonal_key;
-      const { count, error: tErr } = await supabaseAdmin
-        .from("trips")
-        .select("id", { count: "exact", head: true })
-        .eq("seasonal_name", key)
-        .eq("is_seasonal", true)
-        .or("status.eq.active,status.is.null");
-      if (tErr) throw tErr;
-      if ((count ?? 0) > 0) {
-        items.push({
-          key,
-          label_el: row.nav_label_el,
-          label_en: row.nav_label_en,
-        });
-      }
-    }
+    const items = (configs ?? []).map((row) => ({
+      key: row.seasonal_key,
+      label_el: row.nav_label_el,
+      label_en: row.nav_label_en,
+    }));
     res.json({ items });
   } catch (err) {
     console.error("[seasonal-nav]", err);

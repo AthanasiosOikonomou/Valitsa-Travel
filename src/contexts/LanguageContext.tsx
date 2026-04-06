@@ -22,12 +22,15 @@ const translations: Record<Lang, Record<string, string>> = {
     "nav.terms": "Terms & Conditions",
     "nav.daily": "Daily Trips",
     "nav.twoday": "2-Day Trips",
+    "nav.multiday": "Multiday",
     "nav.internal": "Domestic Trips",
     "nav.external": "International Trips",
     "nav.contactBtn": "Contact",
     "nav.toggleLanguage": "Toggle language",
     "nav.toggleTheme": "Toggle theme",
     "nav.menu": "Menu",
+    "nav.seasonal": "Seasonal",
+    "nav.seasonalAria": "Seasonal trips menu",
 
     // Common
     "common.close": "Close",
@@ -445,12 +448,15 @@ const translations: Record<Lang, Record<string, string>> = {
     "nav.terms": "Όροι & Προϋποθέσεις",
     "nav.daily": "Ημερήσιες Εκδρομές",
     "nav.twoday": "2ήμερες Εκδρομές",
+    "nav.multiday": "Πολυήμερες",
     "nav.internal": "Εκδρομές Εσωτερικού",
     "nav.external": "Εκδρομές Εξωτερικού",
     "nav.contactBtn": "Επικοινωνία",
     "nav.toggleLanguage": "Αλλαγή γλώσσας",
     "nav.toggleTheme": "Αλλαγή θέματος",
     "nav.menu": "Μενού",
+    "nav.seasonal": "Εποχιακά",
+    "nav.seasonalAria": "Μενού εποχιακών εκδρομών",
 
     // Common
     "common.close": "Κλείσιμο",

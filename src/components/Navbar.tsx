@@ -1,4 +1,4 @@
-import { Moon, Sun, Globe } from "lucide-react";
+import { Moon, Sun, Globe, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -17,6 +17,7 @@ interface NavbarProps {
 const navCategories = [
   { key: "nav.daily", filter: "daily" },
   { key: "nav.twoday", filter: "twoday" },
+  { key: "nav.multiday", filter: "multiday" },
   { key: "nav.internal", filter: "internal" },
   { key: "nav.external", filter: "external" },
 ];
@@ -25,9 +26,13 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
   const { lang, setLang, t } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
+  const [seasonalDropdownOpen, setSeasonalDropdownOpen] = useState(false);
+  const [seasonalAccordionOpen, setSeasonalAccordionOpen] = useState(false);
   const contactOwnedBlurRef = useRef(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuToggleRef = useRef<HTMLButtonElement>(null);
+  const seasonalTriggerRef = useRef<HTMLButtonElement>(null);
+  const seasonalPanelRef = useRef<HTMLDivElement>(null);
   const { pathname, search } = useLocation();
   const navigate = useNavigate();
 
@@ -36,6 +41,8 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
     queryFn: fetchSeasonalNavItems,
     staleTime: 5 * 60 * 1000,
   });
+
+  const hasSeasonalMenu = showTrips && seasonalItems.length > 0;
 
   const scrollToPageTop = () => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -52,6 +59,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
       window.dispatchEvent(new Event("valitsa:scroll-trips-top"));
       scrollToPageTop();
       setMenuOpen(false);
+      setSeasonalDropdownOpen(false);
       return;
     }
 
@@ -60,6 +68,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
     navigate(`/trips${targetSearch}`);
 
     setMenuOpen(false);
+    setSeasonalDropdownOpen(false);
   };
 
   const handleSeasonalClick = (seasonKey: string) => {
@@ -71,26 +80,47 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
       window.dispatchEvent(new Event("valitsa:scroll-trips-top"));
       scrollToPageTop();
       setMenuOpen(false);
+      setSeasonalDropdownOpen(false);
       return;
     }
 
     navigate(`/trips${targetSearch}`);
     setMenuOpen(false);
+    setSeasonalDropdownOpen(false);
   };
 
   useEffect(() => {
-    if (!menuOpen && !contactOpen) return;
+    if (!seasonalDropdownOpen) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (
+        seasonalTriggerRef.current?.contains(target) ||
+        seasonalPanelRef.current?.contains(target)
+      ) {
+        return;
+      }
+      setSeasonalDropdownOpen(false);
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [seasonalDropdownOpen]);
+
+  useEffect(() => {
+    if (!menuOpen && !contactOpen && !seasonalDropdownOpen) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setMenuOpen(false);
         setContactOpen(false);
+        setSeasonalDropdownOpen(false);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [menuOpen, contactOpen]);
+  }, [menuOpen, contactOpen, seasonalDropdownOpen]);
 
   useEffect(() => {
     if (!contactOpen) return;
@@ -137,6 +167,10 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
     };
   }, [menuOpen]);
 
+  useEffect(() => {
+    if (!menuOpen) setSeasonalAccordionOpen(false);
+  }, [menuOpen]);
+
   return (
     <>
       {/* Main nav */}
@@ -146,7 +180,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
         className="fixed top-2 sm:top-0 left-0 right-0 z-[100] px-2 py-3 sm:px-4 md:px-8 md:py-4 transform-gpu [backface-visibility:hidden]"
       >
-        <div className="premium-panel navbar-shell mx-auto grid w-full max-w-screen-2xl grid-cols-[1fr_auto] items-center gap-3 rounded-[1.75rem] px-3 py-2.5 sm:px-4 md:px-6 md:py-4 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-4 bg-white/70 dark:bg-slate-900/65 backdrop-blur-md transform-gpu [backface-visibility:hidden]">
+        <div className="premium-panel navbar-shell mx-auto grid w-full max-w-[min(100%,1800px)] grid-cols-[1fr_auto] items-center gap-3 rounded-[1.75rem] px-3 py-2.5 sm:px-4 md:px-6 md:py-4 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-4 bg-white/70 dark:bg-slate-900/65 backdrop-blur-md transform-gpu [backface-visibility:hidden]">
           <Link
             to="/"
             className="shrink-0 justify-self-start"
@@ -165,34 +199,80 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
             />
           </Link>
 
-          {/* Desktop categories + seasonal — full middle column; horizontal scroll if needed (no center-clip) */}
+          {/* Desktop categories + grouped Seasonal dropdown — full middle column; horizontal scroll if needed */}
           {showTrips ? (
             <div className="hidden min-w-0 w-full lg:flex">
-              <div className="flex min-w-0 w-full flex-row flex-nowrap items-center justify-start gap-[clamp(0.5rem,1.5vw,2rem)] overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:thin]">
-                {navCategories.map((cat) => (
-                  <button
-                    key={cat.key}
-                    type="button"
-                    onClick={() => handleCategoryClick(cat.filter)}
-                    onMouseEnter={prefetchTripsRoute}
-                    onFocus={prefetchTripsRoute}
-                    className="shrink-0 whitespace-nowrap rounded-full px-3 py-2.5 text-sm font-medium text-foreground-muted hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] sm:px-4"
-                  >
-                    {t(cat.key)}
-                  </button>
-                ))}
-                {seasonalItems.map((item) => (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() => handleSeasonalClick(item.key)}
-                    onMouseEnter={prefetchTripsRoute}
-                    onFocus={prefetchTripsRoute}
-                    className="shrink-0 whitespace-nowrap rounded-full px-3 py-2.5 text-sm font-medium text-foreground-muted hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] sm:px-4"
-                  >
-                    {lang === "gr" ? item.label_el : item.label_en}
-                  </button>
-                ))}
+              {/* Seasonal dropdown must NOT live inside overflow-x-auto — that clips position:absolute panels */}
+              <div className="flex min-w-0 w-full flex-row flex-nowrap items-center justify-start gap-3">
+                <div className="flex min-w-0 flex-1 flex-row flex-nowrap items-center justify-start gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:thin]">
+                  {navCategories.map((cat) => (
+                    <button
+                      key={cat.key}
+                      type="button"
+                      onClick={() => handleCategoryClick(cat.filter)}
+                      onMouseEnter={prefetchTripsRoute}
+                      onFocus={prefetchTripsRoute}
+                      className="shrink-0 whitespace-nowrap rounded-full px-2.5 py-2.5 text-sm font-medium text-foreground-muted hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] sm:px-3"
+                    >
+                      {t(cat.key)}
+                    </button>
+                  ))}
+                </div>
+                {hasSeasonalMenu ? (
+                  <div className="relative shrink-0">
+                    <button
+                      ref={seasonalTriggerRef}
+                      type="button"
+                      onClick={() =>
+                        setSeasonalDropdownOpen((open) => !open)
+                      }
+                      onMouseEnter={prefetchTripsRoute}
+                      onFocus={prefetchTripsRoute}
+                      aria-expanded={seasonalDropdownOpen}
+                      aria-haspopup="menu"
+                      aria-label={t("nav.seasonalAria")}
+                      className="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-2.5 text-sm font-medium text-foreground-muted hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] sm:gap-1.5 sm:px-3"
+                    >
+                      {t("nav.seasonal")}
+                      <ChevronDown
+                        className={`h-4 w-4 shrink-0 transition-transform duration-200 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] ${seasonalDropdownOpen ? "rotate-180" : ""}`}
+                        aria-hidden
+                      />
+                    </button>
+                    <AnimatePresence>
+                      {seasonalDropdownOpen ? (
+                        <motion.div
+                          key="seasonal-nav-dropdown"
+                          ref={seasonalPanelRef}
+                          role="menu"
+                          initial={{ opacity: 0, y: -6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -6 }}
+                          transition={{
+                            duration: 0.2,
+                            ease: [0.22, 1, 0.36, 1],
+                          }}
+                          className="absolute right-0 top-[calc(100%+0.5rem)] z-[110] min-w-[14rem] rounded-2xl border border-foreground/15 bg-white p-2 shadow-lg dark:border-white/15 dark:bg-slate-900"
+                          style={{ boxShadow: "var(--shadow-elev-3)" }}
+                        >
+                          {seasonalItems.map((item) => (
+                            <button
+                              key={item.key}
+                              role="menuitem"
+                              type="button"
+                              onClick={() => handleSeasonalClick(item.key)}
+                              onMouseEnter={prefetchTripsRoute}
+                              onFocus={prefetchTripsRoute}
+                              className="flex w-full min-h-[44px] items-center rounded-xl px-4 py-3 text-left text-base font-medium text-foreground hover:bg-slate-100 dark:hover:bg-white/10"
+                            >
+                              {lang === "gr" ? item.label_el : item.label_en}
+                            </button>
+                          ))}
+                        </motion.div>
+                      ) : null}
+                    </AnimatePresence>
+                  </div>
+                ) : null}
               </div>
             </div>
           ) : (
@@ -309,18 +389,38 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
                     </button>
                   ))
                 : null}
-              {showTrips
-                ? seasonalItems.map((item) => (
-                    <button
-                      key={item.key}
-                      type="button"
-                      onClick={() => handleSeasonalClick(item.key)}
-                      className="px-4 py-3 rounded-2xl text-sm font-medium text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] text-left"
-                    >
-                      {lang === "gr" ? item.label_el : item.label_en}
-                    </button>
-                  ))
-                : null}
+              {hasSeasonalMenu ? (
+                <div className="flex flex-col gap-1">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSeasonalAccordionOpen((open) => !open)
+                    }
+                    aria-expanded={seasonalAccordionOpen}
+                    className="flex w-full items-center justify-between gap-2 rounded-2xl px-4 py-3 text-left text-sm font-medium text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]"
+                  >
+                    <span>{t("nav.seasonal")}</span>
+                    <ChevronDown
+                      className={`h-4 w-4 shrink-0 transition-transform duration-200 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] ${seasonalAccordionOpen ? "rotate-180" : ""}`}
+                      aria-hidden
+                    />
+                  </button>
+                  {seasonalAccordionOpen ? (
+                    <div className="ml-3 flex flex-col gap-1 border-l border-foreground/10 pl-3 dark:border-white/10">
+                      {seasonalItems.map((item) => (
+                        <button
+                          key={item.key}
+                          type="button"
+                          onClick={() => handleSeasonalClick(item.key)}
+                          className="rounded-xl px-4 py-2.5 text-left text-sm font-medium text-foreground-muted hover:bg-white/70 hover:text-foreground dark:hover:bg-white/5"
+                        >
+                          {lang === "gr" ? item.label_el : item.label_en}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
               <button
                 onClick={() => {
                   setContactOpen(true);

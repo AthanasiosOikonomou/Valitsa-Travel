@@ -85,6 +85,7 @@ const countryToContinent: Record<string, string> = {
 const filterPresets: Record<string, { selectedDurations?: number[] }> = {
   daily: { selectedDurations: [1] },
   twoday: { selectedDurations: [2] },
+  multiday: {},
   internal: {},
   external: {},
 };
@@ -164,6 +165,11 @@ export const createInitialTripFilterState = (
   activeFilter: string | null,
 ): TripFilterState => {
   const preset = activeFilter ? filterPresets[activeFilter] : undefined;
+  let selectedDurations: number[] = preset?.selectedDurations ?? [];
+  if (activeFilter === "multiday") {
+    const over2 = metadata.durations.filter((d) => d > 2);
+    selectedDurations = over2.length > 0 ? over2 : [-1];
+  }
   const seedState: TripFilterState = {
     searchQuery: "",
     priceRange: [
@@ -172,7 +178,7 @@ export const createInitialTripFilterState = (
     ],
     selectedContinents: [],
     selectedCountries: getPresetCountries(activeFilter, metadata.countries),
-    selectedDurations: preset?.selectedDurations ?? [],
+    selectedDurations,
     selectedCities: [],
     showFeatured: false,
     sortBy: "recommended",

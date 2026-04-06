@@ -397,8 +397,12 @@ const TripsContent = () => {
     if (seasonalParam) return [] as number[];
     if (activeFilter === "daily") return [1];
     if (activeFilter === "twoday") return [2];
+    if (activeFilter === "multiday") {
+      const over2 = filterMetadata.durations.filter((d) => d > 2);
+      return over2.length > 0 ? over2 : [-1];
+    }
     return [] as number[];
-  }, [activeFilter, seasonalParam]);
+  }, [activeFilter, seasonalParam, filterMetadata.durations]);
   const normalizedFilterState = useMemo(
     () =>
       sanitizeTripFilterState(

@@ -5,7 +5,8 @@ export type SeasonalNavItem = {
 };
 
 /**
- * Public endpoint — no auth. Used by the marketing navbar.
+ * Public endpoint — no auth. Returns all **active** seasonal_configs in display_order
+ * (see GET /api/seasonal-nav). Used by the marketing navbar and trip badges.
  */
 export async function fetchSeasonalNavItems(): Promise<SeasonalNavItem[]> {
   try {
