@@ -66,7 +66,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "hero.label": "Luxury Travel, Redefined",
     "hero.title": "Prepare your 'Valitsa'",
     "hero.subtitle":
-      "Handcrafted journeys to the world's most extraordinary places. Every detail curated, every moment unforgettable.",
+      "Bespoke journeys tailored to your desires. Luxury is found in the details that stay in your heart forever.",
     "hero.cta": "View All Our Trips",
     "hero.alt": "Aerial view of a serene tropical coastline",
 
@@ -496,7 +496,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "hero.label": "Πολυτελή Ταξίδια, Ξανά",
     "hero.title": "Ετοιμάστε Βαλίτσες",
     "hero.subtitle":
-      "Χειροποίητα ταξίδια στα πιο εξαιρετικά μέρη του κόσμου. Κάθε λεπτομέρεια επιμελημένη, κάθε στιγμή αξέχαστη.",
+      "Ταξίδια κομμένα και ραμμένα στα μέτρα σας. Η πολυτέλεια βρίσκεται στις λεπτομέρειες που μένουν για πάντα στην καρδιά σας.",
     "hero.cta": "Δείτε όλα τα ταξίδια μας",
     "hero.alt": "Εναέρια θέα σε ήρεμη τροπική ακτογραμμή",
 
