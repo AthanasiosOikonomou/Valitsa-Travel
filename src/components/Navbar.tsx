@@ -1,6 +1,7 @@
 import { Moon, Sun, Globe, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -48,6 +49,10 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
   const seasonalPanelRef = useRef<HTMLDivElement>(null);
   const multidayTriggerRef = useRef<HTMLButtonElement>(null);
   const multidayPanelRef = useRef<HTMLDivElement>(null);
+  const [multidayMenuPos, setMultidayMenuPos] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
   const { pathname, search } = useLocation();
   const navigate = useNavigate();
 
@@ -65,6 +70,26 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
   });
 
   const hasSeasonalMenu = showTrips && seasonalItems.length > 0;
+
+  useLayoutEffect(() => {
+    if (!multidayDropdownOpen) {
+      setMultidayMenuPos(null);
+      return;
+    }
+    const update = () => {
+      const el = multidayTriggerRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      setMultidayMenuPos({ top: r.bottom + 8, left: r.left + r.width / 2 });
+    };
+    update();
+    window.addEventListener("scroll", update, true);
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("resize", update);
+    };
+  }, [multidayDropdownOpen, lang]);
 
   const scrollToPageTop = () => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -242,7 +267,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
   }, [menuOpen]);
 
   const navLinkClass =
-    "shrink-0 whitespace-nowrap rounded-full px-2.5 py-2.5 text-sm font-medium text-foreground-muted hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] sm:px-3";
+    "shrink-0 whitespace-nowrap rounded-full px-3 py-2.5 text-sm font-medium leading-normal text-foreground-muted hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] sm:px-3.5";
 
   const isMultidayRoute =
     pathname === "/trips" && new URLSearchParams(search).get("filter") === "multiday";
@@ -288,22 +313,20 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
           {showTrips ? (
             <>
               <div className="hidden min-w-0 lg:block" aria-hidden />
-              {/* Split scroll regions so multiday’s absolute panel is not clipped by overflow-y (dropdown sits between columns). */}
-              <div className="hidden min-w-0 w-full items-center gap-2 lg:flex">
-                <div className="flex min-w-0 flex-1 flex-nowrap items-center justify-end gap-3 overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
-                  {navCategoriesBeforeMultiday.map((cat) => (
-                    <button
-                      key={cat.key}
-                      type="button"
-                      onClick={() => handleCategoryClick(cat.filter)}
-                      onMouseEnter={prefetchTripsRoute}
-                      onFocus={prefetchTripsRoute}
-                      className={navLinkClass}
-                    >
-                      {t(cat.key)}
-                    </button>
-                  ))}
-                </div>
+              {/* One row, uniform gap-3; multiday menu is portaled (fixed) so overflow-x does not clip labels or the panel. */}
+              <div className="hidden min-w-0 w-full items-center gap-3 overflow-x-auto overscroll-x-contain px-1 sm:px-2 [scrollbar-width:thin] lg:flex">
+                {navCategoriesBeforeMultiday.map((cat) => (
+                  <button
+                    key={cat.key}
+                    type="button"
+                    onClick={() => handleCategoryClick(cat.filter)}
+                    onMouseEnter={prefetchTripsRoute}
+                    onFocus={prefetchTripsRoute}
+                    className={navLinkClass}
+                  >
+                    {t(cat.key)}
+                  </button>
+                ))}
                 <div className="relative z-[120] shrink-0">
                   <button
                     ref={multidayTriggerRef}
@@ -318,7 +341,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
                     aria-haspopup="menu"
                     aria-label={t("nav.multidayAria")}
                     className={cn(
-                      "inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-2.5 text-sm font-medium hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] sm:gap-1.5 sm:px-3",
+                      "inline-flex items-center gap-1 whitespace-nowrap rounded-full px-3 py-2.5 text-sm font-medium leading-normal hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] sm:gap-1.5 sm:px-3.5",
                       isMultidayRoute
                         ? "text-foreground"
                         : "text-foreground-muted hover:text-foreground",
@@ -330,67 +353,75 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
                       aria-hidden
                     />
                   </button>
-                  <AnimatePresence>
-                    {multidayDropdownOpen ? (
-                      <motion.div
-                        key="multiday-nav-dropdown"
-                        ref={multidayPanelRef}
-                        role="menu"
-                        initial={{ opacity: 0, y: -6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -6 }}
-                        transition={{
-                          duration: 0.2,
-                          ease: [0.22, 1, 0.36, 1],
-                        }}
-                        className="absolute left-1/2 top-[calc(100%+0.5rem)] z-[130] min-w-[14rem] -translate-x-1/2 rounded-2xl border border-foreground/15 bg-white p-2 shadow-lg dark:border-white/15 dark:bg-slate-900"
-                        style={{ boxShadow: "var(--shadow-elev-3)" }}
-                      >
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={() => handleMultidayNavigate(null)}
-                          onMouseEnter={prefetchTripsRoute}
-                          onFocus={prefetchTripsRoute}
-                          className="flex w-full min-h-[44px] items-center rounded-xl px-4 py-3 text-left text-base font-medium text-foreground hover:bg-slate-100 dark:hover:bg-white/10"
+                </div>
+                {navCategoriesAfterMultiday.map((cat) => (
+                  <button
+                    key={cat.key}
+                    type="button"
+                    onClick={() => handleCategoryClick(cat.filter)}
+                    onMouseEnter={prefetchTripsRoute}
+                    onFocus={prefetchTripsRoute}
+                    className={navLinkClass}
+                  >
+                    {t(cat.key)}
+                  </button>
+                ))}
+              </div>
+              {typeof document !== "undefined"
+                ? createPortal(
+                    <AnimatePresence>
+                      {multidayDropdownOpen && multidayMenuPos ? (
+                        <motion.div
+                          key="multiday-nav-dropdown"
+                          ref={multidayPanelRef}
+                          role="menu"
+                          initial={{ opacity: 0, y: -6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -6 }}
+                          transition={{
+                            duration: 0.2,
+                            ease: [0.22, 1, 0.36, 1],
+                          }}
+                          className="fixed z-[130] min-w-[14rem] rounded-2xl border border-foreground/15 bg-white p-2 shadow-lg dark:border-white/15 dark:bg-slate-900"
+                          style={{
+                            boxShadow: "var(--shadow-elev-3)",
+                            top: multidayMenuPos.top,
+                            left: multidayMenuPos.left,
+                            transform: "translateX(-50%)",
+                          }}
                         >
-                          {t("nav.multidayAll")}
-                        </button>
-                        {multidayDurationDays.map((d) => (
                           <button
-                            key={d}
                             type="button"
                             role="menuitem"
-                            onClick={() => handleMultidayNavigate(d)}
+                            onClick={() => handleMultidayNavigate(null)}
                             onMouseEnter={prefetchTripsRoute}
                             onFocus={prefetchTripsRoute}
                             className="flex w-full min-h-[44px] items-center rounded-xl px-4 py-3 text-left text-base font-medium text-foreground hover:bg-slate-100 dark:hover:bg-white/10"
                           >
-                            {t("nav.multidayDaysOption").replace(
-                              "{n}",
-                              String(d),
-                            )}
+                            {t("nav.multidayAll")}
                           </button>
-                        ))}
-                      </motion.div>
-                    ) : null}
-                  </AnimatePresence>
-                </div>
-                <div className="flex min-w-0 flex-1 flex-nowrap items-center justify-start gap-3 overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
-                  {navCategoriesAfterMultiday.map((cat) => (
-                    <button
-                      key={cat.key}
-                      type="button"
-                      onClick={() => handleCategoryClick(cat.filter)}
-                      onMouseEnter={prefetchTripsRoute}
-                      onFocus={prefetchTripsRoute}
-                      className={navLinkClass}
-                    >
-                      {t(cat.key)}
-                    </button>
-                  ))}
-                </div>
-              </div>
+                          {multidayDurationDays.map((d) => (
+                            <button
+                              key={d}
+                              type="button"
+                              role="menuitem"
+                              onClick={() => handleMultidayNavigate(d)}
+                              onMouseEnter={prefetchTripsRoute}
+                              onFocus={prefetchTripsRoute}
+                              className="flex w-full min-h-[44px] items-center rounded-xl px-4 py-3 text-left text-base font-medium text-foreground hover:bg-slate-100 dark:hover:bg-white/10"
+                            >
+                              {t("nav.multidayDaysOption").replace(
+                                "{n}",
+                                String(d),
+                              )}
+                            </button>
+                          ))}
+                        </motion.div>
+                      ) : null}
+                    </AnimatePresence>,
+                    document.body,
+                  )
+                : null}
               <div className="hidden min-w-0 lg:block" aria-hidden />
               {hasSeasonalMenu ? (
                 <div className="relative hidden min-w-0 shrink-0 lg:block">
@@ -406,7 +437,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
                     aria-expanded={seasonalDropdownOpen}
                     aria-haspopup="menu"
                     aria-label={t("nav.seasonalAria")}
-                    className="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-2.5 text-sm font-medium text-foreground-muted hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] sm:gap-1.5 sm:px-3"
+                    className="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-3 py-2.5 text-sm font-medium leading-normal text-foreground-muted hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] sm:gap-1.5 sm:px-3.5"
                   >
                     {t("nav.seasonal")}
                     <ChevronDown
