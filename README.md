@@ -143,10 +143,10 @@ Helmet (HSTS in prod, referrer policy, CORP) · CORS allow-list (production requ
 
 This build is a deliberate **portfolio-grade** artifact: opinionated UX, disciplined security, and infrastructure you can explain in a boardroom.
 
-| Channel      | Link                                  |
-| ------------ | ------------------------------------- |
-| **LinkedIn** | `https://www.linkedin.com/in/ath-oik` |
-| **Email**    | `ath.oikonomou@hotmail.com`           |
+| Channel      | Link                                                        |
+| ------------ | ----------------------------------------------------------- |
+| **LinkedIn** | [Athanasios Oikonomou](https://www.linkedin.com/in/ath-oik) |
+| **Email**    | `ath.oikonomou@hotmail.com`                                 |
 
 ---
 
