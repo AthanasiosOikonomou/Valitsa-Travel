@@ -159,16 +159,31 @@ export const buildTripFilterMetadata = (trips: Trip[], lang: TripLang): TripFilt
   };
 };
 
+export type CreateInitialTripFilterOptions = {
+  /** When set with `filter=multiday`, seed a single duration (must exist in metadata and be > 2). */
+  multidayDays?: number | null;
+};
+
 export const createInitialTripFilterState = (
   trips: Trip[],
   metadata: TripFilterMetadata,
   activeFilter: string | null,
+  options?: CreateInitialTripFilterOptions,
 ): TripFilterState => {
   const preset = activeFilter ? filterPresets[activeFilter] : undefined;
   let selectedDurations: number[] = preset?.selectedDurations ?? [];
   if (activeFilter === "multiday") {
     const over2 = metadata.durations.filter((d) => d > 2);
-    selectedDurations = over2.length > 0 ? over2 : [-1];
+    const single = options?.multidayDays;
+    if (
+      single != null &&
+      single > 2 &&
+      metadata.durations.includes(single)
+    ) {
+      selectedDurations = [single];
+    } else {
+      selectedDurations = over2.length > 0 ? over2 : [-1];
+    }
   }
   const seedState: TripFilterState = {
     searchQuery: "",

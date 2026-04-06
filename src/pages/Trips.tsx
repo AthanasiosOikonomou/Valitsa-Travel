@@ -195,6 +195,13 @@ const TripsContent = () => {
 
   const activeFilter = searchParams.get("filter");
   const seasonalParam = (searchParams.get("seasonal") ?? "").trim();
+  const multidayDaysParam = useMemo(() => {
+    const raw = searchParams.get("days");
+    if (raw == null || raw === "") return null;
+    const n = parseInt(raw, 10);
+    if (Number.isNaN(n) || n <= 2) return null;
+    return n;
+  }, [searchParams]);
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [termsOpen, setTermsOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
@@ -375,8 +382,10 @@ const TripsContent = () => {
   );
   const initialFilterState = useMemo(
     () =>
-      createInitialTripFilterState(scopedTrips, filterMetadata, activeFilter),
-    [activeFilter, filterMetadata, scopedTrips],
+      createInitialTripFilterState(scopedTrips, filterMetadata, activeFilter, {
+        multidayDays: multidayDaysParam,
+      }),
+    [activeFilter, filterMetadata, multidayDaysParam, scopedTrips],
   );
   const [filterState, dispatch] = useReducer(
     tripFilterReducer,
@@ -398,11 +407,22 @@ const TripsContent = () => {
     if (activeFilter === "daily") return [1];
     if (activeFilter === "twoday") return [2];
     if (activeFilter === "multiday") {
+      if (
+        multidayDaysParam != null &&
+        filterMetadata.durations.includes(multidayDaysParam)
+      ) {
+        return [multidayDaysParam];
+      }
       const over2 = filterMetadata.durations.filter((d) => d > 2);
       return over2.length > 0 ? over2 : [-1];
     }
     return [] as number[];
-  }, [activeFilter, seasonalParam, filterMetadata.durations]);
+  }, [
+    activeFilter,
+    seasonalParam,
+    filterMetadata.durations,
+    multidayDaysParam,
+  ]);
   const normalizedFilterState = useMemo(
     () =>
       sanitizeTripFilterState(
@@ -1242,7 +1262,8 @@ const TripsPage = () => {
     return <TripsDisabledPlaceholder />;
   }
   const activeFilter = searchParams.get("filter") ?? "all";
-  return <TripsContent key={activeFilter} />;
+  const daysKey = searchParams.get("days") ?? "";
+  return <TripsContent key={`${activeFilter}-${daysKey}`} />;
 };
 
 export default TripsPage;

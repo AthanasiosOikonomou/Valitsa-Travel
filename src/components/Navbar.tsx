@@ -7,6 +7,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import ContactModal from "@/components/ContactModal";
 import { prefetchTripsRoute } from "@/lib/routePrefetch";
 import { fetchSeasonalNavItems } from "@/lib/seasonalNavApi";
+import { fetchMultidayDurationDays } from "@/lib/multidayNavApi";
 import { showTrips } from "@/lib/showTrips";
 import { cn } from "@/lib/utils";
 
@@ -15,25 +16,38 @@ interface NavbarProps {
   onToggleDark: () => void;
 }
 
-const navCategories = [
+const navCategoriesBeforeMultiday = [
   { key: "nav.daily", filter: "daily" },
   { key: "nav.twoday", filter: "twoday" },
-  { key: "nav.multiday", filter: "multiday" },
+];
+
+const navCategoriesAfterMultiday = [
   { key: "nav.internal", filter: "internal" },
   { key: "nav.external", filter: "external" },
 ];
+
+const buildMultidaySearch = (days: number | null) => {
+  const p = new URLSearchParams();
+  p.set("filter", "multiday");
+  if (days != null) p.set("days", String(days));
+  return `?${p.toString()}`;
+};
 
 const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
   const { lang, setLang, t } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [seasonalDropdownOpen, setSeasonalDropdownOpen] = useState(false);
+  const [multidayDropdownOpen, setMultidayDropdownOpen] = useState(false);
   const [seasonalAccordionOpen, setSeasonalAccordionOpen] = useState(false);
+  const [multidayAccordionOpen, setMultidayAccordionOpen] = useState(false);
   const contactOwnedBlurRef = useRef(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuToggleRef = useRef<HTMLButtonElement>(null);
   const seasonalTriggerRef = useRef<HTMLButtonElement>(null);
   const seasonalPanelRef = useRef<HTMLDivElement>(null);
+  const multidayTriggerRef = useRef<HTMLButtonElement>(null);
+  const multidayPanelRef = useRef<HTMLDivElement>(null);
   const { pathname, search } = useLocation();
   const navigate = useNavigate();
 
@@ -41,6 +55,13 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
     queryKey: ["seasonal-nav"],
     queryFn: fetchSeasonalNavItems,
     staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: multidayDurationDays = [] } = useQuery({
+    queryKey: ["multiday-nav-durations"],
+    queryFn: fetchMultidayDurationDays,
+    staleTime: 5 * 60 * 1000,
+    enabled: showTrips,
   });
 
   const hasSeasonalMenu = showTrips && seasonalItems.length > 0;
@@ -61,6 +82,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
       scrollToPageTop();
       setMenuOpen(false);
       setSeasonalDropdownOpen(false);
+      setMultidayDropdownOpen(false);
       return;
     }
 
@@ -70,6 +92,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
 
     setMenuOpen(false);
     setSeasonalDropdownOpen(false);
+    setMultidayDropdownOpen(false);
   };
 
   const handleSeasonalClick = (seasonKey: string) => {
@@ -82,11 +105,34 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
       scrollToPageTop();
       setMenuOpen(false);
       setSeasonalDropdownOpen(false);
+      setMultidayDropdownOpen(false);
       return;
     }
 
     navigate(`/trips${targetSearch}`);
     setMenuOpen(false);
+    setSeasonalDropdownOpen(false);
+    setMultidayDropdownOpen(false);
+  };
+
+  const handleMultidayNavigate = (days: number | null) => {
+    const targetSearch = buildMultidaySearch(days);
+
+    if (pathname === "/trips" && search === targetSearch) {
+      window.dispatchEvent(new Event("valitsa:reset-trips-filters"));
+      window.dispatchEvent(new Event("valitsa:scroll-trips-top"));
+      scrollToPageTop();
+      setMenuOpen(false);
+      setMultidayDropdownOpen(false);
+      setMultidayAccordionOpen(false);
+      setSeasonalDropdownOpen(false);
+      return;
+    }
+
+    navigate(`/trips${targetSearch}`);
+    setMenuOpen(false);
+    setMultidayDropdownOpen(false);
+    setMultidayAccordionOpen(false);
     setSeasonalDropdownOpen(false);
   };
 
@@ -109,19 +155,39 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
   }, [seasonalDropdownOpen]);
 
   useEffect(() => {
-    if (!menuOpen && !contactOpen && !seasonalDropdownOpen) return;
+    if (!multidayDropdownOpen) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (
+        multidayTriggerRef.current?.contains(target) ||
+        multidayPanelRef.current?.contains(target)
+      ) {
+        return;
+      }
+      setMultidayDropdownOpen(false);
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [multidayDropdownOpen]);
+
+  useEffect(() => {
+    if (!menuOpen && !contactOpen && !seasonalDropdownOpen && !multidayDropdownOpen)
+      return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setMenuOpen(false);
         setContactOpen(false);
         setSeasonalDropdownOpen(false);
+        setMultidayDropdownOpen(false);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [menuOpen, contactOpen, seasonalDropdownOpen]);
+  }, [menuOpen, contactOpen, seasonalDropdownOpen, multidayDropdownOpen]);
 
   useEffect(() => {
     if (!contactOpen) return;
@@ -169,21 +235,17 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
   }, [menuOpen]);
 
   useEffect(() => {
-    if (!menuOpen) setSeasonalAccordionOpen(false);
+    if (!menuOpen) {
+      setSeasonalAccordionOpen(false);
+      setMultidayAccordionOpen(false);
+    }
   }, [menuOpen]);
 
-  const categoryButtons = navCategories.map((cat) => (
-    <button
-      key={cat.key}
-      type="button"
-      onClick={() => handleCategoryClick(cat.filter)}
-      onMouseEnter={prefetchTripsRoute}
-      onFocus={prefetchTripsRoute}
-      className="shrink-0 whitespace-nowrap rounded-full px-2.5 py-2.5 text-sm font-medium text-foreground-muted hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] sm:px-3"
-    >
-      {t(cat.key)}
-    </button>
-  ));
+  const navLinkClass =
+    "shrink-0 whitespace-nowrap rounded-full px-2.5 py-2.5 text-sm font-medium text-foreground-muted hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] sm:px-3";
+
+  const isMultidayRoute =
+    pathname === "/trips" && new URLSearchParams(search).get("filter") === "multiday";
 
   return (
     <>
@@ -226,8 +288,108 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
           {showTrips ? (
             <>
               <div className="hidden min-w-0 lg:block" aria-hidden />
-              <div className="hidden min-w-0 flex-row flex-nowrap items-center justify-start gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:thin] lg:flex">
-                {categoryButtons}
+              {/* Split scroll regions so multiday’s absolute panel is not clipped by overflow-y (dropdown sits between columns). */}
+              <div className="hidden min-w-0 w-full items-center gap-2 lg:flex">
+                <div className="flex min-w-0 flex-1 flex-nowrap items-center justify-end gap-3 overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
+                  {navCategoriesBeforeMultiday.map((cat) => (
+                    <button
+                      key={cat.key}
+                      type="button"
+                      onClick={() => handleCategoryClick(cat.filter)}
+                      onMouseEnter={prefetchTripsRoute}
+                      onFocus={prefetchTripsRoute}
+                      className={navLinkClass}
+                    >
+                      {t(cat.key)}
+                    </button>
+                  ))}
+                </div>
+                <div className="relative z-[120] shrink-0">
+                  <button
+                    ref={multidayTriggerRef}
+                    type="button"
+                    onClick={() => {
+                      setSeasonalDropdownOpen(false);
+                      setMultidayDropdownOpen((open) => !open);
+                    }}
+                    onMouseEnter={prefetchTripsRoute}
+                    onFocus={prefetchTripsRoute}
+                    aria-expanded={multidayDropdownOpen}
+                    aria-haspopup="menu"
+                    aria-label={t("nav.multidayAria")}
+                    className={cn(
+                      "inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-2.5 text-sm font-medium hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] sm:gap-1.5 sm:px-3",
+                      isMultidayRoute
+                        ? "text-foreground"
+                        : "text-foreground-muted hover:text-foreground",
+                    )}
+                  >
+                    {t("nav.multiday")}
+                    <ChevronDown
+                      className={`h-4 w-4 shrink-0 transition-transform duration-200 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] ${multidayDropdownOpen ? "rotate-180" : ""}`}
+                      aria-hidden
+                    />
+                  </button>
+                  <AnimatePresence>
+                    {multidayDropdownOpen ? (
+                      <motion.div
+                        key="multiday-nav-dropdown"
+                        ref={multidayPanelRef}
+                        role="menu"
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        transition={{
+                          duration: 0.2,
+                          ease: [0.22, 1, 0.36, 1],
+                        }}
+                        className="absolute left-1/2 top-[calc(100%+0.5rem)] z-[130] min-w-[14rem] -translate-x-1/2 rounded-2xl border border-foreground/15 bg-white p-2 shadow-lg dark:border-white/15 dark:bg-slate-900"
+                        style={{ boxShadow: "var(--shadow-elev-3)" }}
+                      >
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => handleMultidayNavigate(null)}
+                          onMouseEnter={prefetchTripsRoute}
+                          onFocus={prefetchTripsRoute}
+                          className="flex w-full min-h-[44px] items-center rounded-xl px-4 py-3 text-left text-base font-medium text-foreground hover:bg-slate-100 dark:hover:bg-white/10"
+                        >
+                          {t("nav.multidayAll")}
+                        </button>
+                        {multidayDurationDays.map((d) => (
+                          <button
+                            key={d}
+                            type="button"
+                            role="menuitem"
+                            onClick={() => handleMultidayNavigate(d)}
+                            onMouseEnter={prefetchTripsRoute}
+                            onFocus={prefetchTripsRoute}
+                            className="flex w-full min-h-[44px] items-center rounded-xl px-4 py-3 text-left text-base font-medium text-foreground hover:bg-slate-100 dark:hover:bg-white/10"
+                          >
+                            {t("nav.multidayDaysOption").replace(
+                              "{n}",
+                              String(d),
+                            )}
+                          </button>
+                        ))}
+                      </motion.div>
+                    ) : null}
+                  </AnimatePresence>
+                </div>
+                <div className="flex min-w-0 flex-1 flex-nowrap items-center justify-start gap-3 overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
+                  {navCategoriesAfterMultiday.map((cat) => (
+                    <button
+                      key={cat.key}
+                      type="button"
+                      onClick={() => handleCategoryClick(cat.filter)}
+                      onMouseEnter={prefetchTripsRoute}
+                      onFocus={prefetchTripsRoute}
+                      className={navLinkClass}
+                    >
+                      {t(cat.key)}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="hidden min-w-0 lg:block" aria-hidden />
               {hasSeasonalMenu ? (
@@ -235,7 +397,10 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
                   <button
                     ref={seasonalTriggerRef}
                     type="button"
-                    onClick={() => setSeasonalDropdownOpen((open) => !open)}
+                    onClick={() => {
+                      setMultidayDropdownOpen(false);
+                      setSeasonalDropdownOpen((open) => !open);
+                    }}
                     onMouseEnter={prefetchTripsRoute}
                     onFocus={prefetchTripsRoute}
                     aria-expanded={seasonalDropdownOpen}
@@ -386,8 +551,9 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
             style={{ boxShadow: "var(--shadow-elev-3)" }}
           >
             <div className="flex flex-col gap-2">
-              {showTrips
-                ? navCategories.map((cat) => (
+              {showTrips ? (
+                <>
+                  {navCategoriesBeforeMultiday.map((cat) => (
                     <button
                       key={cat.key}
                       type="button"
@@ -396,15 +562,68 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
                     >
                       {t(cat.key)}
                     </button>
-                  ))
-                : null}
+                  ))}
+                  <div className="flex flex-col gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSeasonalAccordionOpen(false);
+                        setMultidayAccordionOpen((open) => !open);
+                      }}
+                      aria-expanded={multidayAccordionOpen}
+                      className="flex w-full items-center justify-between gap-2 rounded-2xl px-4 py-3 text-left text-sm font-medium text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]"
+                    >
+                      <span>{t("nav.multiday")}</span>
+                      <ChevronDown
+                        className={`h-4 w-4 shrink-0 transition-transform duration-200 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] ${multidayAccordionOpen ? "rotate-180" : ""}`}
+                        aria-hidden
+                      />
+                    </button>
+                    {multidayAccordionOpen ? (
+                      <div className="ml-3 flex flex-col gap-1 border-l border-foreground/10 pl-3 dark:border-white/10">
+                        <button
+                          type="button"
+                          onClick={() => handleMultidayNavigate(null)}
+                          className="rounded-xl px-4 py-2.5 text-left text-sm font-medium text-foreground-muted hover:bg-white/70 hover:text-foreground dark:hover:bg-white/5"
+                        >
+                          {t("nav.multidayAll")}
+                        </button>
+                        {multidayDurationDays.map((d) => (
+                          <button
+                            key={d}
+                            type="button"
+                            onClick={() => handleMultidayNavigate(d)}
+                            className="rounded-xl px-4 py-2.5 text-left text-sm font-medium text-foreground-muted hover:bg-white/70 hover:text-foreground dark:hover:bg-white/5"
+                          >
+                            {t("nav.multidayDaysOption").replace(
+                              "{n}",
+                              String(d),
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                  {navCategoriesAfterMultiday.map((cat) => (
+                    <button
+                      key={cat.key}
+                      type="button"
+                      onClick={() => handleCategoryClick(cat.filter)}
+                      className="px-4 py-3 rounded-2xl text-sm font-medium text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] text-left"
+                    >
+                      {t(cat.key)}
+                    </button>
+                  ))}
+                </>
+              ) : null}
               {hasSeasonalMenu ? (
                 <div className="flex flex-col gap-1">
                   <button
                     type="button"
-                    onClick={() =>
-                      setSeasonalAccordionOpen((open) => !open)
-                    }
+                    onClick={() => {
+                      setMultidayAccordionOpen(false);
+                      setSeasonalAccordionOpen((open) => !open);
+                    }}
                     aria-expanded={seasonalAccordionOpen}
                     className="flex w-full items-center justify-between gap-2 rounded-2xl px-4 py-3 text-left text-sm font-medium text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]"
                   >
