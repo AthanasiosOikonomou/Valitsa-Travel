@@ -17,6 +17,7 @@ import {
   useReducer,
   useLayoutEffect,
 } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import type { Trip } from "@/types/Trip";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -45,6 +46,7 @@ import ProgressiveImage from "@/components/ProgressiveImage";
 import { SafeRichTextHtml } from "@/components/SafeRichTextHtml";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { showTrips } from "@/lib/showTrips";
+import { fetchSeasonalNavItems } from "@/lib/seasonalNavApi";
 import {
   formatTripDuration,
   formatTripPrice,
@@ -202,6 +204,14 @@ const TripsContent = () => {
     if (Number.isNaN(n) || n <= 2) return null;
     return n;
   }, [searchParams]);
+
+  const { data: seasonalNavItems = [] } = useQuery({
+    queryKey: ["seasonal-nav"],
+    queryFn: fetchSeasonalNavItems,
+    staleTime: 5 * 60 * 1000,
+    enabled: showTrips,
+  });
+
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [termsOpen, setTermsOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
@@ -315,6 +325,31 @@ const TripsContent = () => {
     }
     return trips;
   }, [activeFilter, seasonalParam, trips]);
+
+  /** Same scope as the trip list without the seasonal URL filter — used for seasonal facet counts. */
+  const baseForSeasonalCounts = useMemo(() => {
+    if (activeFilter === "internal") {
+      return trips.filter((trip) => trip.country === "Greece");
+    }
+    if (activeFilter === "external") {
+      return trips.filter((trip) => trip.country !== "Greece");
+    }
+    return trips;
+  }, [trips, activeFilter]);
+
+  const seasonalTripCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const item of seasonalNavItems) {
+      const n = baseForSeasonalCounts.filter(
+        (trip) =>
+          Boolean(trip.is_seasonal) &&
+          trip.seasonal_name != null &&
+          String(trip.seasonal_name) === item.key,
+      ).length;
+      map.set(item.key, n);
+    }
+    return map;
+  }, [baseForSeasonalCounts, seasonalNavItems]);
 
   // Helper to get the correct field based on language
   const getField = (trip, field) => {
@@ -549,6 +584,7 @@ const TripsContent = () => {
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     price: true,
     special: true,
+    seasonal: true,
     duration: true,
     country: true,
     continent: true,
@@ -629,6 +665,17 @@ const TripsContent = () => {
 
   const toggleSection = (key: string) =>
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  const applySeasonalFilter = (seasonKey: string | null) => {
+    const p = new URLSearchParams(searchParams.toString());
+    if (seasonKey) {
+      p.set("seasonal", seasonKey);
+    } else {
+      p.delete("seasonal");
+    }
+    const qs = p.toString();
+    navigate({ pathname: "/trips", search: qs ? `?${qs}` : "" });
+  };
 
   const translateFacetValue = (prefix: string, fallback: string) => {
     const translated = t(`${prefix}.${fallback}`);
@@ -780,6 +827,51 @@ const TripsContent = () => {
           />
         </FilterSection>
       )}
+
+      {showTrips && seasonalNavItems.length > 0 ? (
+        <FilterSection
+          id="seasonal"
+          title={t("archive.seasonal")}
+          isOpen={openSections.seasonal}
+          onToggle={toggleSection}
+        >
+          <div className="space-y-2">
+            <FacetOption
+              type="radio"
+              name="seasonal"
+              label={t("archive.seasonalAll")}
+              checked={!seasonalParam}
+              count={baseForSeasonalCounts.length}
+              disabled={false}
+              onChange={() => {
+                window.__valitsaFilterSectionChanged = true;
+                applySeasonalFilter(null);
+              }}
+            />
+            {seasonalNavItems.map((item) => {
+              const count = seasonalTripCounts.get(item.key) ?? 0;
+              const checked = seasonalParam === item.key;
+              const label =
+                lang === "gr" ? item.label_el : item.label_en;
+              return (
+                <FacetOption
+                  key={item.key}
+                  type="radio"
+                  name="seasonal"
+                  label={label}
+                  checked={checked}
+                  count={count}
+                  disabled={isDisabled(count, checked)}
+                  onChange={() => {
+                    window.__valitsaFilterSectionChanged = true;
+                    applySeasonalFilter(item.key);
+                  }}
+                />
+              );
+            })}
+          </div>
+        </FilterSection>
+      ) : null}
 
       <FilterSection
         id="continent"

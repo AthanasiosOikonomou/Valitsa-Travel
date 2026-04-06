@@ -34,6 +34,8 @@ const translations: Record<Lang, Record<string, string>> = {
     "nav.menu": "Menu",
     "nav.seasonal": "Seasonal",
     "nav.seasonalAria": "Seasonal trips menu",
+    "archive.seasonal": "Seasonal",
+    "archive.seasonalAll": "All trips",
 
     // Common
     "common.close": "Close",
@@ -461,8 +463,10 @@ const translations: Record<Lang, Record<string, string>> = {
     "nav.toggleLanguage": "Αλλαγή γλώσσας",
     "nav.toggleTheme": "Αλλαγή θέματος",
     "nav.menu": "Μενού",
-    "nav.seasonal": "Εποχιακά",
+    "nav.seasonal": "Εποχιακές",
     "nav.seasonalAria": "Μενού εποχιακών εκδρομών",
+    "archive.seasonal": "Εποχιακές",
+    "archive.seasonalAll": "Όλα τα ταξίδια",
 
     // Common
     "common.close": "Κλείσιμο",
