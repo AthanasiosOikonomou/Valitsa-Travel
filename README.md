@@ -4,7 +4,7 @@
 
 ### A flagship product experience — part of my **PORTOFOLIO** lineage
 
-**Live:** [valitsatravel.gr](https://valitsatravel.gr/) · **Archive:** [valitsatravel.gr/trips](https://valitsatravel.gr/trips)
+**Live:** [valitsatravel.gr](https://valitsatravel.gr/)
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=111)](https://react.dev/)
@@ -34,14 +34,14 @@ The product is engineered to feel **smooth, fast, and high-touch** — motion th
 
 ### Perceived performance (what users feel)
 
-| Technique | Where it lives | What it does |
-|-----------|----------------|----------------|
-| Route-level code splitting | [`src/App.tsx`](src/App.tsx) — `React.lazy` for `Index`, `Trips`, admin pages | Keeps initial JS lean; heavy routes load on demand inside `Suspense`. |
-| Vendor chunk strategy | [`vite.config.ts`](vite.config.ts) — `manualChunks` splits `react-vendor`, `motion-vendor`, `router-vendor`, `radix-vendor`, `vendor` | Improves cacheability and parallel download behavior. |
-| Progressive imagery | [`src/components/ProgressiveImage.tsx`](src/components/ProgressiveImage.tsx) | `IntersectionObserver` with `rootMargin: "400px"` kicks off loads before the user hits the fold; LQIP-style blur path; `fetchPriority` / `loading` tuned for hero vs below-fold. |
-| CDN-aware URLs | [`src/lib/utils.ts`](src/lib/utils.ts) — `optimizeImageUrl`, `buildResponsiveImageSet` | Unsplash (and similar) URLs get width, format, and quality parameters for responsive `srcset`. |
-| Scroll & route UX | [`src/lib/instantScrollToTop.ts`](src/lib/instantScrollToTop.ts), [`src/App.tsx`](src/App.tsx) `ScrollToTop` | Instant scroll reset on navigation (`useLayoutEffect` + location key) — no “stuck scroll” between views. |
-| Motion system | [`src/App.tsx`](src/App.tsx) — `MotionConfig` with `reducedMotion="user"` | Honors OS “reduce motion”; animations degrade gracefully. |
+| Technique                  | Where it lives                                                                                                                        | What it does                                                                                                                                                                     |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Route-level code splitting | [`src/App.tsx`](src/App.tsx) — `React.lazy` for `Index`, `Trips`, admin pages                                                         | Keeps initial JS lean; heavy routes load on demand inside `Suspense`.                                                                                                            |
+| Vendor chunk strategy      | [`vite.config.ts`](vite.config.ts) — `manualChunks` splits `react-vendor`, `motion-vendor`, `router-vendor`, `radix-vendor`, `vendor` | Improves cacheability and parallel download behavior.                                                                                                                            |
+| Progressive imagery        | [`src/components/ProgressiveImage.tsx`](src/components/ProgressiveImage.tsx)                                                          | `IntersectionObserver` with `rootMargin: "400px"` kicks off loads before the user hits the fold; LQIP-style blur path; `fetchPriority` / `loading` tuned for hero vs below-fold. |
+| CDN-aware URLs             | [`src/lib/utils.ts`](src/lib/utils.ts) — `optimizeImageUrl`, `buildResponsiveImageSet`                                                | Unsplash (and similar) URLs get width, format, and quality parameters for responsive `srcset`.                                                                                   |
+| Scroll & route UX          | [`src/lib/instantScrollToTop.ts`](src/lib/instantScrollToTop.ts), [`src/App.tsx`](src/App.tsx) `ScrollToTop`                          | Instant scroll reset on navigation (`useLayoutEffect` + location key) — no “stuck scroll” between views.                                                                         |
+| Motion system              | [`src/App.tsx`](src/App.tsx) — `MotionConfig` with `reducedMotion="user"`                                                             | Honors OS “reduce motion”; animations degrade gracefully.                                                                                                                        |
 
 ### Visual identity — neon-adjacent purple & electric cyan
 
@@ -55,12 +55,12 @@ Typography pairs **Plus Jakarta Sans** (UI) with **Playfair Display** (trip titl
 
 ### Trust, content safety, and forms
 
-| Concern | Implementation |
-|---------|----------------|
-| Rich HTML from CMS/editor | [`src/lib/sanitizeTripRichTextHtml.ts`](src/lib/sanitizeTripRichTextHtml.ts) — **DOMPurify** with an explicit tag/attribute allowlist; rendered via [`src/components/SafeRichTextHtml.tsx`](src/components/SafeRichTextHtml.tsx). |
-| Bot resistance | [`src/components/CaptchaField.tsx`](src/components/CaptchaField.tsx) — Cloudflare **Turnstile** (or reCAPTCHA) with responsive `size` (`compact` / `flexible`) for mobile layouts. |
+| Concern                      | Implementation                                                                                                                                                                                                                                                                   |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rich HTML from CMS/editor    | [`src/lib/sanitizeTripRichTextHtml.ts`](src/lib/sanitizeTripRichTextHtml.ts) — **DOMPurify** with an explicit tag/attribute allowlist; rendered via [`src/components/SafeRichTextHtml.tsx`](src/components/SafeRichTextHtml.tsx).                                                |
+| Bot resistance               | [`src/components/CaptchaField.tsx`](src/components/CaptchaField.tsx) — Cloudflare **Turnstile** (or reCAPTCHA) with responsive `size` (`compact` / `flexible`) for mobile layouts.                                                                                               |
 | Theme & language persistence | [`src/lib/themeStorage.ts`](src/lib/themeStorage.ts), [`src/lib/languageStorage.ts`](src/lib/languageStorage.ts) — `valitsa-theme` / `valitsa-lang` in `localStorage`, aligned with [`next-themes`](https://github.com/pacocoursey/next-themes) in [`src/App.tsx`](src/App.tsx). |
-| Modal ergonomics | [`src/hooks/useScrollLock.ts`](src/hooks/useScrollLock.ts) — locks `html`/`body` overflow while overlays are open (`TripDetail`, `ContactModal`, `TermsModal`). |
+| Modal ergonomics             | [`src/hooks/useScrollLock.ts`](src/hooks/useScrollLock.ts) — locks `html`/`body` overflow while overlays are open (`TripDetail`, `ContactModal`, `TermsModal`).                                                                                                                  |
 
 ### Backend hardening (Express)
 
@@ -77,12 +77,12 @@ Helmet (HSTS in prod, referrer policy, CORP) · CORS allow-list (production requ
 
 ### Infrastructure & delivery
 
-| Artifact | Role |
-|----------|------|
-| [`.cpanel.yml`](.cpanel.yml) | Rsync deploy to managed hosting, `tmp/restart.txt` for Passenger bounce. |
-| [`passenger_entry.cjs`](passenger_entry.cjs) | CommonJS bridge — dynamic `import()` of ESM [`server/index.js`](server/index.js) for Phusion Passenger. |
-| [`scripts/verify-passenger-deploy.mjs`](scripts/verify-passenger-deploy.mjs) | Invoked via `npm run verify:deploy` — post-deploy sanity checks. |
-| [`vite.config.ts`](vite.config.ts) | Dev `/api` proxy to `API_PORT` (default `8787`); production build drops `console` / `debugger` via `esbuild`. |
+| Artifact                                                                     | Role                                                                                                          |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| [`.cpanel.yml`](.cpanel.yml)                                                 | Rsync deploy to managed hosting, `tmp/restart.txt` for Passenger bounce.                                      |
+| [`passenger_entry.cjs`](passenger_entry.cjs)                                 | CommonJS bridge — dynamic `import()` of ESM [`server/index.js`](server/index.js) for Phusion Passenger.       |
+| [`scripts/verify-passenger-deploy.mjs`](scripts/verify-passenger-deploy.mjs) | Invoked via `npm run verify:deploy` — post-deploy sanity checks.                                              |
+| [`vite.config.ts`](vite.config.ts)                                           | Dev `/api` proxy to `API_PORT` (default `8787`); production build drops `console` / `debugger` via `esbuild`. |
 
 ---
 
@@ -113,14 +113,14 @@ Helmet (HSTS in prod, referrer policy, CORP) · CORS allow-list (production requ
 
 ## Security checklist (evidence-based)
 
-| Layer | Mechanism |
-|-------|-----------|
-| Transport & headers | Helmet, HSTS when `NODE_ENV=production`, no `X-Powered-By` |
-| Origin control | Strict CORS in production — **throws** if `CORS_ORIGIN` is empty when production |
-| Input validation | Zod `inquirySchema` / `trackClickSchema` in [`server/index.js`](server/index.js) |
-| Abuse control | Dedicated limiters + slowdown middleware |
-| HTML injection | DOMPurify allowlist for public rich text |
-| Admin surface | Bearer JWT → Supabase `getUser` + `profiles.role` gate |
+| Layer               | Mechanism                                                                        |
+| ------------------- | -------------------------------------------------------------------------------- |
+| Transport & headers | Helmet, HSTS when `NODE_ENV=production`, no `X-Powered-By`                       |
+| Origin control      | Strict CORS in production — **throws** if `CORS_ORIGIN` is empty when production |
+| Input validation    | Zod `inquirySchema` / `trackClickSchema` in [`server/index.js`](server/index.js) |
+| Abuse control       | Dedicated limiters + slowdown middleware                                         |
+| HTML injection      | DOMPurify allowlist for public rich text                                         |
+| Admin surface       | Bearer JWT → Supabase `getUser` + `profiles.role` gate                           |
 
 > [!IMPORTANT]
 > **Secrets** live in environment variables only (see root `.env.example` and `server/.env.example`). Never commit credentials.
@@ -129,13 +129,13 @@ Helmet (HSTS in prod, referrer policy, CORP) · CORS allow-list (production requ
 
 ## Scripts
 
-| Command | Purpose |
-|---------|---------|
-| `npm run dev` | Concurrent Vite (`localhost:5180`) + Express API (`API_PORT`, default `8787`) |
-| `npm run build` | Optimized client bundle |
-| `npm run start:api` | Production API process |
-| `npm run verify:deploy` | Passenger deploy verification |
-| `npm test` | Vitest |
+| Command                 | Purpose                                                                       |
+| ----------------------- | ----------------------------------------------------------------------------- |
+| `npm run dev`           | Concurrent Vite (`localhost:5180`) + Express API (`API_PORT`, default `8787`) |
+| `npm run build`         | Optimized client bundle                                                       |
+| `npm run start:api`     | Production API process                                                        |
+| `npm run verify:deploy` | Passenger deploy verification                                                 |
+| `npm test`              | Vitest                                                                        |
 
 ---
 
@@ -143,11 +143,10 @@ Helmet (HSTS in prod, referrer policy, CORP) · CORS allow-list (production requ
 
 This build is a deliberate **portfolio-grade** artifact: opinionated UX, disciplined security, and infrastructure you can explain in a boardroom.
 
-| Channel | Link |
-|---------|------|
-| **LinkedIn** | `https://www.linkedin.com/in/YOUR_USERNAME` |
-| **Email** | `you@yourdomain.com` |
-| **Website** | [valitsatravel.gr](https://valitsatravel.gr/) |
+| Channel      | Link                                  |
+| ------------ | ------------------------------------- |
+| **LinkedIn** | `https://www.linkedin.com/in/ath-oik` |
+| **Email**    | `ath.oikonomou@hotmail.com`           |
 
 ---
 
