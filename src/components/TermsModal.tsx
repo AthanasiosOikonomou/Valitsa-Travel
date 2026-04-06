@@ -139,7 +139,7 @@ const TermsModal = ({ open, onClose }: TermsModalProps) => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed inset-0 z-[120] flex items-center justify-center overflow-hidden overscroll-none bg-black/50 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,calc(env(safe-area-inset-top)+4rem))] backdrop-blur-md"
+          className="fixed inset-0 z-[120] flex items-center justify-center overflow-hidden overscroll-none bg-black/50 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,calc(env(safe-area-inset-top)+4rem))] backdrop-blur-md md:pt-[max(1.25rem,calc(env(safe-area-inset-top)+7.25rem))] md:pb-8"
           onClick={onClose}
         >
           <motion.div
@@ -147,7 +147,7 @@ const TermsModal = ({ open, onClose }: TermsModalProps) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, y: 12 }}
             transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-            className="surface-elevated flex max-h-[min(85vh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-8rem))] w-full max-w-3xl flex-col overflow-hidden rounded-3xl bg-card shadow-lg transform-gpu [backface-visibility:hidden] lg:mt-[-1.5rem]"
+            className="surface-elevated flex w-full max-w-3xl flex-col overflow-hidden rounded-3xl bg-card shadow-lg transform-gpu [backface-visibility:hidden] md:max-h-[min(76vh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-10rem))] md:max-w-2xl max-h-[min(85vh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-8rem))]"
             onClick={(event) => event.stopPropagation()}
           >
             <Helmet prioritizeSeoTags>
