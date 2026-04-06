@@ -9,6 +9,8 @@ export type SeasonalConfigRow = {
   is_active: boolean;
   created_at?: string | null;
   updated_at?: string | null;
+  /** Trips currently linked to this seasonal key (from GET /api/admin/seasonal-configs). */
+  trip_count?: number;
 };
 
 export type SeasonalConfigPayload = {
@@ -182,4 +184,19 @@ export async function putSeasonalConfig(
     const j = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(j.error ?? "Failed to update seasonal config");
   }
+}
+
+export async function deleteSeasonalConfig(
+  seasonalKey: string,
+): Promise<{ unlinkedTrips: number }> {
+  const encoded = encodeURIComponent(seasonalKey);
+  const res = await adminFetch(`/api/admin/seasonal-configs/${encoded}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const j = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(j.error ?? "Failed to delete seasonal config");
+  }
+  const j = (await res.json()) as { unlinkedTrips?: number };
+  return { unlinkedTrips: j.unlinkedTrips ?? 0 };
 }

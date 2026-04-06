@@ -426,6 +426,13 @@ export function registerAdminRoutes(app, { supabaseAdmin }) {
     .strict()
     .refine((o) => Object.keys(o).length > 0, { message: "No fields to update" });
 
+  /** Match trips to configs even if DB has different casing or stray whitespace. */
+  function normalizeSeasonalKey(s) {
+    return String(s ?? "")
+      .trim()
+      .toLowerCase();
+  }
+
   app.get(
     "/api/admin/seasonal-configs",
     adminLimiter,
@@ -460,16 +467,32 @@ export function registerAdminRoutes(app, { supabaseAdmin }) {
         res.status(500).json({ error: tErr.message });
         return;
       }
-      const keySet = new Set((configs ?? []).map((c) => c.seasonal_key));
+      const keySet = new Set(
+        (configs ?? []).map((c) => normalizeSeasonalKey(c.seasonal_key)),
+      );
       const distinct = new Set();
       for (const row of tripRows ?? []) {
         const n = row.seasonal_name;
         if (n == null) continue;
-        const s = String(n).trim();
-        if (s) distinct.add(s);
+        const nk = normalizeSeasonalKey(n);
+        if (nk) distinct.add(nk);
       }
       const orphanSeasonalNames = [...distinct].filter((k) => !keySet.has(k)).sort();
-      res.json({ configs: configs ?? [], orphanSeasonalNames });
+
+      const tripCountByKey = new Map();
+      for (const row of tripRows ?? []) {
+        const n = row.seasonal_name;
+        if (n == null) continue;
+        const nk = normalizeSeasonalKey(n);
+        if (!nk) continue;
+        tripCountByKey.set(nk, (tripCountByKey.get(nk) ?? 0) + 1);
+      }
+      const configsWithCounts = (configs ?? []).map((c) => ({
+        ...c,
+        trip_count: tripCountByKey.get(normalizeSeasonalKey(c.seasonal_key)) ?? 0,
+      }));
+
+      res.json({ configs: configsWithCounts, orphanSeasonalNames });
     },
   );
 
@@ -544,6 +567,72 @@ export function registerAdminRoutes(app, { supabaseAdmin }) {
         return;
       }
       res.json({ ok: true });
+    },
+  );
+
+  app.delete(
+    "/api/admin/seasonal-configs/:key",
+    adminLimiter,
+    requireAdmin,
+    async (req, res) => {
+      if (!supabaseAdmin) {
+        res.status(503).json({ error: "Supabase is not configured on the server." });
+        return;
+      }
+      const keyParse = seasonalKeySlug.safeParse(req.params.key ?? "");
+      if (!keyParse.success) {
+        res.status(400).json({ error: "Invalid seasonal key" });
+        return;
+      }
+      const key = keyParse.data;
+      const keyNorm = normalizeSeasonalKey(key);
+
+      const { data: tripRows, error: tripsErr } = await supabaseAdmin
+        .from("trips")
+        .select("id, seasonal_name")
+        .not("seasonal_name", "is", null);
+
+      if (tripsErr) {
+        console.error("[admin] delete seasonal-config load trips:", tripsErr);
+        res.status(500).json({ error: tripsErr.message });
+        return;
+      }
+
+      const idsToUnlink = (tripRows ?? [])
+        .filter((r) => normalizeSeasonalKey(r.seasonal_name) === keyNorm)
+        .map((r) => r.id);
+
+      const tripCount = idsToUnlink.length;
+
+      if (idsToUnlink.length > 0) {
+        const { error: unlinkErr } = await supabaseAdmin
+          .from("trips")
+          .update({ is_seasonal: false, seasonal_name: null })
+          .in("id", idsToUnlink);
+
+        if (unlinkErr) {
+          console.error("[admin] delete seasonal-config unlink trips:", unlinkErr);
+          res.status(500).json({ error: unlinkErr.message });
+          return;
+        }
+      }
+
+      const { error: delErr } = await supabaseAdmin
+        .from("seasonal_configs")
+        .delete()
+        .eq("seasonal_key", key);
+
+      if (delErr) {
+        if (delErr.code === "42P01") {
+          res.status(503).json({ error: "seasonal_configs table is not available." });
+          return;
+        }
+        console.error("[admin] delete seasonal-config row:", delErr);
+        res.status(500).json({ error: delErr.message });
+        return;
+      }
+
+      res.json({ ok: true, unlinkedTrips: tripCount });
     },
   );
 

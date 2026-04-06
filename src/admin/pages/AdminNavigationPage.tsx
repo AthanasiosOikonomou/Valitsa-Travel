@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Dialog from "@radix-ui/react-dialog";
 import { toast } from "sonner";
-import { X } from "lucide-react";
+import { Save, Trash2, X } from "lucide-react";
 import {
+  deleteSeasonalConfig,
   getAdminSeasonalConfigs,
   postSeasonalConfig,
   putSeasonalConfig,
@@ -15,7 +16,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
 
 const SEASONAL_KEY_REGEX = /^[a-z0-9_-]+$/;
 
@@ -243,11 +256,11 @@ function OrphanCreateRow({
 
 function ConfigEditRow({ row, onSaved }: { row: SeasonalConfigRow; onSaved: () => void }) {
   const { t } = useLanguage();
+  const qc = useQueryClient();
   const [navEl, setNavEl] = useState(row.nav_label_el);
   const [navEn, setNavEn] = useState(row.nav_label_en);
   const [order, setOrder] = useState(row.display_order);
   const [active, setActive] = useState(row.is_active);
-
   useEffect(() => {
     setNavEl(row.nav_label_el);
     setNavEn(row.nav_label_en);
@@ -273,11 +286,35 @@ function ConfigEditRow({ row, onSaved }: { row: SeasonalConfigRow; onSaved: () =
     },
   });
 
+  const deleteMut = useMutation({
+    mutationFn: () => deleteSeasonalConfig(row.seasonal_key),
+    onSuccess: (data) => {
+      toast.success(t("admin.navigationDeleted"), {
+        description: t("admin.navigationDeletedTrips").replace(
+          "{n}",
+          String(data.unlinkedTrips),
+        ),
+      });
+      void qc.invalidateQueries({ queryKey: ["admin-trips"] });
+      onSaved();
+    },
+    onError: (err) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(t("admin.navigationDeleteFailed"), { description: msg });
+    },
+  });
+
   const dirty =
     navEl.trim() !== row.nav_label_el ||
     navEn.trim() !== row.nav_label_en ||
     order !== row.display_order ||
     active !== row.is_active;
+
+  const tripCount = row.trip_count ?? 0;
+  const deleteBody = t("admin.navigationDeleteConfirmBody").replace(
+    "{n}",
+    String(tripCount),
+  );
 
   return (
     <tr className="border-b border-slate-100 dark:border-white/10">
@@ -301,9 +338,57 @@ function ConfigEditRow({ row, onSaved }: { row: SeasonalConfigRow; onSaved: () =
         <Switch checked={active} onCheckedChange={setActive} />
       </td>
       <td className="px-3 py-2">
-        <Button type="button" size="sm" disabled={!dirty || mut.isPending} onClick={() => mut.mutate()}>
-          {t("admin.navigationSave")}
-        </Button>
+        <div className="flex flex-wrap items-center gap-1">
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            disabled={!dirty || mut.isPending}
+            onClick={() => mut.mutate()}
+            className={cn(
+              "h-9 w-9 shrink-0",
+              dirty
+                ? "text-primary hover:bg-primary/10 hover:text-primary"
+                : "text-slate-400 hover:bg-slate-100 hover:text-slate-500 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-400",
+            )}
+            aria-label={t("admin.navigationSave")}
+          >
+            <Save className="h-4 w-4" aria-hidden />
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                disabled={deleteMut.isPending}
+                className="h-9 w-9 shrink-0 text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/50 dark:hover:text-red-300"
+                aria-label={t("admin.navigationDelete")}
+              >
+                <Trash2 className="h-4 w-4" aria-hidden />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t("admin.navigationDeleteConfirmTitle")}</AlertDialogTitle>
+                <AlertDialogDescription>{deleteBody}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t("admin.cancel")}</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    deleteMut.mutate();
+                  }}
+                  disabled={deleteMut.isPending}
+                >
+                  {t("admin.navigationDelete")}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </td>
     </tr>
   );
