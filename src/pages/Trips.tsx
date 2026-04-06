@@ -587,7 +587,6 @@ const TripsContent = () => {
     seasonal: true,
     duration: true,
     country: true,
-    continent: true,
     city: true,
     sort: true,
   });
@@ -872,38 +871,6 @@ const TripsContent = () => {
           </div>
         </FilterSection>
       ) : null}
-
-      <FilterSection
-        id="continent"
-        title={t("archive.continent")}
-        isOpen={openSections.continent}
-        onToggle={toggleSection}
-      >
-        {filterMetadata.continents.map((continent) => {
-          const count = availableFacets.continentCounts.get(continent) ?? 0;
-          const checked =
-            normalizedFilterState.selectedContinents.includes(continent);
-
-          return (
-            <FacetOption
-              key={continent}
-              type="checkbox"
-              label={translateFacetValue("continent", continent)}
-              checked={checked}
-              count={count}
-              disabled={isDisabled(count, checked)}
-              onChange={() => {
-                window.__valitsaFilterSectionChanged = true;
-                dispatch({
-                  type: "toggleMulti",
-                  key: "selectedContinents",
-                  value: continent,
-                });
-              }}
-            />
-          );
-        })}
-      </FilterSection>
 
       <FilterSection
         id="duration"

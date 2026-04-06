@@ -125,7 +125,6 @@ const translations: Record<Lang, Record<string, string>> = {
     "archive.sort.durationAsc": "Shortest Duration",
     "archive.duration": "Duration",
     "archive.days": "Days",
-    "archive.continent": "Continent",
     "archive.country": "Country",
     "archive.departureCity": "Departure City",
     "archive.category": "Category",
@@ -187,14 +186,6 @@ const translations: Record<Lang, Record<string, string>> = {
     "country.Peru": "Peru",
     "country.Egypt": "Egypt",
     "country.USA": "USA",
-
-    // Continents
-    "continent.Europe": "Europe",
-    "continent.Asia": "Asia",
-    "continent.Africa": "Africa",
-    "continent.North America": "North America",
-    "continent.South America": "South America",
-    "continent.Other": "Other",
 
     // Footer
     "footer.rights": "© 2026 Valitsa Travel. All rights reserved.",
@@ -557,7 +548,6 @@ const translations: Record<Lang, Record<string, string>> = {
     "archive.sort.durationAsc": "Μικρότερη Διάρκεια",
     "archive.duration": "Διάρκεια",
     "archive.days": "Ημέρες",
-    "archive.continent": "Ήπειρος",
     "archive.country": "Χώρα",
     "archive.departureCity": "Πόλη Αναχώρησης",
     "archive.category": "Κατηγορία",
@@ -619,14 +609,6 @@ const translations: Record<Lang, Record<string, string>> = {
     "country.Peru": "Περού",
     "country.Egypt": "Αίγυπτος",
     "country.USA": "ΗΠΑ",
-
-    // Continents
-    "continent.Europe": "Ευρώπη",
-    "continent.Asia": "Ασία",
-    "continent.Africa": "Αφρική",
-    "continent.North America": "Βόρεια Αμερική",
-    "continent.South America": "Νότια Αμερική",
-    "continent.Other": "Άλλη",
 
     // Footer
     "footer.rights": "© 2026 Valitsa Travel. Με επιφύλαξη παντός δικαιώματος.",

@@ -6,7 +6,6 @@ export type TripLang = "en" | "gr";
 export type SortOption = "recommended" | "priceAsc" | "priceDesc";
 
 type MultiSelectKey =
-  | "selectedContinents"
   | "selectedCountries"
   | "selectedDurations"
   | "selectedCities";
@@ -14,7 +13,6 @@ type MultiSelectKey =
 type FlagKey = "showFeatured";
 
 type FacetKey =
-  | "continent"
   | "country"
   | "duration"
   | "city"
@@ -29,7 +27,6 @@ export interface RangeBounds {
 export interface TripFilterState {
   searchQuery: string;
   priceRange: [number, number];
-  selectedContinents: string[];
   selectedCountries: string[];
   selectedDurations: number[];
   selectedCities: string[];
@@ -50,7 +47,6 @@ export type TripFilterAction =
 
 export interface TripFilterMetadata {
   globalPriceBounds: RangeBounds;
-  continents: string[];
   countries: string[];
   durations: number[];
   cities: string[];
@@ -59,7 +55,6 @@ export interface TripFilterMetadata {
 
 export interface AvailableTripFacets {
   priceBounds: RangeBounds;
-  continentCounts: Map<string, number>;
   countryCounts: Map<string, number>;
   durationCounts: Map<number, number>;
   cityCounts: Map<string, number>;
@@ -67,20 +62,6 @@ export interface AvailableTripFacets {
     featured: number;
   };
 }
-
-const countryToContinent: Record<string, string> = {
-  Greece: "Europe",
-  Italy: "Europe",
-  Iceland: "Europe",
-  Switzerland: "Europe",
-  France: "Europe",
-  Japan: "Asia",
-  Tanzania: "Africa",
-  Egypt: "Africa",
-  Chile: "South America",
-  Peru: "South America",
-  USA: "North America",
-};
 
 const filterPresets: Record<string, { selectedDurations?: number[] }> = {
   daily: { selectedDurations: [1] },
@@ -95,8 +76,6 @@ const getPresetCountries = (filter: string | null, countries: string[]) => {
   return [];
 };
 
-
-const getContinent = (country: string) => countryToContinent[country] ?? "Other";
 
 type LocalizedStringField = "title" | "location" | "country" | "departure_city";
 
@@ -145,9 +124,6 @@ export const buildTripFilterMetadata = (trips: Trip[], lang: TripLang): TripFilt
 
   return {
     globalPriceBounds,
-    continents: sortUniqueStrings(
-      trips.map((trip) => getContinent(getTripField(trip, "country", lang) ?? "")),
-    ),
     countries: sortCountries([
       ...new Set(trips.map((trip) => getTripField(trip, "country", lang) ?? "")),
     ]),
@@ -191,7 +167,6 @@ export const createInitialTripFilterState = (
       metadata.globalPriceBounds.min,
       metadata.globalPriceBounds.max,
     ],
-    selectedContinents: [],
     selectedCountries: getPresetCountries(activeFilter, metadata.countries),
     selectedDurations,
     selectedCities: [],
@@ -265,13 +240,6 @@ export const buildAvailableTripFacets = (
   fallbackPriceBounds: RangeBounds,
 ): AvailableTripFacets => {
 
-  const continentCounts = buildFacetCounts(
-    trips,
-    state,
-    lang,
-    "continent",
-    (trip) => getContinent(getTripField(trip, "country", lang) ?? ""),
-  );
   const countryCounts = buildFacetCounts(
     trips,
     state,
@@ -304,7 +272,6 @@ export const buildAvailableTripFacets = (
 
   return {
     priceBounds,
-    continentCounts,
     countryCounts,
     durationCounts,
     cityCounts,
@@ -383,9 +350,6 @@ export const sanitizeTripFilterState = (
   return {
     ...state,
     priceRange: nextPriceRange,
-    selectedContinents: state.selectedContinents.filter((value) =>
-      availableFacets.continentCounts.has(value),
-    ),
     selectedCountries: state.selectedCountries.filter((value) =>
       availableFacets.countryCounts.has(value),
     ),
@@ -411,14 +375,11 @@ export const areTripFilterStatesEqual = (
   left.searchQuery === right.searchQuery &&
   left.priceRange[0] === right.priceRange[0] &&
   left.priceRange[1] === right.priceRange[1] &&
-  arraysEqual(left.selectedContinents, right.selectedContinents) &&
   arraysEqual(left.selectedCountries, right.selectedCountries) &&
   arraysEqual(left.selectedDurations, right.selectedDurations) &&
   arraysEqual(left.selectedCities, right.selectedCities) &&
   left.showFeatured === right.showFeatured &&
   left.sortBy === right.sortBy;
-
-export const getContinentLabel = (country: string) => getContinent(country);
 
 const arraysEqual = <T extends string | number>(left: T[], right: T[]) => {
   if (left.length !== right.length) return false;
@@ -502,14 +463,6 @@ const matchesTripFilters = (
     excludedFacet !== "price" &&
     ((trip.price_num ?? 0) < state.priceRange[0] ||
       (trip.price_num ?? 0) > state.priceRange[1])
-  ) {
-    return false;
-  }
-
-  if (
-    excludedFacet !== "continent" &&
-    state.selectedContinents.length > 0 &&
-    !state.selectedContinents.includes(getContinent(getTripField(trip, "country", lang) ?? ""))
   ) {
     return false;
   }
