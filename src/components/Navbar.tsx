@@ -8,6 +8,7 @@ import ContactModal from "@/components/ContactModal";
 import { prefetchTripsRoute } from "@/lib/routePrefetch";
 import { fetchSeasonalNavItems } from "@/lib/seasonalNavApi";
 import { showTrips } from "@/lib/showTrips";
+import { cn } from "@/lib/utils";
 
 interface NavbarProps {
   darkMode: boolean;
@@ -171,6 +172,19 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
     if (!menuOpen) setSeasonalAccordionOpen(false);
   }, [menuOpen]);
 
+  const categoryButtons = navCategories.map((cat) => (
+    <button
+      key={cat.key}
+      type="button"
+      onClick={() => handleCategoryClick(cat.filter)}
+      onMouseEnter={prefetchTripsRoute}
+      onFocus={prefetchTripsRoute}
+      className="shrink-0 whitespace-nowrap rounded-full px-2.5 py-2.5 text-sm font-medium text-foreground-muted hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] sm:px-3"
+    >
+      {t(cat.key)}
+    </button>
+  ));
+
   return (
     <>
       {/* Main nav */}
@@ -180,7 +194,16 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
         className="fixed top-2 sm:top-0 left-0 right-0 z-[100] px-2 py-3 sm:px-4 md:px-8 md:py-4 transform-gpu [backface-visibility:hidden]"
       >
-        <div className="premium-panel navbar-shell mx-auto grid w-full max-w-[min(100%,1800px)] grid-cols-[1fr_auto] items-center gap-3 rounded-[1.75rem] px-3 py-2.5 sm:px-4 md:px-6 md:py-4 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-4 bg-white/70 dark:bg-slate-900/65 backdrop-blur-md transform-gpu [backface-visibility:hidden]">
+        <div
+          className={cn(
+            "premium-panel navbar-shell mx-auto grid w-full max-w-[min(100%,1800px)] grid-cols-[1fr_auto] items-center gap-3 rounded-[1.75rem] px-3 py-2.5 sm:px-4 md:px-6 md:py-4 bg-white/70 dark:bg-slate-900/65 backdrop-blur-md transform-gpu [backface-visibility:hidden]",
+            showTrips && hasSeasonalMenu
+              ? "lg:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto_auto] lg:gap-4"
+              : showTrips
+                ? "lg:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto] lg:gap-4"
+                : "lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-4",
+          )}
+        >
           <Link
             to="/"
             className="shrink-0 justify-self-start"
@@ -199,82 +222,68 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
             />
           </Link>
 
-          {/* Desktop categories + grouped Seasonal dropdown — full middle column; horizontal scroll if needed */}
+          {/* Desktop categories: two equal 1fr tracks center the nav — logo→nav matches nav→utilities (or nav→seasonal when present) */}
           {showTrips ? (
-            <div className="hidden min-w-0 w-full lg:flex">
-              {/* Seasonal dropdown must NOT live inside overflow-x-auto — that clips position:absolute panels */}
-              <div className="flex min-w-0 w-full flex-row flex-nowrap items-center justify-start gap-3">
-                <div className="flex min-w-0 flex-1 flex-row flex-nowrap items-center justify-start gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:thin]">
-                  {navCategories.map((cat) => (
-                    <button
-                      key={cat.key}
-                      type="button"
-                      onClick={() => handleCategoryClick(cat.filter)}
-                      onMouseEnter={prefetchTripsRoute}
-                      onFocus={prefetchTripsRoute}
-                      className="shrink-0 whitespace-nowrap rounded-full px-2.5 py-2.5 text-sm font-medium text-foreground-muted hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] sm:px-3"
-                    >
-                      {t(cat.key)}
-                    </button>
-                  ))}
-                </div>
-                {hasSeasonalMenu ? (
-                  <div className="relative shrink-0">
-                    <button
-                      ref={seasonalTriggerRef}
-                      type="button"
-                      onClick={() =>
-                        setSeasonalDropdownOpen((open) => !open)
-                      }
-                      onMouseEnter={prefetchTripsRoute}
-                      onFocus={prefetchTripsRoute}
-                      aria-expanded={seasonalDropdownOpen}
-                      aria-haspopup="menu"
-                      aria-label={t("nav.seasonalAria")}
-                      className="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-2.5 text-sm font-medium text-foreground-muted hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] sm:gap-1.5 sm:px-3"
-                    >
-                      {t("nav.seasonal")}
-                      <ChevronDown
-                        className={`h-4 w-4 shrink-0 transition-transform duration-200 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] ${seasonalDropdownOpen ? "rotate-180" : ""}`}
-                        aria-hidden
-                      />
-                    </button>
-                    <AnimatePresence>
-                      {seasonalDropdownOpen ? (
-                        <motion.div
-                          key="seasonal-nav-dropdown"
-                          ref={seasonalPanelRef}
-                          role="menu"
-                          initial={{ opacity: 0, y: -6 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -6 }}
-                          transition={{
-                            duration: 0.2,
-                            ease: [0.22, 1, 0.36, 1],
-                          }}
-                          className="absolute right-0 top-[calc(100%+0.5rem)] z-[110] min-w-[14rem] rounded-2xl border border-foreground/15 bg-white p-2 shadow-lg dark:border-white/15 dark:bg-slate-900"
-                          style={{ boxShadow: "var(--shadow-elev-3)" }}
-                        >
-                          {seasonalItems.map((item) => (
-                            <button
-                              key={item.key}
-                              role="menuitem"
-                              type="button"
-                              onClick={() => handleSeasonalClick(item.key)}
-                              onMouseEnter={prefetchTripsRoute}
-                              onFocus={prefetchTripsRoute}
-                              className="flex w-full min-h-[44px] items-center rounded-xl px-4 py-3 text-left text-base font-medium text-foreground hover:bg-slate-100 dark:hover:bg-white/10"
-                            >
-                              {lang === "gr" ? item.label_el : item.label_en}
-                            </button>
-                          ))}
-                        </motion.div>
-                      ) : null}
-                    </AnimatePresence>
-                  </div>
-                ) : null}
+            <>
+              <div className="hidden min-w-0 lg:block" aria-hidden />
+              <div className="hidden min-w-0 flex-row flex-nowrap items-center justify-start gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:thin] lg:flex">
+                {categoryButtons}
               </div>
-            </div>
+              <div className="hidden min-w-0 lg:block" aria-hidden />
+              {hasSeasonalMenu ? (
+                <div className="relative hidden min-w-0 shrink-0 lg:block">
+                  <button
+                    ref={seasonalTriggerRef}
+                    type="button"
+                    onClick={() => setSeasonalDropdownOpen((open) => !open)}
+                    onMouseEnter={prefetchTripsRoute}
+                    onFocus={prefetchTripsRoute}
+                    aria-expanded={seasonalDropdownOpen}
+                    aria-haspopup="menu"
+                    aria-label={t("nav.seasonalAria")}
+                    className="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-2.5 text-sm font-medium text-foreground-muted hover:text-foreground hover:bg-white/70 dark:hover:bg-white/5 transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] sm:gap-1.5 sm:px-3"
+                  >
+                    {t("nav.seasonal")}
+                    <ChevronDown
+                      className={`h-4 w-4 shrink-0 transition-transform duration-200 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] ${seasonalDropdownOpen ? "rotate-180" : ""}`}
+                      aria-hidden
+                    />
+                  </button>
+                  <AnimatePresence>
+                    {seasonalDropdownOpen ? (
+                      <motion.div
+                        key="seasonal-nav-dropdown"
+                        ref={seasonalPanelRef}
+                        role="menu"
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        transition={{
+                          duration: 0.2,
+                          ease: [0.22, 1, 0.36, 1],
+                        }}
+                        className="absolute right-0 top-[calc(100%+0.5rem)] z-[110] min-w-[14rem] rounded-2xl border border-foreground/15 bg-white p-2 shadow-lg dark:border-white/15 dark:bg-slate-900"
+                        style={{ boxShadow: "var(--shadow-elev-3)" }}
+                      >
+                        {seasonalItems.map((item) => (
+                          <button
+                            key={item.key}
+                            role="menuitem"
+                            type="button"
+                            onClick={() => handleSeasonalClick(item.key)}
+                            onMouseEnter={prefetchTripsRoute}
+                            onFocus={prefetchTripsRoute}
+                            className="flex w-full min-h-[44px] items-center rounded-xl px-4 py-3 text-left text-base font-medium text-foreground hover:bg-slate-100 dark:hover:bg-white/10"
+                          >
+                            {lang === "gr" ? item.label_el : item.label_en}
+                          </button>
+                        ))}
+                      </motion.div>
+                    ) : null}
+                  </AnimatePresence>
+                </div>
+              ) : null}
+            </>
           ) : (
             <div className="hidden min-w-0 lg:block" aria-hidden />
           )}
