@@ -1,315 +1,160 @@
-# Valitsa Travel Platform
+<div align="center">
 
-> Premium travel discovery and inquiry platform engineered for conversion, trust, and operational reliability.
+# VALITSA TRAVEL
 
-![TypeScript](https://img.shields.io/badge/TypeScript-5.8+-3178C6?logo=typescript&logoColor=white)
-![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=111827)
-![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
-![Node.js](https://img.shields.io/badge/Node.js-API-339933?logo=nodedotjs&logoColor=white)
-![Express](https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white)
-![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3-06B6D4?logo=tailwindcss&logoColor=white)
-![Vitest](https://img.shields.io/badge/Tested_with-Vitest-6E9F18?logo=vitest&logoColor=white)
-![Status](https://img.shields.io/badge/Status-Active_Development-16A34A)
+### A flagship product experience — part of my **PORTOFOLIO** lineage
 
----
+**Live:** [valitsatravel.gr](https://valitsatravel.gr/) · **Archive:** [valitsatravel.gr/trips](https://valitsatravel.gr/trips)
 
-## Table of Contents
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=111)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Express](https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white)](https://expressjs.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Vitest](https://img.shields.io/badge/tests-Vitest-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev/)
 
-- [The Problem](#the-problem)
-- [The Solution](#the-solution)
-- [Architecture and Product Surfaces](#architecture-and-product-surfaces)
-- [Tech Stack](#tech-stack)
-- [Features](#features)
-- [Engineering Excellence](#engineering-excellence)
-  - [Security](#security)
-  - [Performance](#performance)
-  - [Scalability](#scalability)
-- [Documentation](#documentation)
-  - [API Endpoints](#api-endpoints)
-  - [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-- [Contribution](#contribution)
-- [License](#license)
+</div>
 
 ---
 
-## The Problem
-
-Luxury travel brands need digital experiences that do more than look beautiful. They must:
-
-- Communicate trust and brand quality from the first interaction.
-- Handle multilingual audiences and diverse device contexts.
-- Convert discovery traffic into qualified inquiries without friction.
-- Protect backend services from abuse while preserving a smooth user journey.
-
-Traditional brochure-style sites often fail this balance: they are visually strong but operationally weak, or operationally safe but conversion-hostile.
-
-## The Solution
-
-Valitsa Travel is a full-stack, conversion-focused travel platform that combines:
-
-- A fast, animated React front-end optimized for premium storytelling.
-- Structured filtering and search ergonomics to reduce decision fatigue.
-- A hardened Express inquiry API with validation, rate limits, and CAPTCHA verification.
-- SEO and structured data layers that improve discoverability and social share quality.
-
-The engineering intent is clear: deliver a premium experience that is measurable, maintainable, and secure in production.
+> [!NOTE]
+> **Architecture at a glance:** This repository is a **Vite 8 + React 18** single-page application with a **Node / Express 5** API — not Next.js. Routing is **React Router v6**; deployment targets **cPanel / Phusion Passenger** with rsync-based release automation.
 
 ---
 
-## Architecture and Product Surfaces
+## Executive summary
 
-### Live Site URLs
+**Valitsa Travel** is a production luxury-travel discovery and inquiry platform: cinematic storytelling on the marketing surface, a data-rich **trips archive** with faceted filters and URL-driven presets, and a **conversion-oriented inquiry pipeline** (contact modal + trip-detail flows) backed by SMTP confirmation and abuse-resistant APIs.
 
-- Main site: https://valitsatravel.gr/
-- Trips archive: https://valitsatravel.gr/trips
-
----
-
-## Tech Stack
-
-### Frontend
-
-- ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=111827) React 18 + TypeScript SPA architecture.
-- ![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white) Vite for fast iteration and optimized production builds.
-- ![React Router](https://img.shields.io/badge/React_Router-6-CA4245?logo=reactrouter&logoColor=white) Route-driven UX (`/`, `/trips`, fallback page).
-- ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3-06B6D4?logo=tailwindcss&logoColor=white) Utility-first design system.
-- ![Framer Motion](https://img.shields.io/badge/Framer_Motion-12-0055FF?logo=framer&logoColor=white) Motion and transition orchestration.
-- ![Radix UI](https://img.shields.io/badge/Radix_UI-Primitives-161618?logo=radixui&logoColor=white) Accessible UI primitives.
-- ![TanStack Query](https://img.shields.io/badge/TanStack_Query-5-FF4154?logo=reactquery&logoColor=white) Data layer foundation for scalable async state.
-- ![Zod](https://img.shields.io/badge/Zod-Validation-3E67B1) Runtime schema alignment where needed.
-
-### Backend
-
-- ![Node.js](https://img.shields.io/badge/Node.js-Server-339933?logo=nodedotjs&logoColor=white) Node.js runtime.
-- ![Express](https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white) API service for inquiry submission and health checks.
-- ![Nodemailer](https://img.shields.io/badge/Nodemailer-SMTP-0F766E) SMTP integration for operational email delivery.
-- ![Helmet](https://img.shields.io/badge/Helmet-Security-111827) Hardened HTTP headers baseline.
-- ![CORS](https://img.shields.io/badge/CORS-Origin_Control-1F2937) Explicit origin controls by environment.
-- ![Rate Limit](https://img.shields.io/badge/Rate_Limit-Express-DC2626) Abuse mitigation via rate limiting and slowdown.
-
-### Quality and Tooling
-
-- ![ESLint](https://img.shields.io/badge/ESLint-9-4B32C3?logo=eslint&logoColor=white) Linting and code quality gates.
-- ![Vitest](https://img.shields.io/badge/Vitest-4-6E9F18?logo=vitest&logoColor=white) Unit test framework.
-- ![Testing Library](https://img.shields.io/badge/Testing_Library-UI-CA4245?logo=testinglibrary&logoColor=white) UI testing utilities.
-- ![PostCSS](https://img.shields.io/badge/PostCSS-8-DD3A0A?logo=postcss&logoColor=white) CSS processing pipeline.
-
-### SEO and Discovery
-
-- ![Open Graph](https://img.shields.io/badge/Open_Graph-Enabled-0EA5E9)
-- ![Twitter Cards](https://img.shields.io/badge/Twitter_Cards-Enabled-1D9BF0?logo=x&logoColor=white)
-- ![Schema.org](https://img.shields.io/badge/Schema.org-JSON--LD-0F766E)
-- ![Sitemap](https://img.shields.io/badge/XML_Sitemap-Managed-2563EB)
+The product is engineered to feel **smooth, fast, and high-touch** — motion that respects preference, imagery that loads intelligently, and a visual language built on **violet–cyan gradients** and precision elevation shadows — while remaining **auditable and operable** for a real business (SEO, structured data, admin tools, Supabase-backed staff workflows).
 
 ---
 
-## Features
+## Under the Hood — the engineering secret sauce
 
-- Premium, animated landing experience with curated destination storytelling.
-- Dedicated trips archive with advanced faceted filtering and sorting.
-- URL-driven filter presets for campaign-friendly navigation (daily, two-day, domestic, international).
-- Trip detail overlay with itinerary tabs, highlights, and guided inquiry flow.
-- Reusable contact and inquiry forms wired to backend email dispatch.
-- CAPTCHA integration (Cloudflare Turnstile or Google reCAPTCHA) for bot mitigation.
-- Multilingual user experience (Greek and English).
-- Theme-aware rendering (light/dark support).
-- SEO-ready pages with canonical tags, Open Graph, Twitter cards, and JSON-LD.
-- Progressive image loading and route-level lazy loading for smoother perceived performance.
+### Perceived performance (what users feel)
 
----
+| Technique | Where it lives | What it does |
+|-----------|----------------|----------------|
+| Route-level code splitting | [`src/App.tsx`](src/App.tsx) — `React.lazy` for `Index`, `Trips`, admin pages | Keeps initial JS lean; heavy routes load on demand inside `Suspense`. |
+| Vendor chunk strategy | [`vite.config.ts`](vite.config.ts) — `manualChunks` splits `react-vendor`, `motion-vendor`, `router-vendor`, `radix-vendor`, `vendor` | Improves cacheability and parallel download behavior. |
+| Progressive imagery | [`src/components/ProgressiveImage.tsx`](src/components/ProgressiveImage.tsx) | `IntersectionObserver` with `rootMargin: "400px"` kicks off loads before the user hits the fold; LQIP-style blur path; `fetchPriority` / `loading` tuned for hero vs below-fold. |
+| CDN-aware URLs | [`src/lib/utils.ts`](src/lib/utils.ts) — `optimizeImageUrl`, `buildResponsiveImageSet` | Unsplash (and similar) URLs get width, format, and quality parameters for responsive `srcset`. |
+| Scroll & route UX | [`src/lib/instantScrollToTop.ts`](src/lib/instantScrollToTop.ts), [`src/App.tsx`](src/App.tsx) `ScrollToTop` | Instant scroll reset on navigation (`useLayoutEffect` + location key) — no “stuck scroll” between views. |
+| Motion system | [`src/App.tsx`](src/App.tsx) — `MotionConfig` with `reducedMotion="user"` | Honors OS “reduce motion”; animations degrade gracefully. |
 
-## Engineering Excellence
+### Visual identity — neon-adjacent purple & electric cyan
 
-### Security
+Design tokens are centralized in CSS variables, not scattered magic numbers:
 
-Security choices were made to protect both infrastructure and brand reputation:
+- **Primary (brand violet):** `--primary: 270 91% 65%` — aligned with Tailwind semantic `primary` in [`src/index.css`](src/index.css).
+- **Accent (cool cyan):** `--accent: 199 89% 48%` — used for highlights and secondary emphasis.
+- **Layered elevation:** `--shadow-elev-*` stacks combine edge rings + ambient + direct shadows for “floating glass” panels and CTAs.
 
-- Strict payload validation with Zod on inquiry input before processing.
-- Sanitization routines (`escapeHtml`, `sanitizeHeader`) to reduce injection vectors.
-- Helmet middleware for safer default HTTP headers.
-- Environment-aware CORS allow-listing with production enforcement.
-- Request throttling with `express-rate-limit` and `express-slow-down`.
-- CAPTCHA verification against Turnstile or reCAPTCHA before accepting production submissions.
-- Reduced attack surface with disabled `x-powered-by` and constrained body size limits.
+Typography pairs **Plus Jakarta Sans** (UI) with **Playfair Display** (trip titles) — see [`src/index.css`](src/index.css) imports and `--font-trip-title`.
 
-Authentication note:
+### Trust, content safety, and forms
 
-- The current product does not expose authenticated user accounts.
-- If account-based workflows are introduced, JWT/OAuth2 is the recommended next layer for delegated auth and token-based session strategy.
+| Concern | Implementation |
+|---------|----------------|
+| Rich HTML from CMS/editor | [`src/lib/sanitizeTripRichTextHtml.ts`](src/lib/sanitizeTripRichTextHtml.ts) — **DOMPurify** with an explicit tag/attribute allowlist; rendered via [`src/components/SafeRichTextHtml.tsx`](src/components/SafeRichTextHtml.tsx). |
+| Bot resistance | [`src/components/CaptchaField.tsx`](src/components/CaptchaField.tsx) — Cloudflare **Turnstile** (or reCAPTCHA) with responsive `size` (`compact` / `flexible`) for mobile layouts. |
+| Theme & language persistence | [`src/lib/themeStorage.ts`](src/lib/themeStorage.ts), [`src/lib/languageStorage.ts`](src/lib/languageStorage.ts) — `valitsa-theme` / `valitsa-lang` in `localStorage`, aligned with [`next-themes`](https://github.com/pacocoursey/next-themes) in [`src/App.tsx`](src/App.tsx). |
+| Modal ergonomics | [`src/hooks/useScrollLock.ts`](src/hooks/useScrollLock.ts) — locks `html`/`body` overflow while overlays are open (`TripDetail`, `ContactModal`, `TermsModal`). |
 
-Data protection note:
+### Backend hardening (Express)
 
-- SMTP is configured over secure transport (`secure` mode for SMTPS port 465).
-- Secrets are externalized via environment variables, not committed to source.
-
-### Performance
-
-Performance investments target both objective speed and perceived responsiveness:
-
-- Route-level code splitting through `React.lazy` + `Suspense`.
-- Dedicated route prefetch utility to reduce navigation latency.
-- Progressive image rendering to improve visual stability and loading experience.
-- Motion tuned with reduced-motion support and GPU-friendly transitions.
-- Vite production bundling for modern output and fast build performance.
-- Lean API responses and bounded payload sizes for predictable backend behavior.
-
-Caching strategy status:
-
-- Redis is not currently required by workload shape, but the API boundary is ready for introducing Redis-backed response or throttle state caching when traffic patterns demand it.
-
-### Scalability
-
-Scalability is achieved by separation of concerns and clear runtime boundaries:
-
-- Decoupled SPA and API runtimes allow independent deployment and scaling.
-- Modular front-end architecture (components, contexts, pages, libs) supports team parallelism.
-- Stateless API design eases horizontal scaling behind a load balancer.
-- Environment-driven behavior (`NODE_ENV`, explicit CORS origins) supports staged rollouts.
-- Existing boundaries are compatible with containerization (Docker) and future service decomposition if business growth requires microservices.
-
-Design pattern perspective:
-
-- This is intentionally a modular monolith today: simple enough for velocity, structured enough to evolve.
-
----
-
-## Documentation
-
-### API Endpoints
-
-Base URL (local): `http://localhost:8787`
-
-| Method | Endpoint            | Description                      |
-| ------ | ------------------- | -------------------------------- |
-| GET    | `/api/health`       | Health check endpoint            |
-| GET    | `/health`           | Health check alias               |
-| POST   | `/api/send-inquiry` | Main inquiry submission endpoint |
-| POST   | `/send-inquiry`     | Inquiry submission alias         |
-
-Inquiry payload shape (high-level):
-
-- `from_name` (string)
-- `from_email` (email)
-- `phone` (optional)
-- `message` (string)
-- `source` (`contact-modal` or `trip-detail`)
-- `trip_title`, `trip_location`, `trip_price`, `trip_url` (contextual)
-- `captcha_token` (required in production)
-- `submitted_at` (ISO datetime)
-
-### Project Structure
+From [`server/index.js`](server/index.js) and [`server/adminRoutes.js`](server/adminRoutes.js):
 
 ```text
-Valitsa_Travel/
-|- public/                  # Static assets, robots, sitemap, branding
-|- server/
-|  |- index.js              # Express API, validation, security middleware, SMTP
-|  |- .env.example          # Backend environment template
-|- src/
-|  |- components/           # Reusable UI and domain components
-|  |- contexts/             # Theme and language providers
-|  |- data/                 # Mock trip dataset and localized content
-|  |- hooks/                # Custom React hooks
-|  |- lib/                  # Utilities (email client, route prefetch, filters)
-|  |- pages/                # Route-level screens
-|  |- App.tsx               # App composition and route registration
-|  |- main.tsx              # Frontend entrypoint
-|- test/                    # Vitest setup and tests
-|- .env.example             # Frontend environment template
-|- package.json             # Scripts and dependencies
+Helmet (HSTS in prod, referrer policy, CORP) · CORS allow-list (production requires CORS_ORIGIN)
+· express-rate-limit + express-slow-down on hot paths · Zod schemas for inquiry payloads
+· CAPTCHA verification in production · multer + sharp for bounded admin uploads
+· Supabase JWT + profiles.role === "admin" for protected /api/admin/* routes
 ```
+
+`app.disable("x-powered-by")` and `trust proxy` are set explicitly for sane rate limiting behind reverse proxies.
+
+### Infrastructure & delivery
+
+| Artifact | Role |
+|----------|------|
+| [`.cpanel.yml`](.cpanel.yml) | Rsync deploy to managed hosting, `tmp/restart.txt` for Passenger bounce. |
+| [`passenger_entry.cjs`](passenger_entry.cjs) | CommonJS bridge — dynamic `import()` of ESM [`server/index.js`](server/index.js) for Phusion Passenger. |
+| [`scripts/verify-passenger-deploy.mjs`](scripts/verify-passenger-deploy.mjs) | Invoked via `npm run verify:deploy` — post-deploy sanity checks. |
+| [`vite.config.ts`](vite.config.ts) | Dev `/api` proxy to `API_PORT` (default `8787`); production build drops `console` / `debugger` via `esbuild`. |
 
 ---
 
-## Getting Started
+## Scalability
 
-### Prerequisites
-
-- Node.js 20+
-- npm 10+
-
-### 1) Install dependencies
-
-```bash
-npm install
-```
-
-### 2) Configure frontend environment
-
-Create `.env` from `.env.example` in the repository root:
-
-```bash
-VITE_MAIL_API_URL=http://localhost:8787/api/send-inquiry
-VITE_TURNSTILE_SITE_KEY=your_turnstile_site_key
-# VITE_RECAPTCHA_SITE_KEY=your_recaptcha_site_key
-# VITE_SHOW_TRIPS=false hides trips UI site-wide (omit or true for normal behavior)
-```
-
-### 3) Configure backend environment
-
-Create `server/.env` from `server/.env.example`:
-
-```bash
-API_PORT=8787
-CORS_ORIGIN=https://valitsatravel.gr,https://www.valitsatravel.gr
-
-MAIL_HOST=mail.yourdomain.com
-MAIL_PORT=465
-MAIL_USER=noreply@yourdomain.com
-MAIL_PASS=your_email_password
-MAIL_TO=bookings@yourdomain.com
-MAIL_CC=manager@yourdomain.com
-
-TURNSTILE_SECRET_KEY=your_turnstile_secret
-# RECAPTCHA_SECRET_KEY=your_recaptcha_secret
-```
-
-### 4) Run the full stack locally
-
-```bash
-npm run dev:full
-```
-
-Services:
-
-- Frontend: `http://localhost:5173`
-- API: `http://localhost:8787`
-
-### 5) Build and test
-
-```bash
-npm run build
-npm run test
-npm run lint
-```
+- **Front / API split:** Static Vite build + stateless Express API — scale horizontally behind a load balancer without sticky sessions for public traffic.
+- **Data layer:** Supabase client for trip content; TanStack Query in the app for cache-friendly async patterns.
+- **Admin domain:** Isolated under `/admin/*` with role-checked server middleware — clear boundary for future SSO or stricter RBAC.
 
 ---
 
-## Contribution
+## Maintainability
 
-Contributions are welcome from product, design, and engineering collaborators.
+- **TypeScript** end-to-end on the client; **Zod** at API boundaries for runtime truth.
+- **Component architecture:** `src/components/` (UI + domain), `src/pages/` (routes), `src/lib/` (pure utilities), `src/admin/` (operations console).
+- **Styling:** Tailwind + `cn()` ([`src/lib/utils.ts`](src/lib/utils.ts)) merges class names without conflicting utilities.
+- **Content editing:** TipTap ([`@tiptap/*`](package.json)) in admin for structured trip copy — normalized server-side in admin routes.
 
-Recommended workflow:
+---
 
-1. Create a feature branch from `dev`.
-2. Keep pull requests focused and reviewable.
-3. Include tests or validation notes for behavior changes.
-4. Ensure lint and test commands pass before requesting review.
+## Accessibility & inclusive motion
 
-For substantial changes, include a short design rationale that explains the trade-offs and expected user impact.
+- **Radix UI** primitives for dialogs, scroll areas, tooltips — focus management and keyboard semantics by default.
+- **Framer Motion** gated by **`reducedMotion="user"`** globally ([`src/App.tsx`](src/App.tsx)).
+- **Semantic HTML & SEO:** [`src/components/Seo.tsx`](src/components/Seo.tsx) (react-helmet-async) sets canonical, Open Graph, and JSON-LD; root document language is Greek-first ([`index.html`](index.html) `lang="el"`).
+
+---
+
+## Security checklist (evidence-based)
+
+| Layer | Mechanism |
+|-------|-----------|
+| Transport & headers | Helmet, HSTS when `NODE_ENV=production`, no `X-Powered-By` |
+| Origin control | Strict CORS in production — **throws** if `CORS_ORIGIN` is empty when production |
+| Input validation | Zod `inquirySchema` / `trackClickSchema` in [`server/index.js`](server/index.js) |
+| Abuse control | Dedicated limiters + slowdown middleware |
+| HTML injection | DOMPurify allowlist for public rich text |
+| Admin surface | Bearer JWT → Supabase `getUser` + `profiles.role` gate |
+
+> [!IMPORTANT]
+> **Secrets** live in environment variables only (see root `.env.example` and `server/.env.example`). Never commit credentials.
+
+---
+
+## Scripts
+
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Concurrent Vite (`localhost:5180`) + Express API (`API_PORT`, default `8787`) |
+| `npm run build` | Optimized client bundle |
+| `npm run start:api` | Production API process |
+| `npm run verify:deploy` | Passenger deploy verification |
+| `npm test` | Vitest |
+
+---
+
+## Let’s connect
+
+This build is a deliberate **portfolio-grade** artifact: opinionated UX, disciplined security, and infrastructure you can explain in a boardroom.
+
+| Channel | Link |
+|---------|------|
+| **LinkedIn** | `https://www.linkedin.com/in/YOUR_USERNAME` |
+| **Email** | `you@yourdomain.com` |
+| **Website** | [valitsatravel.gr](https://valitsatravel.gr/) |
 
 ---
 
 ## License
 
-## License
+See [LICENSE](LICENSE) in this repository.
 
-This project is licensed under an **Educational Use Only License**.
+---
 
-- **You may use, copy, and modify this software only for educational and non-commercial purposes.**
-- **Commercial use or any activity intended for monetary gain is strictly prohibited.**
-- All rights, title, and interest in and to the software remain with **Athanasios Oikonomou**.
-- For commercial licensing, contact Athanasios Oikonomou for explicit written permission.
-
-See the [LICENSE](LICENSE) file for full terms.
+<p align="center"><sub>Built with intent. Shipped with care. <strong>VALITSA TRAVEL</strong> — premium travel, engineered.</sub></p>
