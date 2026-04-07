@@ -6,15 +6,15 @@
   RewriteEngine On
   RewriteBase /
 
+  # Let ACME/CAA validation and similar well-known paths pass through untouched.
+  RewriteRule ^\.well-known(?:/|$) - [L]
+
   # Let /api/* reach the backend before any -f/-d checks (avoids odd host edge cases).
   RewriteRule ^api(/|$) - [L]
 
   # SPA /admin/* before mod_dir sees a real admin/ folder on disk (often 301s to /admin/).
   RewriteCond %{REQUEST_URI} ^/admin(/.*)?$
   RewriteRule .* index.html [L]
-
-  # Canonical home URL (avoid duplicate /index.html).
-  RewriteRule ^index\.html$ / [R=301,L]
 
   # Do not rewrite real files or directories (assets, index.html, etc.).
   RewriteCond %{REQUEST_FILENAME} -f [OR]
@@ -26,24 +26,18 @@
   RewriteRule . index.html [L]
 </IfModule>
 
-# Never cache index.html; it references hashed JS/CSS bundles
-
-# and must always be fresh so users get the latest build.
-
+# Never cache index.html; it references hashed JS/CSS bundles and must stay fresh.
 <Files "index.html">
-<IfModule mod_headers.c>
-Header set Cache-Control "no-cache, no-store, must-revalidate"
-Header set Pragma "no-cache"
-Header set Expires "0"
-</IfModule>
+  <IfModule mod_headers.c>
+    Header set Cache-Control "no-store, no-cache, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </IfModule>
 </Files>
 
-# Long-term cache for Vite's hashed assets (JS, CSS, images, fonts).
-
-# Safe because Vite changes the filename hash on every build.
-
+# Long-term cache only for hashed Vite assets.
 <IfModule mod_headers.c>
-  <FilesMatch "\.(js|css|woff2?|ttf|eot|svg|png|jpg|jpeg|gif|webp|ico)$">
+  <FilesMatch ".+-[A-Za-z0-9_-]{8,}\.(?:js|css|woff2?|ttf|eot|svg|png|jpe?g|gif|webp|avif|ico)$">
     Header set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
 </IfModule>

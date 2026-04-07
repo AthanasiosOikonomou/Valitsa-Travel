@@ -20,15 +20,19 @@ Passenger production checklist (Valitsa Travel)
 
 5) Document root vs Vite build (two valid layouts)
    A) DocumentRoot = application root (same folder as package.json)
-      - Repo root .htaccess is intentionally minimal (Passenger only). SPA paths and /api are served by Express once Passenger forwards to Node; run `npm run build` so dist/ exists.
+      - Preferred for Passenger on cPanel/CloudLinux.
+      - Repo root .htaccess stays intentionally minimal: Passenger boot only, no SPA redirects or canonical rewrites.
+      - SPA paths and /api are served by Express once Passenger forwards to Node; run `npm run build` so dist/ exists.
       - If your host stacks nginx in front of Apache, heavy mod_rewrite SPA rules can interact badly; prefer this minimal .htaccess and rely on server/index.js static + index.html fallback.
    B) DocumentRoot = only the contents of dist/ (flat static deploy)
       - Use the .htaccess inside dist/ (copied from public/.htaccess at build time).
+      - That file now uses internal rewrites only, skips `/.well-known`, and never redirects `/index.html` during automated checks.
       - Include hidden files when uploading: .htaccess must not be skipped.
 
 6) Client routes (/trips, /admin/login, …)
    - Without dist/, Express cannot serve the SPA; deep links will 404.
-   - If Apache answers before Passenger, root .htaccess (layout A) must be deployed so paths rewrite to dist/index.html.
+   - In layout A, Passenger should forward the request to Node and Express will return dist/index.html for all non-API GET/HEAD routes.
+   - In layout B, dist/.htaccess rewrites deep links internally to index.html while leaving `/api/*` untouched.
 
 7) Node.js for builds on the server
    - Vite 8 requires Node.js 20.19+ or 22.12+. Upgrade the host Node selector (e.g. nodevenv) or build locally / in CI and upload dist/.
@@ -40,5 +44,17 @@ Passenger production checklist (Valitsa Travel)
 10) Unexpected 301 Moved Permanently on `/api/*` or `/admin/*`
    - Open DevTools → Network → select the request → Response Headers. Read `Location` (if present).
    - If `Location` points to another host (e.g. www vs apex) or http→https, fix cPanel Redirects / SSL / Domains — not only this repo’s .htaccess.
-   - If `Location` only adds or removes a trailing slash (often `/admin` → `/admin/`), a real `admin/` directory on the server is the usual cause. Delete or rename that folder if it is not needed; the repo `.htaccess` also rewrites `/admin` to the SPA early to reduce mod_dir 301s — redeploy root `.htaccess` and rebuild `dist/` so `public/.htaccess` is updated.
+   - If `Location` only adds or removes a trailing slash (often `/admin` → `/admin/`), a real `admin/` directory on the server is the usual cause. Delete or rename that folder if it is not needed; rebuild `dist/` so the latest `public/.htaccess` is copied for layout B.
    - After deploy, you can sanity-check: `curl -sI https://your-domain/api/seasonal-nav` and note status plus any `Location` header.
+
+11) Redirect-loop sanity check for cPanel / Passenger
+   - If the Node.js selector fails with TooManyRedirects during `npm install`, first remove any cPanel Redirects / force-HTTPS rules that duplicate Apache or proxy redirects.
+   - In layout A, keep the root .htaccess rewrite-free so Passenger internal pings are handled by Node instead of being redirected by Apache.
+   - In layout B, avoid any external rewrite rules in dist/.htaccess; use internal rewrites only.
+
+12) Post-deploy verification
+   - `curl -sI https://your-domain/` should return 200 and no redirect chain beyond your intended host/HTTPS canonicalization.
+   - `curl -sI https://your-domain/admin` should return 200 and no Apache 404.
+   - `curl -s https://your-domain/api/health` should return JSON like `{"ok":true,...}` with no `Location` header.
+   - `curl -sI https://your-domain/assets/<hashed-file>` should include `Cache-Control: public, max-age=31536000, immutable`.
+   - `curl -sI https://your-domain/index.html` should include `Cache-Control: no-store, no-cache, must-revalidate`.

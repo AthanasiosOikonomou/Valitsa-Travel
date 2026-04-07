@@ -790,17 +790,46 @@ registerAdminRoutes(app, { supabaseAdmin });
 // Serve Vite build when dist exists (not gated on NODE_ENV — many hosts omit NODE_ENV=production).
 const distDir = path.join(__dirname, "../dist");
 const indexHtml = path.join(distDir, "index.html");
+const immutableAssetPattern =
+  /^assets\/.+-[A-Za-z0-9_-]{8,}\.(?:css|js|mjs|png|jpe?g|gif|svg|webp|avif|ico|woff2?|ttf|eot)$/i;
+const setIndexHtmlHeaders = (res) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+};
+const isApiRequestPath = (requestPath) =>
+  requestPath === "/api" || requestPath.startsWith("/api/");
+
 if (fs.existsSync(indexHtml)) {
-  app.use(express.static(distDir));
+  app.use(
+    express.static(distDir, {
+      setHeaders(res, filePath) {
+        const relativePath = path
+          .relative(distDir, filePath)
+          .split(path.sep)
+          .join("/");
+
+        if (relativePath === "index.html") {
+          setIndexHtmlHeaders(res);
+          return;
+        }
+
+        if (immutableAssetPattern.test(relativePath)) {
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        }
+      },
+    }),
+  );
   app.use((req, res, next) => {
     if (req.method !== "GET" && req.method !== "HEAD") {
       next();
       return;
     }
-    if (req.path.startsWith("/api")) {
+    if (isApiRequestPath(req.path)) {
       next();
       return;
     }
+    setIndexHtmlHeaders(res);
     res.sendFile(indexHtml);
   });
 } else {

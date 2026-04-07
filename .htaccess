@@ -1,10 +1,17 @@
-# Phusion Passenger: load ESM server via CommonJS shim (see passenger_entry.cjs).
-# Omit if your host sets the startup file only in the control panel.
+# App-root Passenger bootstrap only.
+# Keep Apache rewrite-free here so CloudLinux/Passenger internal checks and
+# browser deep links both reach Node without edge-side redirect loops.
 <IfModule mod_passenger.c>
   PassengerAppType node
   PassengerStartupFile passenger_entry.cjs
 </IfModule>
 
-# SPA routes (/admin, /trips, …) and /api are handled by Node (server/index.js) once the
-# request reaches Passenger. This minimal file avoids Apache/nginx edge cases that can
-# mis-handle rewrites in front of Passenger.
+# Deny direct access to deployment-only files if Apache serves them before Passenger.
+<IfModule mod_authz_core.c>
+  <FilesMatch "^(?:\.env(?:\..*)?|package(?:-lock)?\.json|Passengerfile\.json|passenger_entry\.cjs|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml)$">
+    Require all denied
+  </FilesMatch>
+</IfModule>
+
+# SPA routes (/admin, /trips, ...) and /api are handled by Express in
+# server/index.js once the request reaches Passenger.
