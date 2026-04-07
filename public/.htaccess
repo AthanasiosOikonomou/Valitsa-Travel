@@ -9,6 +9,10 @@
   # Let /api/* reach the backend before any -f/-d checks (avoids odd host edge cases).
   RewriteRule ^api(/|$) - [L]
 
+  # SPA /admin/* before mod_dir sees a real admin/ folder on disk (often 301s to /admin/).
+  RewriteCond %{REQUEST_URI} ^/admin(/.*)?$
+  RewriteRule .* index.html [L]
+
   # Canonical home URL (avoid duplicate /index.html).
   RewriteRule ^index\.html$ / [R=301,L]
 

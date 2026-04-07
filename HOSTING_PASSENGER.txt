@@ -40,5 +40,5 @@ Passenger production checklist (Valitsa Travel)
 10) Unexpected 301 Moved Permanently on `/api/*` or `/admin/*`
    - Open DevTools → Network → select the request → Response Headers. Read `Location` (if present).
    - If `Location` points to another host (e.g. www vs apex) or http→https, fix cPanel Redirects / SSL / Domains — not only this repo’s .htaccess.
-   - If `Location` only adds or removes a trailing slash, check the web root for stray folders named `api` or `admin` (old uploads). Remove or rename them if they are not part of this app; Apache DirectorySlash can 301 those URLs.
+   - If `Location` only adds or removes a trailing slash (often `/admin` → `/admin/`), a real `admin/` directory on the server is the usual cause. Delete or rename that folder if it is not needed; the repo `.htaccess` also rewrites `/admin` to the SPA early to reduce mod_dir 301s — redeploy root `.htaccess` and rebuild `dist/` so `public/.htaccess` is updated.
    - After deploy, you can sanity-check: `curl -sI https://your-domain/api/seasonal-nav` and note status plus any `Location` header.

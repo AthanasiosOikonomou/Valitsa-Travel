@@ -21,6 +21,10 @@ DirectoryIndex dist/index.html
   # Let /api/* reach Passenger/Node before any -f/-d checks (avoids odd host edge cases).
   RewriteRule ^api(/|$) - [L]
 
+  # SPA /admin/* before mod_dir sees a real admin/ folder on disk (cPanel often 301s to /admin/).
+  RewriteCond %{REQUEST_URI} ^/admin(/.*)?$
+  RewriteRule .* dist/index.html [L]
+
   # Do not expose repo internals when docroot equals application root.
   RewriteRule ^(server|node_modules|\.git)(/|$) - [F,L]
 
