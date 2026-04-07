@@ -1,6 +1,15 @@
 import { supabase } from "@/lib/supabaseClient";
 import type { TripUpdate } from "@/types/Trip";
 
+/** Only used for seasonal-config admin routes when the main site is static-only. */
+function seasonalAdminApiUrl(path: string): string {
+  const origin =
+    import.meta.env.VITE_SEASONAL_ADMIN_API_ORIGIN?.trim().replace(/\/+$/, "") ??
+    "";
+  const p = path.startsWith("/") ? path : `/${path}`;
+  return origin ? `${origin}${p}` : p;
+}
+
 export type SeasonalConfigRow = {
   seasonal_key: string;
   nav_label_el: string;
@@ -148,7 +157,9 @@ export async function getAdminSeasonalConfigs(): Promise<{
   configs: SeasonalConfigRow[];
   orphanSeasonalNames: string[];
 }> {
-  const res = await adminFetch("/api/admin/seasonal-configs");
+  const res = await adminFetch(
+    seasonalAdminApiUrl("/api/admin/seasonal-configs"),
+  );
   if (!res.ok) {
     const j = (await res.json().catch(() => ({}))) as { error?: string };
     const detail = j.error?.trim() || res.statusText || "Request failed";
@@ -161,10 +172,13 @@ export async function getAdminSeasonalConfigs(): Promise<{
 }
 
 export async function postSeasonalConfig(payload: SeasonalConfigPayload): Promise<void> {
-  const res = await adminFetch("/api/admin/seasonal-configs", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
+  const res = await adminFetch(
+    seasonalAdminApiUrl("/api/admin/seasonal-configs"),
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
   if (!res.ok) {
     const j = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(j.error ?? "Failed to create seasonal config");
@@ -176,10 +190,13 @@ export async function putSeasonalConfig(
   updates: SeasonalConfigUpdate,
 ): Promise<void> {
   const encoded = encodeURIComponent(seasonalKey);
-  const res = await adminFetch(`/api/admin/seasonal-configs/${encoded}`, {
-    method: "PUT",
-    body: JSON.stringify(updates),
-  });
+  const res = await adminFetch(
+    seasonalAdminApiUrl(`/api/admin/seasonal-configs/${encoded}`),
+    {
+      method: "PUT",
+      body: JSON.stringify(updates),
+    },
+  );
   if (!res.ok) {
     const j = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(j.error ?? "Failed to update seasonal config");
@@ -190,9 +207,12 @@ export async function deleteSeasonalConfig(
   seasonalKey: string,
 ): Promise<{ unlinkedTrips: number }> {
   const encoded = encodeURIComponent(seasonalKey);
-  const res = await adminFetch(`/api/admin/seasonal-configs/${encoded}`, {
-    method: "DELETE",
-  });
+  const res = await adminFetch(
+    seasonalAdminApiUrl(`/api/admin/seasonal-configs/${encoded}`),
+    {
+      method: "DELETE",
+    },
+  );
   if (!res.ok) {
     const j = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(j.error ?? "Failed to delete seasonal config");
