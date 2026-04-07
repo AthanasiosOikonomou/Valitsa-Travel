@@ -18,6 +18,17 @@ Passenger production checklist (Valitsa Travel)
 4) Local verification before deploy
    - npm run verify:deploy
 
-5) Client routes (/trips, /admin/login, …)
-   - Run `npm run build` on the server or in CI so `dist/index.html` exists next to `package.json`.
-   - Without `dist/`, Express cannot serve the SPA; deep links will 404.
+5) Document root vs Vite build (two valid layouts)
+   A) DocumentRoot = application root (same folder as package.json)
+      - Use the repo root .htaccess (committed in the project). It rewrites /admin, /trips, /assets/* into dist/.
+      - Run `npm run build` so dist/index.html and dist/assets/ exist next to package.json.
+   B) DocumentRoot = only the contents of dist/ (flat static deploy)
+      - Use the .htaccess inside dist/ (copied from public/.htaccess at build time).
+      - Include hidden files when uploading: .htaccess must not be skipped.
+
+6) Client routes (/trips, /admin/login, …)
+   - Without dist/, Express cannot serve the SPA; deep links will 404.
+   - If Apache answers before Passenger, root .htaccess (layout A) must be deployed so paths rewrite to dist/index.html.
+
+7) Node.js for builds on the server
+   - Vite 8 requires Node.js 20.19+ or 22.12+. Upgrade the host Node selector (e.g. nodevenv) or build locally / in CI and upload dist/.

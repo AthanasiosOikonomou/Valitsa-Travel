@@ -4,3 +4,56 @@
   PassengerAppType node
   PassengerStartupFile passenger_entry.cjs
 </IfModule>
+
+# When DocumentRoot is the app root (next to package.json), the Vite build lives in dist/.
+# Serve the SPA entry for bare / and apply rewrites below so /admin, /assets/*, etc. resolve.
+DirectoryIndex dist/index.html
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Do not expose repo internals when docroot equals application root.
+  RewriteRule ^(server|node_modules|\.git)(/|$) - [F,L]
+
+  # Canonical home URL (avoid duplicate index.html URLs).
+  RewriteRule ^index\.html$ / [R=301,L]
+  RewriteRule ^dist/index\.html$ / [R=301,L]
+
+  # Do not rewrite real files or directories at the document root.
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Let /api/* reach Passenger/Node; do not map to the SPA.
+  RewriteRule ^api(/|$) - [L]
+
+  # Vite build output: map /assets/* and other dist files when not already at docroot.
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{DOCUMENT_ROOT}/dist%{REQUEST_URI} -f
+  RewriteRule ^(.*)$ dist/$1 [L]
+
+  # SPA: React Router paths (/admin, /trips, …) → dist/index.html (URL unchanged).
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ dist/index.html [L]
+</IfModule>
+
+# Never cache the SPA shell; it references hashed JS/CSS bundles.
+
+<Files "dist/index.html">
+  <IfModule mod_headers.c>
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </IfModule>
+</Files>
+
+# Long-term cache for Vite hashed assets (and typical static extensions).
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|css|woff2?|ttf|eot|svg|png|jpg|jpeg|gif|webp|ico)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
