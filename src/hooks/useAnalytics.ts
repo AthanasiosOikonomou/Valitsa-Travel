@@ -1,3 +1,4 @@
+import { apiUrl } from "@/lib/apiBase";
 import { useCallback } from "react";
 
 const sessionKey = (tripId: string) => `trip_viewed_${tripId}`;
@@ -13,7 +14,7 @@ export function useAnalytics() {
       const key = sessionKey(tripId);
       if (sessionStorage.getItem(key)) return;
       sessionStorage.setItem(key, "1");
-      void fetch("/api/track-click", {
+      void fetch(apiUrl("/api/track-click"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

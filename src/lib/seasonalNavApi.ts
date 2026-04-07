@@ -1,3 +1,5 @@
+import { apiUrl } from "@/lib/apiBase";
+
 export type SeasonalNavItem = {
   key: string;
   label_el: string;
@@ -10,7 +12,7 @@ export type SeasonalNavItem = {
  */
 export async function fetchSeasonalNavItems(): Promise<SeasonalNavItem[]> {
   try {
-    const res = await fetch("/api/seasonal-nav");
+    const res = await fetch(apiUrl("/api/seasonal-nav"));
     if (!res.ok) return [];
     const j = (await res.json()) as { items?: unknown };
     if (!Array.isArray(j.items)) return [];

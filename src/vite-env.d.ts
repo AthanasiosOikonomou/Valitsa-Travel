@@ -1,7 +1,9 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  /** Optional Node origin for seasonal-config admin API only (no trailing slash), e.g. https://api.example.com */
+  /** Express API origin when the main site is static-only (no trailing slash), e.g. https://api.example.com */
+  readonly VITE_API_BASE_URL?: string;
+  /** @deprecated Use VITE_API_BASE_URL — still applied as fallback in apiBase.ts */
   readonly VITE_SEASONAL_ADMIN_API_ORIGIN?: string;
   readonly VITE_MAIL_API_URL?: string;
   readonly VITE_TURNSTILE_SITE_KEY?: string;

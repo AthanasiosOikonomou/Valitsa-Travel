@@ -21,3 +21,6 @@ Passenger production checklist (Valitsa Travel)
 5) Client routes (/trips, /admin/login, …)
    - Run `npm run build` on the server or in CI so `dist/index.html` exists next to `package.json`.
    - Without `dist/`, Express cannot serve the SPA; deep links will 404.
+
+6) If the main domain only serves static files and /api never hits Node (uploads, trips API, seasonal admin fail):
+   - Point Express at another URL where /api/health returns JSON, set VITE_API_BASE_URL to that origin (no trailing slash), rebuild the frontend, and add the main site origin to CORS_ORIGIN on the API server. See .env.example.

@@ -37,6 +37,7 @@ const AdminDashboardPage = lazy(() => import("./admin/pages/AdminDashboardPage.t
 const AdminTripsPage = lazy(() => import("./admin/pages/AdminTripsPage.tsx"));
 const AdminLeadsPage = lazy(() => import("./admin/pages/AdminLeadsPage.tsx"));
 const AdminNavigationPage = lazy(() => import("./admin/pages/AdminNavigationPage.tsx"));
+const ApiPathHint = lazy(() => import("./pages/ApiPathHint.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -57,7 +58,8 @@ const ScrollToTop = () => {
 
 function PublicChrome() {
   const { pathname } = useLocation();
-  const hide = pathname.startsWith("/admin");
+  const hide =
+    pathname.startsWith("/admin") || pathname.startsWith("/api");
   return (
     <>
       {!hide && <NavbarWrapper />}
@@ -107,6 +109,11 @@ const App = () => (
                       <Route path="navigation" element={<AdminNavigationPage />} />
                     </Route>
                   </Route>
+                  {/*
+                    If hosting serves index.html for /api/*, React would otherwise hit * and redirect home.
+                    This route explains the misconfiguration instead.
+                  */}
+                  <Route path="/api/*" element={<ApiPathHint />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </Suspense>
