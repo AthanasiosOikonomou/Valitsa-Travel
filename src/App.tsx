@@ -9,6 +9,15 @@ import {
   Routes,
   useLocation,
 } from "react-router-dom";
+
+/** Fallback for unknown paths; never send /admin* to public home (avoids splat / future-flag edge cases). */
+function CatchAllRedirect() {
+  const { pathname } = useLocation();
+  if (pathname.startsWith("/admin")) {
+    return <Navigate to="/admin/login" replace />;
+  }
+  return <Navigate to="/" replace />;
+}
 import { MotionConfig } from "framer-motion";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -81,12 +90,7 @@ const App = () => (
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <BrowserRouter
-              future={{
-                v7_startTransition: true,
-                v7_relativeSplatPath: true,
-              }}
-            >
+            <BrowserRouter>
               <PublicChrome />
               <Suspense
                 fallback={
@@ -107,7 +111,7 @@ const App = () => (
                       <Route path="navigation" element={<AdminNavigationPage />} />
                     </Route>
                   </Route>
-                  <Route path="*" element={<Navigate to="/" replace />} />
+                  <Route path="*" element={<CatchAllRedirect />} />
                 </Routes>
               </Suspense>
             </BrowserRouter>

@@ -12,7 +12,7 @@ function NonAdminRedirect() {
     void supabase.auth.signOut();
     toast.error(t("admin.forbiddenAccessToast"));
   }, [t]);
-  return <Navigate to="/" replace />;
+  return <Navigate to="/admin/login" replace />;
 }
 
 export function AdminGuard() {
