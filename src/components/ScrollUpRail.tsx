@@ -42,7 +42,8 @@ const ScrollUpRail = () => {
       document.documentElement.scrollTop ||
       document.body.scrollTop ||
       0;
-    setScrolledPast(y > SCROLL_THRESHOLD);
+    const next = y > SCROLL_THRESHOLD;
+    setScrolledPast((prev) => (prev === next ? prev : next));
   }, []);
 
   useLayoutEffect(() => {
@@ -50,8 +51,19 @@ const ScrollUpRail = () => {
   }, [updateScroll]);
 
   useLayoutEffect(() => {
-    window.addEventListener("scroll", updateScroll, { passive: true });
-    return () => window.removeEventListener("scroll", updateScroll);
+    let rafId = 0;
+    const onScroll = () => {
+      if (rafId !== 0) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        updateScroll();
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      if (rafId !== 0) cancelAnimationFrame(rafId);
+      window.removeEventListener("scroll", onScroll);
+    };
   }, [updateScroll]);
 
   const visible = scrolledPast && !overlayOpen;
@@ -65,7 +77,7 @@ const ScrollUpRail = () => {
         "scroll-up-rail-shell-pulse",
         "fixed bottom-6 right-4 z-[60] flex h-14 w-14 items-center justify-center",
         "md:bottom-8 md:right-6",
-        "rounded-full border-0 bg-background/80 backdrop-blur-md shadow-elev1",
+        "rounded-full border-0 bg-background/85 backdrop-blur-sm shadow-elev1",
         "dark:bg-background/75",
         "cursor-pointer select-none transition-[opacity,box-shadow] duration-elev ease-material",
         "hover:text-foreground focus-visible:outline-none focus-visible:shadow-lg",

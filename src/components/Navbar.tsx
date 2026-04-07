@@ -281,12 +281,21 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
       const r = el.getBoundingClientRect();
       setMultidayMenuPos({ top: r.bottom + 8, left: r.left + r.width / 2 });
     };
+    let rafId = 0;
+    const schedule = () => {
+      if (rafId !== 0) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        update();
+      });
+    };
     update();
-    window.addEventListener("scroll", update, true);
-    window.addEventListener("resize", update);
+    window.addEventListener("scroll", schedule, true);
+    window.addEventListener("resize", schedule);
     return () => {
-      window.removeEventListener("scroll", update, true);
-      window.removeEventListener("resize", update);
+      if (rafId !== 0) cancelAnimationFrame(rafId);
+      window.removeEventListener("scroll", schedule, true);
+      window.removeEventListener("resize", schedule);
     };
   }, [multidayDropdownOpen, lang, visibleSlotCount]);
 
@@ -770,7 +779,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
       >
         <div
           className={cn(
-            "premium-panel navbar-shell mx-auto grid w-full max-w-[min(100%,1800px)] grid-cols-[1fr_auto] items-center gap-3 rounded-[1.75rem] px-3 py-2.5 sm:px-4 md:px-6 md:py-4 bg-white/70 dark:bg-slate-900/65 backdrop-blur-md transform-gpu [backface-visibility:hidden] lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-4",
+            "premium-panel navbar-shell mx-auto grid w-full max-w-[min(100%,1800px)] grid-cols-[1fr_auto] items-center gap-3 rounded-[1.75rem] px-3 py-2.5 sm:px-4 md:px-6 md:py-4 bg-white/78 dark:bg-slate-900/72 backdrop-blur-sm transform-gpu [backface-visibility:hidden] lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-4",
           )}
         >
           <Link

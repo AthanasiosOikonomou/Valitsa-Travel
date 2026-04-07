@@ -528,6 +528,8 @@ body.modal-blur-active .navbar-shell {
     position: fixed;
     inset: 0;
     pointer-events: none;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
     background:
       radial-gradient(
         circle at 15% 10%,
@@ -639,6 +641,8 @@ body.modal-blur-active .navbar-shell {
     height: 4.75rem;
     pointer-events: none;
     z-index: 90;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
     background: linear-gradient(
       180deg,
       hsl(var(--background) / 1) 0%,

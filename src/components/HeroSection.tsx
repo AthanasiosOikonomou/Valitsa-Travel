@@ -31,7 +31,7 @@ const HeroSection = () => {
         sizes="100vw"
         decoding="sync"
         className="absolute inset-0"
-        imgClassName="brightness-[0.55] animate-scale-hero"
+        imgClassName="brightness-[0.85] animate-scale-hero"
       />
 
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.14),rgba(15,23,42,0.72))]" />

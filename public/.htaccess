@@ -2,19 +2,19 @@
   RewriteEngine On
   RewriteBase /
 
-# Canonical home URL.
+  # Canonical home URL (avoid duplicate /index.html).
+  RewriteRule ^index\.html$ / [R=301,L]
 
-RewriteRule ^index\.html$ / [R=301,L]
+  # Do not rewrite real files or directories (assets, index.html, etc.).
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
 
-# Keep API routes untouched (handled by backend/proxy).
+  # Let /api/* through to the backend (Passenger/Node or proxy); do not map to index.html.
+  RewriteRule ^api(/|$) - [L]
 
-RewriteRule ^api(/|$) - [L]
-
-# Redirect any missing path to the home page.
-
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule . / [R=302,L,QSA]
+  # SPA: serve React Router routes (/admin, /trips, …) from index.html (no redirect — keeps URL).
+  RewriteRule ^ index.html [L]
 </IfModule>
 
 # Never cache index.html; it references hashed JS/CSS bundles
