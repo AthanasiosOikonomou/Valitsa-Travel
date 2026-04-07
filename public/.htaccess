@@ -8,8 +8,9 @@
   RewriteEngine On
   RewriteBase /
 
-  # Canonical home URL (avoid duplicate /index.html).
-  RewriteRule ^index\.html$ / [R=301,L]
+  # Do NOT 301 /index.html -> / here. Nginx (try_files → /index.html) + Apache can loop:
+  # internal /index.html request gets 301 to /, browser requests / again → endless 301.
+  # Canonical URL is already set via <link rel="canonical"> in index.html.
 
   # Real files only (hashed bundles, images). Omit -d here: if a URL path matches a
   # directory on disk, skipping rewrite for "-d" can prevent falling through to index.html.
