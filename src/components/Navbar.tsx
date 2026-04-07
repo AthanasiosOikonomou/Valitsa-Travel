@@ -835,7 +835,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
                   <ChevronDown className="h-4 w-4 shrink-0" aria-hidden />
                 </button>
 
-                <div className="flex min-w-0 w-full items-center justify-start gap-3 overflow-visible px-1 sm:px-2">
+                <div className="flex min-w-0 w-full items-center justify-center gap-3 overflow-visible px-1 sm:px-2">
                   {tripNavSlots.slice(0, visibleSlotCount).map((slot) => (
                     <Fragment key={slot.id}>{renderInlineSlot(slot)}</Fragment>
                   ))}
