@@ -36,3 +36,9 @@ Passenger production checklist (Valitsa Travel)
 8) After changing public/.htaccess, run `npm run build` and redeploy dist/ so the built copy in dist/.htaccess matches (layout B).
 
 9) If Apache returns 500 after deploying .htaccess, the host may disallow `Options` in .htaccess — remove the `Options -MultiViews` block from .htaccess and redeploy.
+
+10) Unexpected 301 Moved Permanently on `/api/*` or `/admin/*`
+   - Open DevTools → Network → select the request → Response Headers. Read `Location` (if present).
+   - If `Location` points to another host (e.g. www vs apex) or http→https, fix cPanel Redirects / SSL / Domains — not only this repo’s .htaccess.
+   - If `Location` only adds or removes a trailing slash, check the web root for stray folders named `api` or `admin` (old uploads). Remove or rename them if they are not part of this app; Apache DirectorySlash can 301 those URLs.
+   - After deploy, you can sanity-check: `curl -sI https://your-domain/api/seasonal-nav` and note status plus any `Location` header.

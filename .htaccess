@@ -18,6 +18,9 @@ DirectoryIndex dist/index.html
   RewriteEngine On
   RewriteBase /
 
+  # Let /api/* reach Passenger/Node before any -f/-d checks (avoids odd host edge cases).
+  RewriteRule ^api(/|$) - [L]
+
   # Do not expose repo internals when docroot equals application root.
   RewriteRule ^(server|node_modules|\.git)(/|$) - [F,L]
 
@@ -29,9 +32,6 @@ DirectoryIndex dist/index.html
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
-
-  # Let /api/* reach Passenger/Node; do not map to the SPA.
-  RewriteRule ^api(/|$) - [L]
 
   # Vite build output: map /assets/* and other dist files when not already at docroot.
   RewriteCond %{REQUEST_FILENAME} !-f

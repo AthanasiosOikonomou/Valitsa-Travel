@@ -6,6 +6,9 @@
   RewriteEngine On
   RewriteBase /
 
+  # Let /api/* reach the backend before any -f/-d checks (avoids odd host edge cases).
+  RewriteRule ^api(/|$) - [L]
+
   # Canonical home URL (avoid duplicate /index.html).
   RewriteRule ^index\.html$ / [R=301,L]
 
@@ -13,9 +16,6 @@
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
-
-  # Let /api/* through to the backend (Passenger/Node or proxy); do not map to index.html.
-  RewriteRule ^api(/|$) - [L]
 
   # SPA: serve React Router routes (/admin, /trips, …) from index.html (no redirect — keeps URL).
   # Pattern must match non-empty paths; "^" alone only matches the root path.
