@@ -77,6 +77,8 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
   const [seasonalDropdownOpen, setSeasonalDropdownOpen] = useState(false);
   const [multidayDropdownOpen, setMultidayDropdownOpen] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const [morePanelMultidayOpen, setMorePanelMultidayOpen] = useState(false);
+  const [morePanelSeasonalOpen, setMorePanelSeasonalOpen] = useState(false);
   const [seasonalAccordionOpen, setSeasonalAccordionOpen] = useState(false);
   const [multidayAccordionOpen, setMultidayAccordionOpen] = useState(false);
   const contactOwnedBlurRef = useRef(false);
@@ -398,6 +400,13 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
   }, [multidayDropdownOpen]);
 
   useEffect(() => {
+    if (!moreMenuOpen) {
+      setMorePanelMultidayOpen(false);
+      setMorePanelSeasonalOpen(false);
+    }
+  }, [moreMenuOpen]);
+
+  useEffect(() => {
     if (!moreMenuOpen) return;
 
     const onPointerDown = (event: PointerEvent) => {
@@ -673,47 +682,71 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
     if (slot.type === "multiday") {
       return (
         <div key="multiday-more" className={sectionClass}>
-          <p className="px-4 pb-1 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
-            {t("nav.multiday")}
-          </p>
           <button
             type="button"
-            role="menuitem"
-            onClick={() => handleMultidayNavigate(null)}
-            className="flex w-full min-h-[40px] items-center rounded-xl px-4 py-2.5 text-left text-sm font-medium text-foreground hover:bg-slate-100 dark:hover:bg-white/10"
+            aria-expanded={morePanelMultidayOpen}
+            onClick={() => setMorePanelMultidayOpen((o) => !o)}
+            className="flex w-full min-h-[44px] items-center justify-between gap-2 rounded-xl px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-foreground-muted hover:bg-slate-100 dark:hover:bg-white/10"
           >
-            {t("nav.multidayAll")}
+            <span>{t("nav.multiday")}</span>
+            <ChevronDown
+              className={`h-4 w-4 shrink-0 transition-transform duration-200 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] ${morePanelMultidayOpen ? "rotate-180" : ""}`}
+              aria-hidden
+            />
           </button>
-          {multidayDurationDays.map((d) => (
-            <button
-              key={d}
-              type="button"
-              role="menuitem"
-              onClick={() => handleMultidayNavigate(d)}
-              className="flex w-full min-h-[40px] items-center rounded-xl px-4 py-2.5 text-left text-sm font-medium text-foreground hover:bg-slate-100 dark:hover:bg-white/10"
-            >
-              {t("nav.multidayDaysOption").replace("{n}", String(d))}
-            </button>
-          ))}
+          {morePanelMultidayOpen ? (
+            <>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => handleMultidayNavigate(null)}
+                className="flex w-full min-h-[40px] items-center rounded-xl px-4 py-2.5 text-left text-sm font-medium text-foreground hover:bg-slate-100 dark:hover:bg-white/10"
+              >
+                {t("nav.multidayAll")}
+              </button>
+              {multidayDurationDays.map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  role="menuitem"
+                  onClick={() => handleMultidayNavigate(d)}
+                  className="flex w-full min-h-[40px] items-center rounded-xl px-4 py-2.5 text-left text-sm font-medium text-foreground hover:bg-slate-100 dark:hover:bg-white/10"
+                >
+                  {t("nav.multidayDaysOption").replace("{n}", String(d))}
+                </button>
+              ))}
+            </>
+          ) : null}
         </div>
       );
     }
     return (
       <div key="seasonal-more" className={sectionClass}>
-        <p className="px-4 pb-1 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
-          {t("nav.seasonal")}
-        </p>
-        {seasonalItems.map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            role="menuitem"
-            onClick={() => handleSeasonalClick(item.key)}
-            className="flex w-full min-h-[40px] items-center rounded-xl px-4 py-2.5 text-left text-sm font-medium text-foreground hover:bg-slate-100 dark:hover:bg-white/10"
-          >
-            {lang === "gr" ? item.label_el : item.label_en}
-          </button>
-        ))}
+        <button
+          type="button"
+          aria-expanded={morePanelSeasonalOpen}
+          onClick={() => setMorePanelSeasonalOpen((o) => !o)}
+          className="flex w-full min-h-[44px] items-center justify-between gap-2 rounded-xl px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-foreground-muted hover:bg-slate-100 dark:hover:bg-white/10"
+        >
+          <span>{t("nav.seasonal")}</span>
+          <ChevronDown
+            className={`h-4 w-4 shrink-0 transition-transform duration-200 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] ${morePanelSeasonalOpen ? "rotate-180" : ""}`}
+            aria-hidden
+          />
+        </button>
+        {morePanelSeasonalOpen
+          ? seasonalItems.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                role="menuitem"
+                onClick={() => handleSeasonalClick(item.key)}
+                className="flex w-full min-h-[40px] items-center rounded-xl px-4 py-2.5 text-left text-sm font-medium text-foreground hover:bg-slate-100 dark:hover:bg-white/10"
+              >
+                {lang === "gr" ? item.label_el : item.label_en}
+              </button>
+            ))
+          : null}
       </div>
     );
   };
