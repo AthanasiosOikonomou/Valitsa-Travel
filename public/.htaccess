@@ -1,3 +1,7 @@
+<IfModule mod_negotiation.c>
+  Options -MultiViews
+</IfModule>
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
@@ -14,7 +18,8 @@
   RewriteRule ^api(/|$) - [L]
 
   # SPA: serve React Router routes (/admin, /trips, …) from index.html (no redirect — keeps URL).
-  RewriteRule ^ index.html [L]
+  # Pattern must match non-empty paths; "^" alone only matches the root path.
+  RewriteRule . index.html [L]
 </IfModule>
 
 # Never cache index.html; it references hashed JS/CSS bundles

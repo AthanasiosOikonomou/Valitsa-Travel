@@ -9,6 +9,11 @@
 # Serve the SPA entry for bare / and apply rewrites below so /admin, /assets/*, etc. resolve.
 DirectoryIndex dist/index.html
 
+# cPanel/Apache: avoid MultiViews picking a "best" file instead of our rewrite rules (breaks SPAs).
+<IfModule mod_negotiation.c>
+  Options -MultiViews
+</IfModule>
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
@@ -35,9 +40,10 @@ DirectoryIndex dist/index.html
   RewriteRule ^(.*)$ dist/$1 [L]
 
   # SPA: React Router paths (/admin, /trips, …) → dist/index.html (URL unchanged).
+  # Use "." not "^" alone — "^" only matches an empty path, so /admin would never rewrite.
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule ^ dist/index.html [L]
+  RewriteRule . dist/index.html [L]
 </IfModule>
 
 # Never cache the SPA shell; it references hashed JS/CSS bundles.

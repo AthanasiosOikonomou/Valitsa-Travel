@@ -32,3 +32,7 @@ Passenger production checklist (Valitsa Travel)
 
 7) Node.js for builds on the server
    - Vite 8 requires Node.js 20.19+ or 22.12+. Upgrade the host Node selector (e.g. nodevenv) or build locally / in CI and upload dist/.
+
+8) After changing public/.htaccess, run `npm run build` and redeploy dist/ so the built copy in dist/.htaccess matches (layout B).
+
+9) If Apache returns 500 after deploying .htaccess, the host may disallow `Options` in .htaccess — remove the `Options -MultiViews` block from .htaccess and redeploy.
