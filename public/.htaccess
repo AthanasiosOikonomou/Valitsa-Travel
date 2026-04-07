@@ -1,3 +1,8 @@
+# Hosting note:
+# - Passenger + Node (root .htaccess with PassengerStartupFile): Express serves dist/ and
+#   already falls back to index.html for paths like /admin/login — no mod_rewrite required.
+# - Apache serving dist as static files only: the block below is needed so deep links work.
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
@@ -5,9 +10,9 @@
   # Canonical home URL (avoid duplicate /index.html).
   RewriteRule ^index\.html$ / [R=301,L]
 
-  # Do not rewrite real files or directories (assets, index.html, etc.).
-  RewriteCond %{REQUEST_FILENAME} -f [OR]
-  RewriteCond %{REQUEST_FILENAME} -d
+  # Real files only (hashed bundles, images). Omit -d here: if a URL path matches a
+  # directory on disk, skipping rewrite for "-d" can prevent falling through to index.html.
+  RewriteCond %{REQUEST_FILENAME} -f
   RewriteRule ^ - [L]
 
   # Let /api/* through to the backend (Passenger/Node or proxy); do not map to index.html.
