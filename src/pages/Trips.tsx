@@ -52,6 +52,7 @@ import {
   formatTripPrice,
 } from "@/lib/tripDisplay";
 import { pickLocalizedStringList } from "@/lib/tripLocaleArrays";
+import { transportLabelForSlug } from "@/lib/tripTransportModes";
 
 interface FilterSectionProps {
   id: string;
@@ -586,6 +587,7 @@ const TripsContent = () => {
     special: true,
     seasonal: true,
     duration: true,
+    transport: true,
     country: true,
     city: true,
     sort: true,
@@ -903,6 +905,40 @@ const TripsContent = () => {
           );
         })}
       </FilterSection>
+
+      {filterMetadata.transportSlugs.length > 0 ? (
+        <FilterSection
+          id="transport"
+          title={t("archive.transport")}
+          isOpen={openSections.transport}
+          onToggle={toggleSection}
+        >
+          {filterMetadata.transportSlugs.map((slug) => {
+            const count = availableFacets.transportCounts.get(slug) ?? 0;
+            const checked =
+              normalizedFilterState.selectedTransportSlugs.includes(slug);
+
+            return (
+              <FacetOption
+                key={slug}
+                type="checkbox"
+                label={transportLabelForSlug(slug, lang)}
+                checked={checked}
+                count={count}
+                disabled={isDisabled(count, checked)}
+                onChange={() => {
+                  window.__valitsaFilterSectionChanged = true;
+                  dispatch({
+                    type: "toggleMulti",
+                    key: "selectedTransportSlugs",
+                    value: slug,
+                  });
+                }}
+              />
+            );
+          })}
+        </FilterSection>
+      ) : null}
 
       <FilterSection
         id="country"

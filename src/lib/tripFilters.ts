@@ -1,5 +1,10 @@
 
 import type { Trip } from "@/types/Trip";
+import {
+  TRANSPORT_MODE_SLUGS,
+  mergeTransportSlugsFromColumns,
+  type TransportModeSlug,
+} from "@/lib/tripTransportModes";
 
 export type TripLang = "en" | "gr";
 
@@ -8,7 +13,8 @@ export type SortOption = "recommended" | "priceAsc" | "priceDesc";
 type MultiSelectKey =
   | "selectedCountries"
   | "selectedDurations"
-  | "selectedCities";
+  | "selectedCities"
+  | "selectedTransportSlugs";
 
 type FlagKey = "showFeatured";
 
@@ -17,7 +23,8 @@ type FacetKey =
   | "duration"
   | "city"
   | "featured"
-  | "price";
+  | "price"
+  | "transport";
 
 export interface RangeBounds {
   min: number;
@@ -30,6 +37,7 @@ export interface TripFilterState {
   selectedCountries: string[];
   selectedDurations: number[];
   selectedCities: string[];
+  selectedTransportSlugs: TransportModeSlug[];
   showFeatured: boolean;
   sortBy: SortOption;
   page: number;
@@ -50,6 +58,7 @@ export interface TripFilterMetadata {
   countries: string[];
   durations: number[];
   cities: string[];
+  transportSlugs: TransportModeSlug[];
   hasFeaturedTrips: boolean;
 }
 
@@ -58,6 +67,7 @@ export interface AvailableTripFacets {
   countryCounts: Map<string, number>;
   durationCounts: Map<number, number>;
   cityCounts: Map<string, number>;
+  transportCounts: Map<TransportModeSlug, number>;
   specialCounts: {
     featured: number;
   };
@@ -116,6 +126,19 @@ const sortCountries = (countries: string[]) =>
 
 const sortUniqueStrings = (values: string[]) => [...new Set(values)].sort();
 
+const collectTransportSlugsFromTrips = (trips: Trip[]): TransportModeSlug[] => {
+  const seen = new Set<TransportModeSlug>();
+  for (const trip of trips) {
+    for (const slug of mergeTransportSlugsFromColumns(
+      trip.transport_el,
+      trip.transport,
+    )) {
+      seen.add(slug);
+    }
+  }
+  return TRANSPORT_MODE_SLUGS.filter((slug) => seen.has(slug));
+};
+
 export const buildTripFilterMetadata = (trips: Trip[], lang: TripLang): TripFilterMetadata => {
   const globalPriceBounds = getRangeBounds(
     trips.map((trip) => trip.price_num ?? 0),
@@ -131,6 +154,7 @@ export const buildTripFilterMetadata = (trips: Trip[], lang: TripLang): TripFilt
       (left, right) => left - right,
     ),
     cities: sortUniqueStrings(trips.map((trip) => getTripField(trip, "departure_city", lang) ?? "")),
+    transportSlugs: collectTransportSlugsFromTrips(trips),
     hasFeaturedTrips: trips.some((trip) => trip.is_featured),
   };
 };
@@ -170,6 +194,7 @@ export const createInitialTripFilterState = (
     selectedCountries: getPresetCountries(activeFilter, metadata.countries),
     selectedDurations,
     selectedCities: [],
+    selectedTransportSlugs: [],
     showFeatured: false,
     sortBy: "recommended",
     page: 1,
@@ -261,6 +286,7 @@ export const buildAvailableTripFacets = (
     "city",
     (trip) => getTripField(trip, "departure_city", lang) ?? "",
   );
+  const transportCounts = buildTransportFacetCounts(trips, state, lang);
 
   const priceBounds = getPriceBoundsForState(
     trips,
@@ -275,6 +301,7 @@ export const buildAvailableTripFacets = (
     countryCounts,
     durationCounts,
     cityCounts,
+    transportCounts,
     specialCounts,
   };
 };
@@ -361,6 +388,9 @@ export const sanitizeTripFilterState = (
     selectedCities: state.selectedCities.filter((value) =>
       availableFacets.cityCounts.has(value),
     ),
+    selectedTransportSlugs: state.selectedTransportSlugs.filter((value) =>
+      availableFacets.transportCounts.has(value),
+    ),
     showFeatured:
       state.showFeatured &&
       metadata.hasFeaturedTrips &&
@@ -378,12 +408,37 @@ export const areTripFilterStatesEqual = (
   arraysEqual(left.selectedCountries, right.selectedCountries) &&
   arraysEqual(left.selectedDurations, right.selectedDurations) &&
   arraysEqual(left.selectedCities, right.selectedCities) &&
+  arraysEqual(left.selectedTransportSlugs, right.selectedTransportSlugs) &&
   left.showFeatured === right.showFeatured &&
   left.sortBy === right.sortBy;
 
 const arraysEqual = <T extends string | number>(left: T[], right: T[]) => {
   if (left.length !== right.length) return false;
   return left.every((value, index) => value === right[index]);
+};
+
+const buildTransportFacetCounts = (
+  trips: Trip[],
+  state: TripFilterState,
+  lang: TripLang,
+): Map<TransportModeSlug, number> => {
+  const counts = new Map<TransportModeSlug, number>();
+
+  for (const trip of trips) {
+    if (!matchesTripFilters(trip, state, lang, "transport")) continue;
+    const slugs = mergeTransportSlugsFromColumns(
+      trip.transport_el,
+      trip.transport,
+    );
+    const seen = new Set<TransportModeSlug>();
+    for (const slug of slugs) {
+      if (seen.has(slug)) continue;
+      seen.add(slug);
+      addCount(counts, slug);
+    }
+  }
+
+  return counts;
 };
 
 const clampRange = (
@@ -489,6 +544,19 @@ const matchesTripFilters = (
     !state.selectedCities.includes(getTripField(trip, "departure_city", lang) ?? "")
   ) {
     return false;
+  }
+
+  if (excludedFacet !== "transport" && state.selectedTransportSlugs.length > 0) {
+    const tripSlugs = mergeTransportSlugsFromColumns(
+      trip.transport_el,
+      trip.transport,
+    );
+    const overlaps = state.selectedTransportSlugs.some((s) =>
+      tripSlugs.includes(s),
+    );
+    if (!overlaps) {
+      return false;
+    }
   }
 
   if (excludedFacet !== "featured" && state.showFeatured && !trip.is_featured) {
