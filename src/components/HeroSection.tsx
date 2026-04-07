@@ -43,7 +43,7 @@ const HeroSection = () => {
             initial={{ opacity: 0, y: 10, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            className="label-ui text-white mb-5 drop-shadow-[0_2px_14px_rgba(0,0,0,0.35)]"
+            className="label-ui text-sm text-white mb-5 hero-copy-depth"
           >
             {t("hero.label")}
           </motion.p>
@@ -56,7 +56,7 @@ const HeroSection = () => {
               delay: 0.1,
               ease: [0.22, 1, 0.36, 1],
             }}
-            className="text-hero text-display text-white mb-6 drop-shadow-[0_10px_32px_rgba(0,0,0,0.42)]"
+            className="text-hero text-display text-white mb-6 hero-copy-depth-title"
           >
             {t("hero.title")}
           </motion.h1>
@@ -70,7 +70,7 @@ const HeroSection = () => {
                 delay: 0.2,
                 ease: [0.22, 1, 0.36, 1],
               }}
-              className="premium-subheading text-white/80 text-lg md:text-xl mb-10 max-w-2xl mx-auto drop-shadow-[0_4px_18px_rgba(0,0,0,0.3)]"
+              className="premium-subheading text-white/80 text-xl md:text-2xl mb-10 max-w-2xl mx-auto hero-copy-depth"
             >
               {t("hero.subtitle")}
             </motion.p>
