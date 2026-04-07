@@ -2,6 +2,7 @@
 # - Passenger + Node (root .htaccess with PassengerStartupFile): Express serves dist/ and
 #   already falls back to index.html for paths like /admin/login — no mod_rewrite required.
 # - Apache serving dist as static files only: the block below is needed so deep links work.
+# - Nginx in front: .htaccess is ignored — use try_files (see deploy/nginx-spa-snippet.conf).
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
