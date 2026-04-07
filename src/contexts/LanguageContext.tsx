@@ -63,10 +63,10 @@ const translations: Record<Lang, Record<string, string>> = {
     "validation.phoneInvalid": "Please enter a valid phone number",
 
     // Hero
-    "hero.label": "Luxury Travel, Redefined",
-    "hero.title": "Prepare your 'Valitsa'",
+    "hero.label": "Less routine, more life",
+    "hero.title": "Prepare your 'Valitses'",
     "hero.subtitle":
-      "Bespoke journeys tailored to your desires. Luxury is found in the details that stay in your heart forever.",
+      "Every trip has secret destinations that the traveler doesn't know. -Martin Buber",
     "hero.cta": "View All Our Trips",
     "hero.alt": "Aerial view of a serene tropical coastline",
 
@@ -493,10 +493,10 @@ const translations: Record<Lang, Record<string, string>> = {
     "validation.phoneInvalid": "Εισάγετε έγκυρο αριθμό τηλεφώνου",
 
     // Hero
-    "hero.label": "Πολυτελή Ταξίδια, Ξανά",
+    "hero.label": "Λιγότερο ρουτίνα, περισσότερη ζωή",
     "hero.title": "Ετοιμάστε Βαλίτσες",
     "hero.subtitle":
-      "Ταξίδια κομμένα και ραμμένα στα μέτρα σας. Η πολυτέλεια βρίσκεται στις λεπτομέρειες που μένουν για πάντα στην καρδιά σας.",
+      "Κάθε ταξίδι έχει μυστικούς προορισμούς που ο ταξιδιώτης δε γνωρίζει. -Martin Buber",
     "hero.cta": "Δείτε όλα τα ταξίδια μας",
     "hero.alt": "Εναέρια θέα σε ήρεμη τροπική ακτογραμμή",
 
