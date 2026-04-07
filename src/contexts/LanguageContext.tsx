@@ -249,6 +249,12 @@ const translations: Record<Lang, Record<string, string>> = {
       "Your Supabase credentials are working. The seasonal tables are not created yet. In Supabase: SQL → New query → paste the file supabase/migrations/20260406120000_seasonal_navigation.sql from this repository → Run. Then refresh this page.",
     "admin.navigationLoadErrorHintEnv":
       "The API cannot use Supabase: set VITE_SUPABASE_URL or SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in the project root .env or server/.env, then restart the Node API (npm run dev or node server/index.js).",
+    "admin.navigationLoadErrorApiUnreachableBody":
+      "The server returned the public website HTML instead of the API. Requests to /api are not reaching Node—this is a hosting/routing issue, not a missing database table.",
+    "admin.navigationLoadErrorHintApiUnreachable":
+      "Fix: (1) Configure the host so /api is handled by your Node app (Passenger or nginx proxy to Express). (2) Or set VITE_SEASONAL_ADMIN_API_ORIGIN in .env to the base URL where Express runs (open /api/health there—it must return JSON {\"ok\":true}), run npm run build, and upload the new dist.",
+    "admin.navigationLoadErrorInvalidJsonBody":
+      "The response was not valid JSON. Confirm the URL hits the Node API, not static hosting only.",
     "admin.tripIsSeasonal": "Seasonal trip",
     "admin.tripSeasonalName": "Season",
     "admin.tripSeasonalPlaceholder": "Choose a season",
@@ -681,6 +687,12 @@ const translations: Record<Lang, Record<string, string>> = {
       "Τα διαπιστευτήρια Supabase λειτουργούν. Οι εποχιακοί πίνακες δεν έχουν δημιουργηθεί ακόμα. Στο Supabase: SQL → Νέο ερώτημα → επικολλήστε το αρχείο supabase/migrations/20260406120000_seasonal_navigation.sql από αυτό το repo → Εκτέλεση. Μετά ανανεώστε τη σελίδα.",
     "admin.navigationLoadErrorHintEnv":
       "Το API δεν μπορεί να χρησιμοποιήσει το Supabase: ορίστε VITE_SUPABASE_URL ή SUPABASE_URL και SUPABASE_SERVICE_ROLE_KEY στο .env στη ρίζα ή στο server/.env και επανεκκινήστε το Node API.",
+    "admin.navigationLoadErrorApiUnreachableBody":
+      "Ο διακομιστής επέστρεψε HTML της δημόσιας ιστοσελίδας αντί για το API. Τα αιτήματα στο /api δεν φτάνουν στο Node—πρόκειται για ρύθμιση hosting/δρομολόγησης, όχι για ελλιπή πίνακα στη βάση.",
+    "admin.navigationLoadErrorHintApiUnreachable":
+      "Λύση: (1) Ρυθμίστε τον host ώστε το /api να εξυπηρετείται από την εφαρμογή Node (Passenger ή nginx proxy προς Express). (2) Ή ορίστε VITE_SEASONAL_ADMIN_API_ORIGIN στο .env στη βάση URL όπου τρέχει το Express (ανοίξτε εκεί /api/health—πρέπει να επιστρέφει JSON {\"ok\":true}), τρέξτε npm run build και ανεβάστε το νέο dist.",
+    "admin.navigationLoadErrorInvalidJsonBody":
+      "Η απάντηση δεν ήταν έγκυρο JSON. Βεβαιωθείτε ότι το URL οδηγεί στο Node API, όχι μόνο σε στατικά αρχεία.",
     "admin.tripIsSeasonal": "Εποχιακό ταξίδι",
     "admin.tripSeasonalName": "Εποχή",
     "admin.tripSeasonalPlaceholder": "Επιλέξτε εποχή",

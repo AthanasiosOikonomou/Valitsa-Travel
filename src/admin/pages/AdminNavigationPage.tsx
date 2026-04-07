@@ -409,7 +409,19 @@ export default function AdminNavigationPage() {
   });
 
   const loadErrorMessage = q.error instanceof Error ? q.error.message : String(q.error ?? "");
+  const loadErrorDisplay =
+    loadErrorMessage === "SEASONAL_API_UNREACHABLE_HTML"
+      ? t("admin.navigationLoadErrorApiUnreachableBody")
+      : loadErrorMessage === "SEASONAL_API_INVALID_JSON"
+        ? t("admin.navigationLoadErrorInvalidJsonBody")
+        : loadErrorMessage;
   const loadErrorHint = (() => {
+    if (loadErrorMessage === "SEASONAL_API_UNREACHABLE_HTML") {
+      return t("admin.navigationLoadErrorHintApiUnreachable");
+    }
+    if (loadErrorMessage === "SEASONAL_API_INVALID_JSON") {
+      return t("admin.navigationLoadErrorHint");
+    }
     if (/seasonal_configs|table is not available/i.test(loadErrorMessage)) {
       return t("admin.navigationLoadErrorHintTableMissing");
     }
@@ -434,9 +446,7 @@ export default function AdminNavigationPage() {
           className="rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive dark:bg-destructive/10"
         >
           <p className="font-medium">{t("admin.navigationLoadErrorTitle")}</p>
-          <p className="mt-1 whitespace-pre-wrap break-words">
-            {q.error instanceof Error ? q.error.message : String(q.error)}
-          </p>
+          <p className="mt-1 whitespace-pre-wrap break-words">{loadErrorDisplay}</p>
           <p className="mt-2 text-xs text-destructive/90">{loadErrorHint}</p>
         </div>
       ) : (

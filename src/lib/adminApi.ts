@@ -160,15 +160,33 @@ export async function getAdminSeasonalConfigs(): Promise<{
   const res = await adminFetch(
     seasonalAdminApiUrl("/api/admin/seasonal-configs"),
   );
+  const raw = await res.text();
+  const ct = res.headers.get("content-type") ?? "";
   if (!res.ok) {
-    const j = (await res.json().catch(() => ({}))) as { error?: string };
-    const detail = j.error?.trim() || res.statusText || "Request failed";
+    const looksLikeHtml =
+      ct.includes("text/html") ||
+      raw.trimStart().toLowerCase().startsWith("<!doctype") ||
+      raw.trimStart().toLowerCase().startsWith("<html");
+    if (looksLikeHtml) {
+      throw new Error("SEASONAL_API_UNREACHABLE_HTML");
+    }
+    let detail = res.statusText || "Request failed";
+    try {
+      const j = JSON.parse(raw) as { error?: string };
+      if (j.error?.trim()) detail = j.error.trim();
+    } catch {
+      /* non-JSON error body */
+    }
     throw new Error(`${detail} (HTTP ${res.status})`);
   }
-  return res.json() as Promise<{
-    configs: SeasonalConfigRow[];
-    orphanSeasonalNames: string[];
-  }>;
+  try {
+    return JSON.parse(raw) as {
+      configs: SeasonalConfigRow[];
+      orphanSeasonalNames: string[];
+    };
+  } catch {
+    throw new Error("SEASONAL_API_INVALID_JSON");
+  }
 }
 
 export async function postSeasonalConfig(payload: SeasonalConfigPayload): Promise<void> {
