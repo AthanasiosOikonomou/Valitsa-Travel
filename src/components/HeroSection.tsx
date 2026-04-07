@@ -91,10 +91,14 @@ const HeroSection = () => {
                 onMouseEnter={prefetchTripsRoute}
                 onFocus={prefetchTripsRoute}
                 onTouchStart={prefetchTripsRoute}
-                className="premium-button-light px-10 py-5 text-base"
+                className="premium-button-light hero-cta-text-depth px-10 py-5 text-base"
               >
                 {t("hero.cta")}
-                <ArrowRight size={20} />
+                <ArrowRight
+                  size={20}
+                  className="drop-shadow-[0_1px_2px_rgba(15,23,42,0.22)]"
+                  aria-hidden
+                />
               </Link>
             </motion.div>
           ) : null}
