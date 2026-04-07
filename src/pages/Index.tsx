@@ -10,6 +10,11 @@ import TripDetail from "@/components/TripDetail";
 import Seo from "@/components/Seo";
 import TermsModal from "@/components/TermsModal";
 import { SiteFooter } from "@/components/SiteFooter";
+import {
+  HERO_IMAGE_HEIGHT,
+  HERO_IMAGE_SRC,
+  HERO_IMAGE_WIDTH,
+} from "@/lib/heroImage";
 import { showTrips } from "@/lib/showTrips";
 
 const IndexContent = () => {
@@ -163,7 +168,10 @@ const IndexContent = () => {
         title={seoTitle}
         description={seoDescription}
         path="/"
-        image="/branding/navbar/logo-light.svg"
+        image={HERO_IMAGE_SRC}
+        imageAlt={t("hero.alt")}
+        imageWidth={HERO_IMAGE_WIDTH}
+        imageHeight={HERO_IMAGE_HEIGHT}
         keywords={seoKeywords}
         lang={lang}
         structuredData={[

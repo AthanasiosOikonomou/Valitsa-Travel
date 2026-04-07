@@ -1,6 +1,14 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { buildResponsiveImageSet, cn } from "@/lib/utils";
 
+export interface StaticImageSources {
+  webp: string;
+  /** Optional smaller file for browsers that support AVIF. */
+  avif?: string;
+  /** `<img>` fallback when `<picture>` sources are unsupported (usually same as webp). */
+  fallback?: string;
+}
+
 interface ProgressiveImageProps {
   src: string;
   alt: string;
@@ -14,6 +22,10 @@ interface ProgressiveImageProps {
   fetchPriority?: "high" | "low" | "auto";
   responsiveWidths?: number[];
   lqipWidth?: number;
+  /** Overrides LQIP URL (e.g. tiny `/hero/hero-lqip.webp` for same-origin heroes). */
+  lqipSrc?: string;
+  /** Fixed AVIF/WebP files (e.g. under `/public/hero/`). When set, CDN srcset is not used. */
+  staticSources?: StaticImageSources;
   decoding?: "sync" | "async" | "auto";
 }
 
@@ -30,6 +42,8 @@ const ProgressiveImage = ({
   fetchPriority,
   responsiveWidths,
   lqipWidth = 20,
+  lqipSrc: lqipSrcProp,
+  staticSources,
   decoding = "async",
 }: ProgressiveImageProps) => {
   const [loaded, setLoaded] = useState(false);
@@ -45,6 +59,14 @@ const ProgressiveImage = ({
     () => buildResponsiveImageSet(src, responsiveWidths, lqipWidth),
     [src, responsiveWidths, lqipWidth],
   );
+
+  const resolvedLqipSrc = staticSources
+    ? lqipSrcProp
+    : (lqipSrcProp ?? sources.lqipSrc);
+  const imgFallbackSrc = staticSources
+    ? (staticSources.fallback ?? staticSources.webp)
+    : sources.fallbackSrc;
+  const imgFallbackSrcSet = staticSources ? undefined : sources.fallbackSrcSet;
 
   // Intersection Observer for lazy images: start loading at 400px before visibility
   useEffect(() => {
@@ -110,9 +132,9 @@ const ProgressiveImage = ({
         className,
       )}
     >
-      {shouldLoad && showBlur && (
+      {shouldLoad && showBlur && resolvedLqipSrc ? (
         <img
-          src={sources.lqipSrc}
+          src={resolvedLqipSrc}
           alt=""
           aria-hidden="true"
           className={cn(
@@ -124,28 +146,43 @@ const ProgressiveImage = ({
               "opacity 250ms cubic-bezier(0.22, 1, 0.36, 1), filter 250ms cubic-bezier(0.22, 1, 0.36, 1)",
           }}
         />
-      )}
+      ) : null}
 
       {shouldLoad && (
         <picture>
-          {sources.avifSrcSet ? (
-            <source
-              type="image/avif"
-              srcSet={sources.avifSrcSet}
-              sizes={sizes}
-            />
-          ) : null}
-          {sources.webpSrcSet ? (
-            <source
-              type="image/webp"
-              srcSet={sources.webpSrcSet}
-              sizes={sizes}
-            />
-          ) : null}
+          {staticSources ? (
+            <>
+              {staticSources.avif ? (
+                <source
+                  type="image/avif"
+                  srcSet={staticSources.avif}
+                  sizes={sizes}
+                />
+              ) : null}
+              <source type="image/webp" srcSet={staticSources.webp} sizes={sizes} />
+            </>
+          ) : (
+            <>
+              {sources.avifSrcSet ? (
+                <source
+                  type="image/avif"
+                  srcSet={sources.avifSrcSet}
+                  sizes={sizes}
+                />
+              ) : null}
+              {sources.webpSrcSet ? (
+                <source
+                  type="image/webp"
+                  srcSet={sources.webpSrcSet}
+                  sizes={sizes}
+                />
+              ) : null}
+            </>
+          )}
 
           <img
-            src={sources.fallbackSrc}
-            srcSet={sources.fallbackSrcSet}
+            src={imgFallbackSrc}
+            srcSet={imgFallbackSrcSet}
             sizes={sizes}
             alt={alt}
             width={width}

@@ -10,6 +10,8 @@ interface SeoProps {
   path?: string;
   image?: string;
   imageAlt?: string;
+  imageWidth?: number;
+  imageHeight?: number;
   type?: "website" | "article";
   noindex?: boolean;
   keywords?: string;
@@ -31,6 +33,8 @@ const Seo = ({
   path = "/",
   image = "/branding/navbar/logo-light.svg",
   imageAlt = "Valitsa Travel Logo",
+  imageWidth = 1200,
+  imageHeight = 630,
   type = "website",
   noindex = false,
   keywords,
@@ -74,8 +78,8 @@ const Seo = ({
       <meta property="og:url" content={canonicalUrl} />
       <meta property="og:image" content={imageUrl} />
       <meta property="og:image:alt" content={imageAlt} />
-      <meta property="og:image:width" content="1200" />
-      <meta property="og:image:height" content="630" />
+      <meta property="og:image:width" content={String(imageWidth)} />
+      <meta property="og:image:height" content={String(imageHeight)} />
       <meta property="og:locale" content={locale} />
       {locale === "el_GR" && (
         <meta property="og:locale:alternate" content="en_US" />

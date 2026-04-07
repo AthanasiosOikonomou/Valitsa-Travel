@@ -4,6 +4,13 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Link } from "react-router-dom";
 import { prefetchTripsRoute } from "@/lib/routePrefetch";
 import ProgressiveImage from "@/components/ProgressiveImage";
+import {
+  getHeroStaticSources,
+  HERO_IMAGE_HEIGHT,
+  HERO_IMAGE_SRC,
+  HERO_IMAGE_WIDTH,
+  HERO_LQIP_SRC,
+} from "@/lib/heroImage";
 import { showTrips } from "@/lib/showTrips";
 
 const HeroSection = () => {
@@ -12,15 +19,17 @@ const HeroSection = () => {
   return (
     <section className="relative min-h-[96vh] flex items-center justify-center overflow-hidden px-4 pt-24 pb-12 md:px-8">
       <ProgressiveImage
-        src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=2000"
+        src={HERO_IMAGE_SRC}
+        staticSources={getHeroStaticSources()}
+        {...(HERO_LQIP_SRC ? { lqipSrc: HERO_LQIP_SRC } : {})}
         alt={t("hero.alt")}
-        width={2000}
-        height={1200}
+        width={HERO_IMAGE_WIDTH}
+        height={HERO_IMAGE_HEIGHT}
         priority
         loading="eager"
         fetchPriority="high"
-        responsiveWidths={[768, 1024, 1440, 1920, 2400]}
         sizes="100vw"
+        decoding="sync"
         className="absolute inset-0"
         imgClassName="brightness-[0.55] animate-scale-hero"
       />
