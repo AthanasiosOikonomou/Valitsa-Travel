@@ -7,6 +7,7 @@ import ProgressiveImage from "@/components/ProgressiveImage";
 import { SafeRichTextHtml } from "@/components/SafeRichTextHtml";
 import { formatTripDuration, formatTripPrice } from "@/lib/tripDisplay";
 import { formatTripDepartureSummary } from "@/lib/departureWindows";
+import { effectiveTripListDuration, effectiveTripListPrice } from "@/lib/tripPricing";
 import { SeasonalTripBadge } from "@/components/SeasonalTripBadge";
 
 interface TripCardProps {
@@ -84,13 +85,13 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
                 data-nosnippet
                 className="premium-chip border-white/45 bg-black/35 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-sm"
               >
-                {formatTripPrice(trip.price_num, lang)}
+                {formatTripPrice(effectiveTripListPrice(trip), lang)}
               </span>
               <span
                 data-nosnippet
                 className="premium-chip border-white/45 bg-black/35 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-sm"
               >
-                {formatTripDuration(trip.duration_days, lang)}
+                {formatTripDuration(effectiveTripListDuration(trip), lang)}
               </span>
             </div>
 

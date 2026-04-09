@@ -19,6 +19,7 @@ const TRIP_LIST_FIELDS = [
   "date_range",
   "date_range_el",
   "departure_windows",
+  "pricing_segments",
   "departure_city",
   "tags",
   "tags_el",

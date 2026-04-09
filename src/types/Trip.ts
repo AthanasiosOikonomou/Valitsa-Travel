@@ -31,6 +31,22 @@ export type DepartureWindow = {
 
 export type DepartureScheduleEntry = DepartureMonthBlock | DepartureWindow;
 
+/**
+ * Stored in `trips.pricing_segments` jsonb. Rows are not merged across the same month.
+ */
+export type TripPricingSegment = {
+  month: number;
+  days: number[];
+  hotel_en?: string | null;
+  hotel_el?: string | null;
+  duration_days?: number | null;
+  price_double?: number | null;
+  price_single?: number | null;
+  /** Triple room (τρίκλινο). */
+  price_triple?: number | null;
+  price_child?: number | null;
+};
+
 export type Trip = {
   id: string;
   title: string;
@@ -73,6 +89,8 @@ export type Trip = {
   is_seasonal?: boolean | null;
   /** Slug matching `seasonal_configs.seasonal_key` when `is_seasonal` is true. */
   seasonal_name?: string | null;
+  /** Independent per-departure offers (hotel, duration, room prices); not merged like `departure_windows`. */
+  pricing_segments?: TripPricingSegment[] | null;
 };
 
 /** Flat payload for admin PUT `/api/admin/trips/:id` (matches `adminTripPutSchema`). */
@@ -110,4 +128,5 @@ export type TripUpdate = Partial<{
   status: TripStatus | null;
   is_seasonal: boolean | null;
   seasonal_name: string | null;
+  pricing_segments: TripPricingSegment[] | null;
 }>;

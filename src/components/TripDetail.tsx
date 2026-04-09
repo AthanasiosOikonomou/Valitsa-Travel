@@ -9,7 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import type { Trip } from "@/types/Trip";
+import type { Trip, TripPricingSegment } from "@/types/Trip";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { createInquiry } from "@/lib/inquiries";
 import { toast } from "sonner";
@@ -34,7 +34,101 @@ import {
   normalizeDepartureBlocks,
   formatMonthNameLong,
 } from "@/lib/departureWindows";
+import {
+  effectiveTripListDuration,
+  effectiveTripListPrice,
+  normalizePricingSegments,
+} from "@/lib/tripPricing";
 import { buildResponsiveImageSet, cn } from "@/lib/utils";
+
+function segmentHeroPrice(s: TripPricingSegment): number | null {
+  const candidates = [s.price_double, s.price_single, s.price_triple, s.price_child];
+  for (const n of candidates) {
+    if (n != null && Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+function PricingSegmentCard({
+  segment: s,
+  langKey,
+  lang,
+  t,
+}: {
+  segment: TripPricingSegment;
+  langKey: "en" | "gr";
+  lang: "en" | "gr";
+  t: (key: string) => string;
+}) {
+  const hotel =
+    langKey === "gr"
+      ? String(s.hotel_el ?? s.hotel_en ?? "").trim()
+      : String(s.hotel_en ?? s.hotel_el ?? "").trim();
+  const daysText = formatDaysForMonth(s.days, langKey);
+  const departuresLine = `${formatMonthNameLong(s.month, langKey)} · ${daysText}`;
+  const hero = segmentHeroPrice(s);
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <p className="min-w-0 flex-1 font-semibold leading-snug text-foreground line-clamp-3">
+          {hotel || "—"}
+        </p>
+        <p className="shrink-0 text-lg font-bold tabular-nums text-foreground">
+          {formatTripPrice(hero, lang)}
+        </p>
+      </div>
+      <div className="mt-3 space-y-2.5 text-sm">
+        <div>
+          <p className="label-ui text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-foreground-muted">
+            {t("detail.pricingDepartures")}
+          </p>
+          <p className="mt-1 leading-snug text-foreground">{departuresLine}</p>
+        </div>
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <span className="label-ui text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-foreground-muted">
+            {t("detail.pricingDurationCol")}
+          </span>
+          <span className="text-right text-foreground">{formatTripDuration(s.duration_days, lang)}</span>
+        </div>
+        <div className="grid grid-cols-1 gap-3 border-t border-border/80 pt-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <p className="label-ui text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-foreground-muted">
+              {t("detail.pricingDoubleCol")}
+            </p>
+            <p className="mt-1 font-medium tabular-nums text-foreground">
+              {formatTripPrice(s.price_double, lang)}
+            </p>
+          </div>
+          <div>
+            <p className="label-ui text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-foreground-muted">
+              {t("detail.pricingSingleCol")}
+            </p>
+            <p className="mt-1 font-medium tabular-nums text-foreground">
+              {formatTripPrice(s.price_single, lang)}
+            </p>
+          </div>
+          <div>
+            <p className="label-ui text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-foreground-muted">
+              {t("detail.pricingTripleCol")}
+            </p>
+            <p className="mt-1 font-medium tabular-nums text-foreground">
+              {formatTripPrice(s.price_triple, lang)}
+            </p>
+          </div>
+          <div>
+            <p className="label-ui text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-foreground-muted">
+              {t("detail.pricingChildCol")}
+            </p>
+            <p className="mt-1 font-medium tabular-nums text-foreground">
+              {formatTripPrice(s.price_child, lang)}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface TripDetailProps {
   trip: Trip;
@@ -263,7 +357,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
         tripId: trip.id,
         tripTitle: getDetailField("title"),
         tripLocation: getDetailField("location"),
-        tripPrice: formatTripPrice(trip.price_num, lang),
+        tripPrice: formatTripPrice(effectiveTripListPrice(trip), lang),
         tripUrl:
           typeof window !== "undefined"
             ? `${window.location.origin}/trips?trip=${trip.id}`
@@ -671,6 +765,27 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                               ) : null}
                               {(() => {
                                 const langKey = lang === "gr" ? "gr" : "en";
+                                const segments = normalizePricingSegments(trip.pricing_segments);
+                                if (segments.length > 0) {
+                                  return (
+                                    <div className="space-y-4 border-t border-slate-200/90 pt-8 dark:border-white/10">
+                                      <h3 className="label-ui text-xs font-semibold uppercase tracking-[0.2em] text-foreground-muted">
+                                        {t("detail.pricingSegmentsTitle")}
+                                      </h3>
+                                      <div className="space-y-3">
+                                        {segments.map((s, idx) => (
+                                          <PricingSegmentCard
+                                            key={`${s.month}-${idx}`}
+                                            segment={s}
+                                            langKey={langKey}
+                                            lang={lang}
+                                            t={t}
+                                          />
+                                        ))}
+                                      </div>
+                                    </div>
+                                  );
+                                }
                                 const blocks = normalizeDepartureBlocks(trip);
                                 const fallbackLine = formatTripDepartureSummary(trip, langKey);
                                 if (blocks.length === 0 && !fallbackLine) return null;
@@ -803,11 +918,11 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                               {t("detail.startingFrom")}
                             </p>
                             <p className="text-3xl font-bold">
-                              {formatTripPrice(trip.price_num, lang)}
+                              {formatTripPrice(effectiveTripListPrice(trip), lang)}
                             </p>
                           </div>
                           <span className="label-ui text-primary bg-primary/10 px-3 py-1.5 rounded-full">
-                            {formatTripDuration(trip.duration_days, lang)}
+                            {formatTripDuration(effectiveTripListDuration(trip), lang)}
                           </span>
                         </div>
 

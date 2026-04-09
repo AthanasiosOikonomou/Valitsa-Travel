@@ -52,6 +52,7 @@ import {
   formatTripDuration,
   formatTripPrice,
 } from "@/lib/tripDisplay";
+import { effectiveTripListDuration, effectiveTripListPrice } from "@/lib/tripPricing";
 import { pickLocalizedStringList } from "@/lib/tripLocaleArrays";
 import { transportLabelForSlug } from "@/lib/tripTransportModes";
 
@@ -388,7 +389,7 @@ const TripsContent = () => {
         image: trip.image ?? undefined,
         description: getField(trip, "description"),
         priceCurrency: "EUR",
-        price: String(trip.price_num ?? ""),
+        price: String(effectiveTripListPrice(trip) ?? ""),
         duration: formatTripDuration(trip.duration_days, lang),
       };
     }),
@@ -1341,10 +1342,10 @@ const TripResultCard = ({
         <div className="flex flex-wrap items-center justify-between gap-3 mt-2">
           <div className="flex items-center gap-4 text-sm">
             <span className="font-bold text-primary text-base">
-              {formatTripPrice(trip.price_num, lang)}
+              {formatTripPrice(effectiveTripListPrice(trip), lang)}
             </span>
             <span className="text-foreground-muted">
-              {formatTripDuration(trip.duration_days, lang)}
+              {formatTripDuration(effectiveTripListDuration(trip), lang)}
             </span>
           </div>
           <span className="premium-outline-button text-sm">

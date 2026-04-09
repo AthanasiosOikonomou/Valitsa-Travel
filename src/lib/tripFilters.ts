@@ -1,5 +1,9 @@
 import type { Trip } from "@/types/Trip";
-import { tripDepartureMonths } from "@/lib/departureWindows";
+import {
+  effectiveTripListDuration,
+  effectiveTripListPrice,
+  tripDepartureMonthsAugmented,
+} from "@/lib/tripPricing";
 import {
   TRANSPORT_MODE_SLUGS,
   mergeTransportSlugsFromColumns,
@@ -148,13 +152,13 @@ const collectTransportSlugsFromTrips = (trips: Trip[]): TransportModeSlug[] => {
 
 export const buildTripFilterMetadata = (trips: Trip[], lang: TripLang): TripFilterMetadata => {
   const globalPriceBounds = getRangeBounds(
-    trips.map((trip) => trip.price_num ?? 0),
+    trips.map((trip) => effectiveTripListPrice(trip) ?? 0),
     { min: 0, max: 0 },
   );
 
   const monthSet = new Set<number>();
   for (const trip of trips) {
-    for (const m of tripDepartureMonths(trip)) {
+    for (const m of tripDepartureMonthsAugmented(trip)) {
       monthSet.add(m);
     }
   }
@@ -164,7 +168,7 @@ export const buildTripFilterMetadata = (trips: Trip[], lang: TripLang): TripFilt
     countries: sortCountries([
       ...new Set(trips.map((trip) => getTripField(trip, "country", lang) ?? "")),
     ]),
-    durations: [...new Set(trips.map((trip) => trip.duration_days ?? 0))].sort(
+    durations: [...new Set(trips.map((trip) => effectiveTripListDuration(trip) ?? 0))].sort(
       (left, right) => left - right,
     ),
     cities: sortUniqueStrings(trips.map((trip) => getTripField(trip, "departure_city", lang) ?? "")),
@@ -293,7 +297,7 @@ export const buildAvailableTripFacets = (
     state,
     lang,
     "duration",
-    (trip) => trip.duration_days ?? 0,
+    (trip) => effectiveTripListDuration(trip) ?? 0,
   );
   const cityCounts = buildFacetCounts(
     trips,
@@ -342,12 +346,14 @@ export const sortTrips = (trips: Trip[], sortBy: SortOption) => {
   switch (sortBy) {
     case "priceAsc":
       sortedTrips.sort(
-        (left, right) => (left.price_num ?? 0) - (right.price_num ?? 0),
+        (left, right) =>
+          (effectiveTripListPrice(left) ?? 0) - (effectiveTripListPrice(right) ?? 0),
       );
       return sortedTrips;
     case "priceDesc":
       sortedTrips.sort(
-        (left, right) => (right.price_num ?? 0) - (left.price_num ?? 0),
+        (left, right) =>
+          (effectiveTripListPrice(right) ?? 0) - (effectiveTripListPrice(left) ?? 0),
       );
       return sortedTrips;
     case "recommended":
@@ -373,7 +379,7 @@ export const buildPriceFacetValues = (
 
   for (const trip of trips) {
     if (!matchesTripFilters(trip, state, lang, "price")) continue;
-    prices.add(trip.price_num ?? 0);
+    prices.add(effectiveTripListPrice(trip) ?? 0);
   }
 
   return [...prices].sort((left, right) => left - right);
@@ -472,7 +478,7 @@ const buildMonthFacetCounts = (
 
   for (const trip of trips) {
     if (!matchesTripFilters(trip, state, lang, "month")) continue;
-    const months = tripDepartureMonths(trip);
+    const months = tripDepartureMonthsAugmented(trip);
     const seen = new Set<number>();
     for (const m of months) {
       if (seen.has(m)) continue;
@@ -520,7 +526,7 @@ const getPriceBoundsForState = (
 
   for (const trip of trips) {
     if (!matchesTripFilters(trip, state, lang, "price")) continue;
-    values.push(trip.price_num ?? 0);
+    values.push(effectiveTripListPrice(trip) ?? 0);
   }
 
   return getRangeBounds(values, fallbackBounds);
@@ -559,8 +565,8 @@ const matchesTripFilters = (
 
   if (
     excludedFacet !== "price" &&
-    ((trip.price_num ?? 0) < state.priceRange[0] ||
-      (trip.price_num ?? 0) > state.priceRange[1])
+    ((effectiveTripListPrice(trip) ?? 0) < state.priceRange[0] ||
+      (effectiveTripListPrice(trip) ?? 0) > state.priceRange[1])
   ) {
     return false;
   }
@@ -576,7 +582,7 @@ const matchesTripFilters = (
   if (
     excludedFacet !== "duration" &&
     state.selectedDurations.length > 0 &&
-    !state.selectedDurations.includes(trip.duration_days ?? 0)
+    !state.selectedDurations.includes(effectiveTripListDuration(trip) ?? 0)
   ) {
     return false;
   }
@@ -610,7 +616,7 @@ const matchesTripFilters = (
     excludedFacet !== "month" &&
     state.selectedMonths.length > 0
   ) {
-    const tripMonths = tripDepartureMonths(trip);
+    const tripMonths = tripDepartureMonthsAugmented(trip);
     if (tripMonths.size === 0) {
       return false;
     }

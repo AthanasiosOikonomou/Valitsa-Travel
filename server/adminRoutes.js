@@ -299,6 +299,76 @@ function normalizeDepartureWindowsField(value) {
   return [];
 }
 
+/** Per-departure pricing rows: validate month/days only; do not merge months. */
+function normalizePricingSegmentsArray(arr) {
+  if (!Array.isArray(arr)) return [];
+  const out = [];
+  for (const raw of arr) {
+    if (!raw || typeof raw !== "object") continue;
+    const month = Math.trunc(Number(raw.month));
+    if (!Number.isFinite(month) || month < 1 || month > 12) continue;
+    const daySet = new Set();
+    if (Array.isArray(raw.days)) {
+      for (const d of raw.days) {
+        const day = Math.trunc(Number(d));
+        if (Number.isFinite(day) && isValidDayForMonthServer(month, day)) {
+          daySet.add(day);
+        }
+      }
+    }
+    const days = [...daySet].sort((a, b) => a - b);
+    if (days.length === 0) continue;
+
+    const strOrNull = (v) => {
+      if (v == null) return null;
+      const s = String(v).trim();
+      return s || null;
+    };
+    const numOrNull = (v) => {
+      if (v === undefined || v === null || v === "") return null;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    };
+    const intOrNull = (v) => {
+      if (v === undefined || v === null || v === "") return null;
+      const n = Math.trunc(Number(v));
+      return Number.isFinite(n) ? n : null;
+    };
+
+    out.push({
+      month,
+      days,
+      hotel_en: strOrNull(raw.hotel_en),
+      hotel_el: strOrNull(raw.hotel_el),
+      duration_days: intOrNull(raw.duration_days),
+      price_double: numOrNull(raw.price_double),
+      price_single: numOrNull(raw.price_single),
+      price_triple: numOrNull(raw.price_triple),
+      price_child: numOrNull(raw.price_child),
+    });
+  }
+  return out;
+}
+
+function normalizePricingSegmentsField(value) {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (typeof value === "string") {
+    const s = value.trim();
+    if (!s) return [];
+    try {
+      const parsed = JSON.parse(s);
+      return normalizePricingSegmentsArray(parsed);
+    } catch {
+      return [];
+    }
+  }
+  if (Array.isArray(value)) {
+    return normalizePricingSegmentsArray(value);
+  }
+  return [];
+}
+
 const LEGACY_TRIP_BODY_KEYS = ["type", "type_el", "category", "category_el"];
 
 function normalizeTripPutBody(body) {
@@ -335,6 +405,9 @@ function normalizeTripPutBody(body) {
   }
   if ("departure_windows" in out) {
     out.departure_windows = normalizeDepartureWindowsField(out.departure_windows);
+  }
+  if ("pricing_segments" in out) {
+    out.pricing_segments = normalizePricingSegmentsField(out.pricing_segments);
   }
   if (out.is_seasonal === false) {
     out.seasonal_name = null;
@@ -378,6 +451,22 @@ const adminTripPutSchema = z
           days: z.array(z.coerce.number().int().min(1).max(31)),
           label_en: z.string().nullable().optional(),
           label_el: z.string().nullable().optional(),
+        }),
+      )
+      .nullable()
+      .optional(),
+    pricing_segments: z
+      .array(
+        z.object({
+          month: z.coerce.number().int().min(1).max(12),
+          days: z.array(z.coerce.number().int().min(1).max(31)),
+          hotel_en: z.string().nullable().optional(),
+          hotel_el: z.string().nullable().optional(),
+          duration_days: z.coerce.number().int().nullable().optional(),
+          price_double: z.number().nullable().optional(),
+          price_single: z.number().nullable().optional(),
+          price_triple: z.number().nullable().optional(),
+          price_child: z.number().nullable().optional(),
         }),
       )
       .nullable()
