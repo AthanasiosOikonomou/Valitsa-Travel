@@ -334,6 +334,17 @@ const translations: Record<Lang, Record<string, string>> = {
       "Each pricing row needs a matching departure row (same order). Add departures first or remove extra pricing rows.",
     "admin.tripFlightLegCountMismatch":
       "Flight details must have exactly one leg per departure row (same count and order).",
+    "admin.tripDepartureModalTitle": "Departure dates",
+    "admin.tripDepartureModalOpenButton": "Edit departure dates",
+    "admin.tripDepartureModalSummary": "{count} departure window(s)",
+    "admin.tripDepartureModalSave": "Save",
+    "admin.tripDepartureModalCancel": "Cancel",
+    "admin.tripDepartureUnsavedTitle": "Unsaved departure changes",
+    "admin.tripDepartureUnsavedDescription":
+      "You have unsaved changes to departure dates. Save them before closing, or leave without saving.",
+    "admin.tripDepartureUnsavedSaveAndClose": "Save and close",
+    "admin.tripDepartureUnsavedDiscard": "Leave without saving",
+    "admin.tripDepartureUnsavedKeepEditing": "Keep editing",
     "admin.tabGreek": "Ελληνικά",
     "admin.tabEnglish": "English",
     "admin.tripSinglePhotoHint":
@@ -852,6 +863,17 @@ const translations: Record<Lang, Record<string, string>> = {
       "Κάθε γραμμή τιμολόγησης χρειάζεται αντίστοιχη γραμμή αναχώρησης (ίδια σειρά). Προσθέστε αναχωρήσεις πρώτα ή αφαιρέστε επιπλέον γραμμές τιμολόγησης.",
     "admin.tripFlightLegCountMismatch":
       "Οι λεπτομέρειες πτήσης πρέπει να έχουν ακριβώς ένα σκέλος ανά γραμμή αναχώρησης (ίδιο πλήθος και σειρά).",
+    "admin.tripDepartureModalTitle": "Ημερομηνίες αναχώρησης",
+    "admin.tripDepartureModalOpenButton": "Επεξεργασία ημερομηνιών αναχώρησης",
+    "admin.tripDepartureModalSummary": "{count} παράθυρο(α) αναχώρησης",
+    "admin.tripDepartureModalSave": "Αποθήκευση",
+    "admin.tripDepartureModalCancel": "Ακύρωση",
+    "admin.tripDepartureUnsavedTitle": "Μη αποθηκευμένες αλλαγές αναχωρήσεων",
+    "admin.tripDepartureUnsavedDescription":
+      "Έχετε μη αποθηκευμένες αλλαγές στις ημερομηνίες αναχώρησης. Αποθηκεύστε πριν το κλείσιμο ή εγκαταλείψτε χωρίς αποθήκευση.",
+    "admin.tripDepartureUnsavedSaveAndClose": "Αποθήκευση και κλείσιμο",
+    "admin.tripDepartureUnsavedDiscard": "Έξοδος χωρίς αποθήκευση",
+    "admin.tripDepartureUnsavedKeepEditing": "Συνέχεια επεξεργασίας",
     "admin.tabGreek": "Ελληνικά",
     "admin.tabEnglish": "English",
     "admin.tripSinglePhotoHint":

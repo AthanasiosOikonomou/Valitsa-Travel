@@ -1,0 +1,272 @@
+import * as Dialog from "@radix-ui/react-dialog";
+import { Plus, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { DepartureWindowFormRow } from "@/lib/tripAdminForm";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
+import { isValidDayForMonth } from "@/lib/departureWindows";
+import { DepartureDayPickerPure } from "./DepartureDayPickerPure";
+
+function emptyRow(): DepartureWindowFormRow {
+  return { month: 1, days: [], label_en: "", label_el: "" };
+}
+
+export function DepartureWindowsModal({
+  open,
+  onOpenChange,
+  rows,
+  onSave,
+  t,
+  lang,
+  tripInputClass,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  rows: DepartureWindowFormRow[];
+  onSave: (rows: DepartureWindowFormRow[]) => void;
+  t: (key: string) => string;
+  lang: "gr" | "en";
+  tripInputClass: string;
+}) {
+  const [draft, setDraft] = useState<DepartureWindowFormRow[]>([]);
+  const snapshotRef = useRef<string>("");
+  const [unsavedOpen, setUnsavedOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const init = structuredClone(rows);
+    setDraft(init);
+    snapshotRef.current = JSON.stringify(init);
+  }, [open, rows]);
+
+  const tryClose = useCallback(() => {
+    if (JSON.stringify(draft) === snapshotRef.current) {
+      onOpenChange(false);
+      return;
+    }
+    setUnsavedOpen(true);
+  }, [draft, onOpenChange]);
+
+  const handleSave = useCallback(() => {
+    onSave(draft);
+  }, [draft, onSave]);
+
+  const handleDialogOpenChange = useCallback(
+    (next: boolean) => {
+      if (next) onOpenChange(true);
+      else tryClose();
+    },
+    [onOpenChange, tryClose],
+  );
+
+  const discardAndClose = () => {
+    setUnsavedOpen(false);
+    onOpenChange(false);
+  };
+
+  const saveFromAlertAndClose = () => {
+    setUnsavedOpen(false);
+    onSave(draft);
+  };
+
+  const locale = lang === "gr" ? "el-GR" : "en-GB";
+
+  return (
+    <>
+      <Dialog.Root open={open} onOpenChange={handleDialogOpenChange}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-[110] bg-black/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+          <Dialog.Content
+            className={cn(
+              "fixed left-1/2 top-1/2 z-[111] flex max-h-[min(90vh,720px)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-elev3 duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100",
+            )}
+            onOpenAutoFocus={(e) => e.preventDefault()}
+          >
+            <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-100 px-4 py-3 dark:border-white/10 sm:px-5">
+              <Dialog.Title className="pr-2 text-base font-semibold leading-snug sm:text-lg">
+                {t("admin.tripDepartureModalTitle")}
+              </Dialog.Title>
+              <button
+                type="button"
+                className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-red-400"
+                aria-label={t("admin.close")}
+                onClick={tryClose}
+              >
+                <X className="h-5 w-5 shrink-0" aria-hidden />
+              </button>
+            </div>
+            <Dialog.Description className="sr-only">{t("admin.tripDepartureModalTitle")}</Dialog.Description>
+
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-5">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-3">
+                <Label className="text-sm font-medium">{t("admin.tripDepartureDates")}</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={() => setDraft((prev) => [...prev, emptyRow()])}
+                >
+                  <Plus className="mr-1 h-4 w-4" />
+                  {t("admin.tripDepartureAddRow")}
+                </Button>
+              </div>
+              <div className="space-y-3">
+                {draft.map((row, index) => (
+                  <div
+                    key={index}
+                    className="space-y-3 rounded-xl border border-border bg-muted/20 p-3"
+                  >
+                    <div className="flex justify-end">
+                      {draft.length > 1 ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() =>
+                            setDraft((prev) => prev.filter((_, i) => i !== index))
+                          }
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">{t("admin.tripDepartureRemoveRow")}</span>
+                        </Button>
+                      ) : null}
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label htmlFor={`dep-modal-month-${index}`}>{t("admin.tripDepartureMonth")}</Label>
+                        <select
+                          id={`dep-modal-month-${index}`}
+                          className={cn(
+                            tripInputClass,
+                            "flex h-11 w-full rounded-md border border-input bg-background px-3 py-2",
+                          )}
+                          value={row.month}
+                          onChange={(e) => {
+                            const month = Number(e.target.value);
+                            setDraft((prev) => {
+                              const copy = [...prev];
+                              const cur = { ...copy[index], month };
+                              const days = (cur.days ?? []).filter((d) =>
+                                isValidDayForMonth(month, d),
+                              );
+                              copy[index] = { ...cur, days };
+                              return copy;
+                            });
+                          }}
+                        >
+                          {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                            <option key={m} value={m}>
+                              {new Intl.DateTimeFormat(locale, { month: "long" }).format(
+                                new Date(2000, m - 1, 1),
+                              )}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <DepartureDayPickerPure
+                        month={row.month}
+                        days={row.days}
+                        onDaysChange={(next) =>
+                          setDraft((prev) => {
+                            const copy = [...prev];
+                            copy[index] = { ...copy[index], days: next };
+                            return copy;
+                          })
+                        }
+                        daysPickLabel={t("admin.tripDepartureDaysPick")}
+                      />
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label htmlFor={`dep-modal-label-el-${index}`}>
+                          {t("admin.tripDepartureLabelEl")}
+                        </Label>
+                        <Input
+                          id={`dep-modal-label-el-${index}`}
+                          className={tripInputClass}
+                          value={row.label_el}
+                          onChange={(e) =>
+                            setDraft((prev) => {
+                              const copy = [...prev];
+                              copy[index] = { ...copy[index], label_el: e.target.value };
+                              return copy;
+                            })
+                          }
+                          autoComplete="off"
+                          placeholder={t("admin.tripDepartureLabelOptional")}
+                        />
+                      </div>
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label htmlFor={`dep-modal-label-en-${index}`}>
+                          {t("admin.tripDepartureLabelEn")}
+                        </Label>
+                        <Input
+                          id={`dep-modal-label-en-${index}`}
+                          className={tripInputClass}
+                          value={row.label_en}
+                          onChange={(e) =>
+                            setDraft((prev) => {
+                              const copy = [...prev];
+                              copy[index] = { ...copy[index], label_en: e.target.value };
+                              return copy;
+                            })
+                          }
+                          autoComplete="off"
+                          placeholder={t("admin.tripDepartureLabelOptional")}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-slate-100 bg-slate-50/90 px-4 py-3 dark:border-white/10 dark:bg-zinc-950/80 sm:px-5">
+              <Button type="button" variant="outline" onClick={tryClose}>
+                {t("admin.tripDepartureModalCancel")}
+              </Button>
+              <Button type="button" className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleSave}>
+                {t("admin.tripDepartureModalSave")}
+              </Button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      <AlertDialog open={unsavedOpen} onOpenChange={setUnsavedOpen}>
+        <AlertDialogContent
+          overlayClassName="z-[120]"
+          className="z-[121] max-w-2xl min-w-0"
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle className="break-words pr-1">{t("admin.tripDepartureUnsavedTitle")}</AlertDialogTitle>
+            <AlertDialogDescription className="break-words text-pretty">
+              {t("admin.tripDepartureUnsavedDescription")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-col gap-2 sm:flex-col sm:space-x-0 [&>*]:h-auto [&>*]:min-h-10 [&>*]:w-full [&>*]:whitespace-normal [&>*]:px-3 [&>*]:py-2 [&>*]:text-left">
+            <AlertDialogCancel>{t("admin.tripDepartureUnsavedKeepEditing")}</AlertDialogCancel>
+            <Button type="button" variant="outline" onClick={discardAndClose}>
+              {t("admin.tripDepartureUnsavedDiscard")}
+            </Button>
+            <AlertDialogAction onClick={saveFromAlertAndClose}>
+              {t("admin.tripDepartureUnsavedSaveAndClose")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}

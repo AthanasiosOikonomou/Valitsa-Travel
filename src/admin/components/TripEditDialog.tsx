@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Plus, Trash2, X } from "lucide-react";
+import { CalendarDays, Plus, Trash2, X } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -24,6 +24,7 @@ import {
   formStepsToDbPayload,
   programDbToFormSteps,
   stringListDbToForm,
+  type DepartureWindowFormRow,
   type ProgramFormStep,
 } from "@/lib/tripAdminForm";
 import { mergeTransportSlugsFromColumns, slugsToLabelArray } from "@/lib/tripTransportModes";
@@ -38,6 +39,7 @@ import { TripImageDropzone } from "@/admin/components/TripImageDropzone";
 import { TripGalleryGrid } from "@/admin/components/TripGalleryGrid";
 import { ProgramTimelineEditor } from "@/admin/components/trip-edit/ProgramTimelineEditor";
 import { StringArrayField } from "@/admin/components/trip-edit/StringArrayField";
+import { DepartureWindowsModal } from "@/admin/components/trip-edit/DepartureWindowsModal";
 import { TransportMultiSelect } from "@/admin/components/trip-edit/TransportMultiSelect";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
@@ -378,59 +380,6 @@ function PricingSegmentDayPickerRow({
   );
 }
 
-function DepartureDayPickerRow({
-  control,
-  index,
-  t,
-}: {
-  control: Control<TripFormValues>;
-  index: number;
-  t: (key: string) => string;
-}) {
-  const month = useWatch({ control, name: `departure_windows.${index}.month` }) ?? 1;
-  return (
-    <Controller
-      name={`departure_windows.${index}.days`}
-      control={control}
-      render={({ field }) => (
-        <div className="space-y-2 sm:col-span-2">
-          <Label>{t("admin.tripDepartureDaysPick")}</Label>
-          <div className="flex flex-wrap gap-1.5">
-            {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => {
-              const disabled = !isValidDayForMonth(month, day);
-              const value = Array.isArray(field.value) ? field.value : [];
-              const selected = value.includes(day);
-              return (
-                <button
-                  key={day}
-                  type="button"
-                  disabled={disabled}
-                  className={cn(
-                    "min-h-9 min-w-9 rounded-md border text-xs font-medium transition-colors",
-                    disabled && "cursor-not-allowed opacity-25",
-                    selected
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-background hover:bg-muted",
-                  )}
-                  onClick={() => {
-                    if (disabled) return;
-                    const next = new Set(value);
-                    if (next.has(day)) next.delete(day);
-                    else next.add(day);
-                    field.onChange([...next].sort((a, b) => a - b));
-                  }}
-                >
-                  {day}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    />
-  );
-}
-
 const GREEK_FIELD_ORDER = [
   "title_el",
   "location_el",
@@ -612,6 +561,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
   const navigate = useNavigate();
   const { t, lang } = useLanguage();
   const [tab, setTab] = useState<"el" | "en">("el");
+  const [departureModalOpen, setDepartureModalOpen] = useState(false);
   const langTabsScrollAnchorRef = useRef<HTMLDivElement>(null);
   const isCreate = tripId === ADMIN_TRIP_CREATE_ID;
 
@@ -651,17 +601,17 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
     setFocus,
     setValue,
     getValues,
+    trigger,
     formState: { errors },
   } = useForm<TripFormValues>({
     resolver: zodResolver(schema),
     defaultValues: defaultForm(),
   });
 
-  const { fields: departureWindowFields, append: appendDepartureWindow, remove: removeDepartureWindow } =
-    useFieldArray({
-      control,
-      name: "departure_windows",
-    });
+  const { fields: departureWindowFields } = useFieldArray({
+    control,
+    name: "departure_windows",
+  });
 
   const {
     fields: pricingSegmentFields,
@@ -690,6 +640,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
   const hasEnglishOn = useWatch({ control, name: "hasEnglish" });
   const isSeasonalOn = useWatch({ control, name: "is_seasonal" });
   const flightDetailsEnabled = useWatch({ control, name: "flight_details_enabled" });
+  const watchedDepartureWindows = useWatch({ control, name: "departure_windows" });
 
   const activeSeasonalConfigs =
     seasonalConfigsQ.data?.configs.filter((c) => c.is_active) ?? [];
@@ -829,9 +780,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
         const ttab = tabForDepartureWindowErrors(errs);
         setTab(ttab);
         document
-          .getElementById(
-            ttab === "en" ? "trip-field-departure_windows_en" : "trip-field-departure_windows_el",
-          )
+          .getElementById("trip-field-departure_windows")
           ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
         return;
       }
@@ -845,7 +794,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
           name === "transport_mode_slugs"
             ? "trip-field-transport_mode_slugs_el"
             : name === "departure_windows"
-              ? "trip-field-departure_windows_el"
+              ? "trip-field-departure_windows"
               : name === "pricing_segments"
                 ? "trip-field-pricing_segments_el"
                 : name === "flight_details"
@@ -890,6 +839,18 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
     legs = legs.slice(0, n);
     setValue("flight_details", legs, { shouldValidate: false });
   }, [getValues, setValue]);
+
+  const handleDepartureSave = useCallback(
+    async (rows: DepartureWindowFormRow[]) => {
+      setValue("departure_windows", rows, { shouldValidate: true, shouldDirty: true });
+      const ok = await trigger("departure_windows");
+      if (ok) {
+        syncFlightLegsToDepartureCount();
+        setDepartureModalOpen(false);
+      }
+    },
+    [setValue, syncFlightLegsToDepartureCount, trigger],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -1219,6 +1180,60 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                 </div>
 
                 <div
+                  id="trip-field-departure_windows"
+                  className={cn(
+                    fieldClass("departure_windows"),
+                    "mt-8 flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-white/10 dark:bg-zinc-950/50 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between",
+                  )}
+                >
+                  <div className="min-w-0 space-y-1">
+                    <Label className="text-sm font-medium">{t("admin.tripDepartureDates")}</Label>
+                    <p className="text-xs text-slate-600 dark:text-zinc-400">
+                      {t("admin.tripDepartureModalSummary").replace(
+                        "{count}",
+                        String(departureWindowFields.length),
+                      )}
+                    </p>
+                    {errors.departure_windows &&
+                    typeof (errors.departure_windows as { message?: string }).message === "string" ? (
+                      <p className="text-xs text-destructive">
+                        {(errors.departure_windows as { message: string }).message}
+                      </p>
+                    ) : null}
+                    {departureWindowFields.map((_, index) =>
+                      (errors.departure_windows as unknown as Record<number, { days?: { message?: string } }>)?.[
+                        index
+                      ]?.days?.message ? (
+                        <p key={index} className="text-xs text-destructive">
+                          {
+                            (errors.departure_windows as unknown as Record<
+                              number,
+                              { days?: { message?: string } }
+                            >)?.[index]?.days?.message
+                          }
+                        </p>
+                      ) : null,
+                    )}
+                  </div>
+                  <Button type="button" variant="outline" className="shrink-0" onClick={() => setDepartureModalOpen(true)}>
+                    <CalendarDays className="mr-2 h-4 w-4" aria-hidden />
+                    {t("admin.tripDepartureModalOpenButton")}
+                  </Button>
+                </div>
+                <DepartureWindowsModal
+                  open={departureModalOpen}
+                  onOpenChange={setDepartureModalOpen}
+                  rows={
+                    watchedDepartureWindows ??
+                    ([{ month: 1, days: [], label_en: "", label_el: "" }] satisfies DepartureWindowFormRow[])
+                  }
+                  onSave={handleDepartureSave}
+                  t={t}
+                  lang={lang}
+                  tripInputClass={tripInputClass}
+                />
+
+                <div
                   id="trip-edit-lang-tabs"
                   ref={langTabsScrollAnchorRef}
                   className="mt-8 scroll-mt-4"
@@ -1283,124 +1298,6 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                         {errors.transport_mode_slugs ? (
                           <p className="mt-1 text-xs text-destructive">
                             {(errors.transport_mode_slugs as { message?: string }).message}
-                          </p>
-                        ) : null}
-                      </div>
-
-                      <div
-                        className={cn(fieldClass("departure_windows"), "space-y-3 sm:col-span-2")}
-                        id="trip-field-departure_windows_el"
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <Label>{t("admin.tripDepartureDates")}</Label>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="shrink-0"
-                            onClick={() =>
-                              appendDepartureWindow({
-                                month: 1,
-                                days: [],
-                                label_en: "",
-                                label_el: "",
-                              })
-                            }
-                          >
-                            <Plus className="mr-1 h-4 w-4" />
-                            {t("admin.tripDepartureAddRow")}
-                          </Button>
-                        </div>
-                        {departureWindowFields.map((row, index) => (
-                          <div
-                            key={row.id}
-                            className="space-y-3 rounded-xl border border-border bg-muted/20 p-3"
-                          >
-                            <div className="flex justify-end">
-                              {departureWindowFields.length > 1 ? (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-destructive hover:text-destructive"
-                                  onClick={() => removeDepartureWindow(index)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                  <span className="sr-only">{t("admin.tripDepartureRemoveRow")}</span>
-                                </Button>
-                              ) : null}
-                            </div>
-                            <div className="grid gap-3 sm:grid-cols-2">
-                              <div className="space-y-2 sm:col-span-2">
-                                <Label htmlFor={`dep-month-el-${index}`}>{t("admin.tripDepartureMonth")}</Label>
-                                <Controller
-                                  name={`departure_windows.${index}.month`}
-                                  control={control}
-                                  render={({ field }) => (
-                                    <select
-                                      id={`dep-month-el-${index}`}
-                                      className={cn(
-                                        tripInputClass,
-                                        "flex h-11 w-full rounded-md border border-input bg-background px-3 py-2",
-                                      )}
-                                      value={field.value}
-                                      onChange={(e) => {
-                                        const month = Number(e.target.value);
-                                        field.onChange(month);
-                                        const currentDays =
-                                          getValues(`departure_windows.${index}.days`) ?? [];
-                                        const filtered = currentDays.filter((d) =>
-                                          isValidDayForMonth(month, d),
-                                        );
-                                        setValue(`departure_windows.${index}.days`, filtered);
-                                      }}
-                                    >
-                                      {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                                        <option key={m} value={m}>
-                                          {new Intl.DateTimeFormat(lang === "gr" ? "el-GR" : "en-GB", {
-                                            month: "long",
-                                          }).format(new Date(2000, m - 1, 1))}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  )}
-                                />
-                              </div>
-                              <DepartureDayPickerRow control={control} index={index} t={t} />
-                              {(errors.departure_windows as unknown as Record<number, { days?: { message?: string } }>)?.[
-                                index
-                              ]?.days ? (
-                                <p className="text-xs text-destructive sm:col-span-2">
-                                  {
-                                    (errors.departure_windows as unknown as Record<number, { days?: { message?: string } }>)?.[
-                                      index
-                                    ]?.days?.message
-                                  }
-                                </p>
-                              ) : null}
-                              <div className="space-y-2 sm:col-span-2">
-                                <Label htmlFor={`dep-label-el-${index}`}>{t("admin.tripDepartureLabelEl")}</Label>
-                                <Controller
-                                  name={`departure_windows.${index}.label_el`}
-                                  control={control}
-                                  render={({ field }) => (
-                                    <Input
-                                      id={`dep-label-el-${index}`}
-                                      className={tripInputClass}
-                                      {...field}
-                                      autoComplete="off"
-                                      placeholder={t("admin.tripDepartureLabelOptional")}
-                                    />
-                                  )}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                        {errors.departure_windows &&
-                        typeof (errors.departure_windows as { message?: string }).message === "string" ? (
-                          <p className="text-xs text-destructive">
-                            {(errors.departure_windows as { message: string }).message}
                           </p>
                         ) : null}
                       </div>
@@ -1946,124 +1843,6 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                         {errors.transport_mode_slugs ? (
                           <p className="mt-1 text-xs text-destructive">
                             {(errors.transport_mode_slugs as { message?: string }).message}
-                          </p>
-                        ) : null}
-                      </div>
-
-                      <div
-                        className={cn(fieldClass("departure_windows"), "space-y-3 sm:col-span-2")}
-                        id="trip-field-departure_windows_en"
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <Label>{t("admin.tripDepartureDates")}</Label>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="shrink-0"
-                            onClick={() =>
-                              appendDepartureWindow({
-                                month: 1,
-                                days: [],
-                                label_en: "",
-                                label_el: "",
-                              })
-                            }
-                          >
-                            <Plus className="mr-1 h-4 w-4" />
-                            {t("admin.tripDepartureAddRow")}
-                          </Button>
-                        </div>
-                        {departureWindowFields.map((row, index) => (
-                          <div
-                            key={row.id}
-                            className="space-y-3 rounded-xl border border-border bg-muted/20 p-3"
-                          >
-                            <div className="flex justify-end">
-                              {departureWindowFields.length > 1 ? (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-destructive hover:text-destructive"
-                                  onClick={() => removeDepartureWindow(index)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                  <span className="sr-only">{t("admin.tripDepartureRemoveRow")}</span>
-                                </Button>
-                              ) : null}
-                            </div>
-                            <div className="grid gap-3 sm:grid-cols-2">
-                              <div className="space-y-2 sm:col-span-2">
-                                <Label htmlFor={`dep-month-en-${index}`}>{t("admin.tripDepartureMonth")}</Label>
-                                <Controller
-                                  name={`departure_windows.${index}.month`}
-                                  control={control}
-                                  render={({ field }) => (
-                                    <select
-                                      id={`dep-month-en-${index}`}
-                                      className={cn(
-                                        tripInputClass,
-                                        "flex h-11 w-full rounded-md border border-input bg-background px-3 py-2",
-                                      )}
-                                      value={field.value}
-                                      onChange={(e) => {
-                                        const month = Number(e.target.value);
-                                        field.onChange(month);
-                                        const currentDays =
-                                          getValues(`departure_windows.${index}.days`) ?? [];
-                                        const filtered = currentDays.filter((d) =>
-                                          isValidDayForMonth(month, d),
-                                        );
-                                        setValue(`departure_windows.${index}.days`, filtered);
-                                      }}
-                                    >
-                                      {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                                        <option key={m} value={m}>
-                                          {new Intl.DateTimeFormat(lang === "gr" ? "el-GR" : "en-GB", {
-                                            month: "long",
-                                          }).format(new Date(2000, m - 1, 1))}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  )}
-                                />
-                              </div>
-                              <DepartureDayPickerRow control={control} index={index} t={t} />
-                              {(errors.departure_windows as unknown as Record<number, { days?: { message?: string } }>)?.[
-                                index
-                              ]?.days ? (
-                                <p className="text-xs text-destructive sm:col-span-2">
-                                  {
-                                    (errors.departure_windows as unknown as Record<number, { days?: { message?: string } }>)?.[
-                                      index
-                                    ]?.days?.message
-                                  }
-                                </p>
-                              ) : null}
-                              <div className="space-y-2 sm:col-span-2">
-                                <Label htmlFor={`dep-label-en-${index}`}>{t("admin.tripDepartureLabelEn")}</Label>
-                                <Controller
-                                  name={`departure_windows.${index}.label_en`}
-                                  control={control}
-                                  render={({ field }) => (
-                                    <Input
-                                      id={`dep-label-en-${index}`}
-                                      className={tripInputClass}
-                                      {...field}
-                                      autoComplete="off"
-                                      placeholder={t("admin.tripDepartureLabelOptional")}
-                                    />
-                                  )}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                        {errors.departure_windows &&
-                        typeof (errors.departure_windows as { message?: string }).message === "string" ? (
-                          <p className="text-xs text-destructive">
-                            {(errors.departure_windows as { message: string }).message}
                           </p>
                         ) : null}
                       </div>
