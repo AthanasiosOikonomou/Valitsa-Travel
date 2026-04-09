@@ -107,6 +107,8 @@ export type Trip = {
   flight_details_enabled?: boolean | null;
   /** Repeatable flight legs (αναχώρηση / επιστροφή) per trip. */
   flight_details?: TripFlightLeg[] | null;
+  /** Admin toggle: when true, English fields are required and stored; when false, English is optional. */
+  has_english?: boolean | null;
 };
 
 /** Flat payload for admin PUT `/api/admin/trips/:id` (matches `adminTripPutSchema`). */
@@ -147,4 +149,5 @@ export type TripUpdate = Partial<{
   pricing_segments: TripPricingSegment[] | null;
   flight_details_enabled: boolean | null;
   flight_details: TripFlightLeg[] | null;
+  has_english: boolean | null;
 }>;

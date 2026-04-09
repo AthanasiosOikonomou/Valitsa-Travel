@@ -1,9 +1,11 @@
 import type { Trip } from "@/types/Trip";
 import {
-  effectiveTripListDuration,
   effectiveTripListPrice,
   tripDepartureCityLabelsForFilter,
   tripDepartureMonthsAugmented,
+  tripDistinctDurations,
+  tripListPriceRange,
+  tripPriceRangeOverlapsFilter,
 } from "@/lib/tripPricing";
 import {
   TRANSPORT_MODE_SLUGS,
@@ -152,10 +154,14 @@ const collectTransportSlugsFromTrips = (trips: Trip[]): TransportModeSlug[] => {
 };
 
 export const buildTripFilterMetadata = (trips: Trip[], lang: TripLang): TripFilterMetadata => {
-  const globalPriceBounds = getRangeBounds(
-    trips.map((trip) => effectiveTripListPrice(trip) ?? 0),
-    { min: 0, max: 0 },
-  );
+  const priceSamples: number[] = [];
+  for (const trip of trips) {
+    const r = tripListPriceRange(trip);
+    if (r) {
+      priceSamples.push(r.min, r.max);
+    }
+  }
+  const globalPriceBounds = getRangeBounds(priceSamples, { min: 0, max: 0 });
 
   const monthSet = new Set<number>();
   for (const trip of trips) {
@@ -169,9 +175,11 @@ export const buildTripFilterMetadata = (trips: Trip[], lang: TripLang): TripFilt
     countries: sortCountries([
       ...new Set(trips.map((trip) => getTripField(trip, "country", lang) ?? "")),
     ]),
-    durations: [...new Set(trips.map((trip) => effectiveTripListDuration(trip) ?? 0))].sort(
-      (left, right) => left - right,
-    ),
+    durations: [
+      ...new Set(
+        trips.flatMap((trip) => tripDistinctDurations(trip)),
+      ),
+    ].sort((left, right) => left - right),
     cities: sortUniqueStrings(
       trips.flatMap((trip) => tripDepartureCityLabelsForFilter(trip, lang)),
     ),
@@ -295,13 +303,7 @@ export const buildAvailableTripFacets = (
     "country",
     (trip) => getTripField(trip, "country", lang) ?? "",
   );
-  const durationCounts = buildFacetCounts(
-    trips,
-    state,
-    lang,
-    "duration",
-    (trip) => effectiveTripListDuration(trip) ?? 0,
-  );
+  const durationCounts = buildDurationFacetCounts(trips, state, lang);
   const cityCounts = buildCityFacetCounts(trips, state, lang);
   const transportCounts = buildTransportFacetCounts(trips, state, lang);
   const monthCounts = buildMonthFacetCounts(trips, state, lang);
@@ -348,10 +350,11 @@ export const sortTrips = (trips: Trip[], sortBy: SortOption) => {
       );
       return sortedTrips;
     case "priceDesc":
-      sortedTrips.sort(
-        (left, right) =>
-          (effectiveTripListPrice(right) ?? 0) - (effectiveTripListPrice(left) ?? 0),
-      );
+      sortedTrips.sort((left, right) => {
+        const rL = tripListPriceRange(left);
+        const rR = tripListPriceRange(right);
+        return (rR?.max ?? 0) - (rL?.max ?? 0);
+      });
       return sortedTrips;
     case "recommended":
     default:
@@ -376,7 +379,11 @@ export const buildPriceFacetValues = (
 
   for (const trip of trips) {
     if (!matchesTripFilters(trip, state, lang, "price")) continue;
-    prices.add(effectiveTripListPrice(trip) ?? 0);
+    const r = tripListPriceRange(trip);
+    if (r) {
+      prices.add(r.min);
+      prices.add(r.max);
+    }
   }
 
   return [...prices].sort((left, right) => left - right);
@@ -440,6 +447,26 @@ export const areTripFilterStatesEqual = (
 const arraysEqual = <T extends string | number>(left: T[], right: T[]) => {
   if (left.length !== right.length) return false;
   return left.every((value, index) => value === right[index]);
+};
+
+const buildDurationFacetCounts = (
+  trips: Trip[],
+  state: TripFilterState,
+  lang: TripLang,
+): Map<number, number> => {
+  const counts = new Map<number, number>();
+
+  for (const trip of trips) {
+    if (!matchesTripFilters(trip, state, lang, "duration")) continue;
+    const seen = new Set<number>();
+    for (const d of tripDistinctDurations(trip)) {
+      if (seen.has(d)) continue;
+      seen.add(d);
+      addCount(counts, d);
+    }
+  }
+
+  return counts;
 };
 
 const buildCityFacetCounts = (
@@ -543,7 +570,10 @@ const getPriceBoundsForState = (
 
   for (const trip of trips) {
     if (!matchesTripFilters(trip, state, lang, "price")) continue;
-    values.push(effectiveTripListPrice(trip) ?? 0);
+    const r = tripListPriceRange(trip);
+    if (r) {
+      values.push(r.min, r.max);
+    }
   }
 
   return getRangeBounds(values, fallbackBounds);
@@ -582,8 +612,7 @@ const matchesTripFilters = (
 
   if (
     excludedFacet !== "price" &&
-    ((effectiveTripListPrice(trip) ?? 0) < state.priceRange[0] ||
-      (effectiveTripListPrice(trip) ?? 0) > state.priceRange[1])
+    !tripPriceRangeOverlapsFilter(trip, state.priceRange)
   ) {
     return false;
   }
@@ -596,12 +625,18 @@ const matchesTripFilters = (
     return false;
   }
 
-  if (
-    excludedFacet !== "duration" &&
-    state.selectedDurations.length > 0 &&
-    !state.selectedDurations.includes(effectiveTripListDuration(trip) ?? 0)
-  ) {
-    return false;
+  if (excludedFacet !== "duration" && state.selectedDurations.length > 0) {
+    const durs = tripDistinctDurations(trip);
+    const selected = state.selectedDurations.filter((x) => x !== -1);
+    if (selected.length > 0) {
+      if (!durs.some((d) => selected.includes(d))) {
+        return false;
+      }
+    } else if (state.selectedDurations.includes(-1)) {
+      if (!durs.some((d) => d > 2)) {
+        return false;
+      }
+    }
   }
 
   if (excludedFacet !== "city" && state.selectedCities.length > 0) {

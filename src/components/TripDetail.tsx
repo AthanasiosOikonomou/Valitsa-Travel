@@ -17,7 +17,12 @@ import CaptchaField from "@/components/CaptchaField";
 import ProgressiveImage from "@/components/ProgressiveImage";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import ModalScrollUpButton from "@/components/ModalScrollUpButton";
-import { formatTripDuration, formatTripPrice } from "@/lib/tripDisplay";
+import {
+  formatTripDuration,
+  formatTripListDurationLabel,
+  formatTripListPriceLabel,
+  formatTripPrice,
+} from "@/lib/tripDisplay";
 import {
   pickLocalizedProgram,
   pickLocalizedStringList,
@@ -34,11 +39,7 @@ import {
   normalizeDepartureBlocks,
   formatMonthNameLong,
 } from "@/lib/departureWindows";
-import {
-  effectiveTripListDuration,
-  effectiveTripListPrice,
-  normalizePricingSegments,
-} from "@/lib/tripPricing";
+import { normalizePricingSegments } from "@/lib/tripPricing";
 import {
   flightLegHasContent,
   normalizeFlightDetails,
@@ -419,7 +420,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
         tripId: trip.id,
         tripTitle: getDetailField("title"),
         tripLocation: getDetailField("location"),
-        tripPrice: formatTripPrice(effectiveTripListPrice(trip), lang),
+        tripPrice: formatTripListPriceLabel(trip, lang),
         tripUrl:
           typeof window !== "undefined"
             ? `${window.location.origin}/trips?trip=${trip.id}`
@@ -741,7 +742,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                         </span>
                         <span className="flex items-center gap-1.5">
                           <Clock size={14} />{" "}
-                          {formatTripDuration(trip.duration_days, lang)}
+                          {formatTripListDurationLabel(trip, lang)}
                         </span>
                       </div>
 
@@ -999,11 +1000,11 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                               {t("detail.startingFrom")}
                             </p>
                             <p className="text-3xl font-bold">
-                              {formatTripPrice(effectiveTripListPrice(trip), lang)}
+                              {formatTripListPriceLabel(trip, lang)}
                             </p>
                           </div>
                           <span className="label-ui text-primary bg-primary/10 px-3 py-1.5 rounded-full">
-                            {formatTripDuration(effectiveTripListDuration(trip), lang)}
+                            {formatTripListDurationLabel(trip, lang)}
                           </span>
                         </div>
 

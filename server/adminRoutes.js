@@ -458,6 +458,9 @@ function normalizeTripPutBody(body) {
   if (out.is_seasonal === true && (out.seasonal_name === "" || out.seasonal_name === undefined)) {
     out.seasonal_name = null;
   }
+  if ("has_english" in out) {
+    out.has_english = Boolean(out.has_english);
+  }
   return out;
 }
 
@@ -536,6 +539,7 @@ const adminTripPutSchema = z
       )
       .nullable()
       .optional(),
+    has_english: z.boolean().optional(),
   })
   .strict();
 
@@ -646,6 +650,9 @@ export function registerAdminRoutes(app, { supabaseAdmin }) {
       }
       if (row.status === undefined || row.status === null) {
         row.status = "inactive";
+      }
+      if (row.has_english === undefined || row.has_english === null) {
+        row.has_english = false;
       }
       const { data, error } = await supabaseAdmin.from("trips").insert(row).select("id").single();
       if (error) {

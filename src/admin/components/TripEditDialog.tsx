@@ -337,6 +337,22 @@ function buildTripFormSchema(t: (key: string) => string) {
       if (!data.country.trim()) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: fieldReq, path: ["country"] });
       }
+      if (
+        !data.program.some((s) => s.title.trim().length > 0 || !isHtmlEmpty(s.description))
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: t("admin.tripProgramNeedsContent"),
+          path: ["program"],
+        });
+      }
+      if (!data.included.some((s) => s.trim().length > 0)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: t("admin.tripIncludedMin"),
+          path: ["included"],
+        });
+      }
     });
 }
 
@@ -458,6 +474,7 @@ function buildTripPayload(values: TripFormValues) {
       return g.length > 0 ? g : null;
     })(),
     status: values.status,
+    has_english: values.hasEnglish,
   };
 
   if (!values.hasEnglish) {
@@ -496,23 +513,6 @@ function buildTripPayload(values: TripFormValues) {
     not_included: notIncEn.length > 0 ? notIncEn : null,
     tags: tagsEn.length > 0 ? tagsEn : null,
   };
-}
-
-function deriveEnglishEnabledFromRow(row: Record<string, unknown>): boolean {
-  if (String(row.title ?? "").trim()) return true;
-  if (!isHtmlEmpty(asHtml(row.description))) return true;
-  if (!isHtmlEmpty(asHtml(row.trip_notes))) return true;
-  const programEn = programDbToFormSteps(row.program);
-  if (programEn.some((s) => s.title.trim() || !isHtmlEmpty(s.description))) return true;
-  const inc = stringListDbToForm(row.included);
-  if (inc.some((s) => s.trim())) return true;
-  if (String(row.location ?? "").trim() || String(row.country ?? "").trim()) return true;
-  const dw = row.departure_windows;
-  if (Array.isArray(dw) && dw.length > 0) return true;
-  if (String(row.date_range ?? "").trim() || String(row.departure_city ?? "").trim()) return true;
-  const tags = stringListDbToForm(row.tags);
-  if (tags.some((s) => s.trim())) return true;
-  return false;
 }
 
 const defaultForm = (): TripFormValues => ({
@@ -674,7 +674,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
       included_el: stringListDbToForm(row.included_el),
       not_included_el: stringListDbToForm(row.not_included_el),
       tags_el: stringListDbToForm(row.tags_el),
-      hasEnglish: deriveEnglishEnabledFromRow(row),
+      hasEnglish: row.has_english === true,
       status: statusVal,
       title: String(row.title ?? ""),
       description: asHtml(row.description),
@@ -1057,60 +1057,6 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                           onChange={field.onChange}
                           dropHint={t("admin.tripGalleryDropHint")}
                           removeButtonLabel={t("admin.tripGalleryRemoveShort")}
-                        />
-                      )}
-                    />
-                  </div>
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="trip-price">{t("admin.tripPriceNum")}</Label>
-                    <Controller
-                      name="price_num"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          id="trip-price"
-                          type="number"
-                          inputMode="decimal"
-                          step="any"
-                          min={0}
-                          className={tripInputClass}
-                          value={field.value ?? ""}
-                          onChange={(e) => {
-                            const v = e.target.value;
-                            if (v === "") {
-                              field.onChange(null);
-                              return;
-                            }
-                            const n = Number(v);
-                            field.onChange(Number.isFinite(n) ? n : null);
-                          }}
-                        />
-                      )}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="trip-duration">{t("admin.tripDurationDays")}</Label>
-                    <Controller
-                      name="duration_days"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          id="trip-duration"
-                          type="number"
-                          inputMode="numeric"
-                          step={1}
-                          min={0}
-                          className={tripInputClass}
-                          value={field.value ?? ""}
-                          onChange={(e) => {
-                            const v = e.target.value;
-                            if (v === "") {
-                              field.onChange(null);
-                              return;
-                            }
-                            const n = Math.trunc(Number(v));
-                            field.onChange(Number.isFinite(n) ? n : null);
-                          }}
                         />
                       )}
                     />

@@ -1,3 +1,6 @@
+import type { Trip } from "@/types/Trip";
+import { tripListDurationRange, tripListPriceRange } from "@/lib/tripPricing";
+
 export type TripFormatLang = "en" | "gr";
 
 const PRICE_PLACEHOLDER = "—";
@@ -29,4 +32,26 @@ export function formatTripDuration(
     return n === 1 ? "1 Ημέρα" : `${n} Ημέρες`;
   }
   return n === 1 ? "1 Day" : `${n} Days`;
+}
+
+/** List/card line: min–max from pricing segments (or legacy trip fields). */
+export function formatTripListPriceLabel(
+  trip: Pick<Trip, "price_num" | "pricing_segments">,
+  lang: TripFormatLang,
+): string {
+  const r = tripListPriceRange(trip);
+  if (!r) return PRICE_PLACEHOLDER;
+  if (r.min === r.max) return formatTripPrice(r.min, lang);
+  return `${formatTripPrice(r.min, lang)} – ${formatTripPrice(r.max, lang)}`;
+}
+
+export function formatTripListDurationLabel(
+  trip: Pick<Trip, "duration_days" | "pricing_segments">,
+  lang: TripFormatLang,
+): string {
+  const r = tripListDurationRange(trip);
+  if (!r) return PRICE_PLACEHOLDER;
+  if (r.min === r.max) return formatTripDuration(r.min, lang);
+  if (lang === "gr") return `${r.min}–${r.max} Ημέρες`;
+  return `${r.min}–${r.max} Days`;
 }

@@ -8,6 +8,13 @@ function dedupeSortDays(days: number[]): number[] {
   return [...new Set(days.filter((d) => Number.isInteger(d)))].sort((a, b) => a - b);
 }
 
+/** All numeric room prices on a segment (for min–max list pricing). */
+function segmentPrices(s: TripPricingSegment): number[] {
+  return [s.price_double, s.price_single, s.price_triple, s.price_child].filter(
+    (n): n is number => n != null && Number.isFinite(n),
+  );
+}
+
 /** Coerce unknown JSON into normalized segments (dedupe/sort days per row; drop invalid rows). */
 export function normalizePricingSegments(raw: unknown): TripPricingSegment[] {
   if (!Array.isArray(raw)) return [];
@@ -58,26 +65,77 @@ export function normalizePricingSegments(raw: unknown): TripPricingSegment[] {
   return out;
 }
 
-/** Minimum list price: min of segment `price_double`, else trip.price_num. */
-export function effectiveTripListPrice(trip: Pick<Trip, "price_num" | "pricing_segments">): number | null {
+/**
+ * Min/max price across all pricing rows and room types.
+ * Falls back to legacy `price_num` when segments have no numeric prices.
+ */
+export function tripListPriceRange(
+  trip: Pick<Trip, "price_num" | "pricing_segments">,
+): { min: number; max: number } | null {
   const segs = normalizePricingSegments(trip.pricing_segments);
-  const doubles = segs
-    .map((s) => s.price_double)
-    .filter((n): n is number => n != null && Number.isFinite(n));
-  if (doubles.length > 0) return Math.min(...doubles);
-  return trip.price_num ?? null;
+  const all: number[] = [];
+  for (const s of segs) {
+    all.push(...segmentPrices(s));
+  }
+  if (all.length > 0) {
+    return { min: Math.min(...all), max: Math.max(...all) };
+  }
+  const p = trip.price_num;
+  if (p != null && Number.isFinite(p)) {
+    return { min: p, max: p };
+  }
+  return null;
 }
 
-/** Minimum duration from segments when present, else `duration_days`. */
-export function effectiveTripListDuration(
+/** Minimum “from” price for sorting and badges (lowest offer across segments). */
+export function effectiveTripListPrice(trip: Pick<Trip, "price_num" | "pricing_segments">): number | null {
+  return tripListPriceRange(trip)?.min ?? null;
+}
+
+/** Distinct trip lengths (days) from pricing segments, else legacy `duration_days`. */
+export function tripDistinctDurations(
   trip: Pick<Trip, "duration_days" | "pricing_segments">,
-): number | null {
+): number[] {
   const segs = normalizePricingSegments(trip.pricing_segments);
   const durs = segs
     .map((s) => s.duration_days)
-    .filter((n): n is number => n != null && Number.isFinite(n));
-  if (durs.length > 0) return Math.min(...durs);
-  return trip.duration_days ?? null;
+    .filter((n): n is number => n != null && Number.isFinite(n) && n > 0);
+  if (durs.length > 0) {
+    return [...new Set(durs.map((n) => Math.round(n)))].sort((a, b) => a - b);
+  }
+  const d = trip.duration_days;
+  if (d != null && Number.isFinite(d) && d > 0) {
+    return [Math.round(d)];
+  }
+  return [];
+}
+
+/** Min/max duration in days for list/detail display. */
+export function tripListDurationRange(
+  trip: Pick<Trip, "duration_days" | "pricing_segments">,
+): { min: number; max: number } | null {
+  const ds = tripDistinctDurations(trip);
+  if (ds.length === 0) return null;
+  return { min: Math.min(...ds), max: Math.max(...ds) };
+}
+
+/** Shortest duration (legacy helper; prefer `tripListDurationRange` for UI). */
+export function effectiveTripListDuration(
+  trip: Pick<Trip, "duration_days" | "pricing_segments">,
+): number | null {
+  const r = tripListDurationRange(trip);
+  return r?.min ?? null;
+}
+
+/** Whether [filterLo, filterHi] overlaps the trip’s price span (segment-based). */
+export function tripPriceRangeOverlapsFilter(
+  trip: Pick<Trip, "price_num" | "pricing_segments">,
+  filterRange: [number, number],
+): boolean {
+  const span = tripListPriceRange(trip);
+  if (!span) return true;
+  const [f0, f1] = filterRange;
+  return span.min <= f1 && span.max >= f0;
 }
 
 /** Months from structured departures plus pricing segments (for archive month filter). */

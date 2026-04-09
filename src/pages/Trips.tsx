@@ -49,10 +49,9 @@ import { showTrips } from "@/lib/showTrips";
 import { fetchSeasonalNavItems } from "@/lib/seasonalNavApi";
 import { formatTripDepartureSummary } from "@/lib/departureWindows";
 import {
-  formatTripDuration,
-  formatTripPrice,
+  formatTripListDurationLabel,
+  formatTripListPriceLabel,
 } from "@/lib/tripDisplay";
-import { effectiveTripListDuration, effectiveTripListPrice } from "@/lib/tripPricing";
 import { pickLocalizedStringList } from "@/lib/tripLocaleArrays";
 import { transportLabelForSlug } from "@/lib/tripTransportModes";
 
@@ -389,8 +388,8 @@ const TripsContent = () => {
         image: trip.image ?? undefined,
         description: getField(trip, "description"),
         priceCurrency: "EUR",
-        price: String(effectiveTripListPrice(trip) ?? ""),
-        duration: formatTripDuration(trip.duration_days, lang),
+        price: formatTripListPriceLabel(trip, lang).replace(/–/g, "-"),
+        duration: formatTripListDurationLabel(trip, lang).replace(/–/g, "-"),
       };
     }),
   };
@@ -1342,10 +1341,10 @@ const TripResultCard = ({
         <div className="flex flex-wrap items-center justify-between gap-3 mt-2">
           <div className="flex items-center gap-4 text-sm">
             <span className="font-bold text-primary text-base">
-              {formatTripPrice(effectiveTripListPrice(trip), lang)}
+              {formatTripListPriceLabel(trip, lang)}
             </span>
             <span className="text-foreground-muted">
-              {formatTripDuration(effectiveTripListDuration(trip), lang)}
+              {formatTripListDurationLabel(trip, lang)}
             </span>
           </div>
           <span className="premium-outline-button text-sm">
