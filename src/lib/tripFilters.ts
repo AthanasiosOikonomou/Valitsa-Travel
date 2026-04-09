@@ -2,6 +2,7 @@ import type { Trip } from "@/types/Trip";
 import {
   effectiveTripListDuration,
   effectiveTripListPrice,
+  tripDepartureCityLabelsForFilter,
   tripDepartureMonthsAugmented,
 } from "@/lib/tripPricing";
 import {
@@ -171,7 +172,9 @@ export const buildTripFilterMetadata = (trips: Trip[], lang: TripLang): TripFilt
     durations: [...new Set(trips.map((trip) => effectiveTripListDuration(trip) ?? 0))].sort(
       (left, right) => left - right,
     ),
-    cities: sortUniqueStrings(trips.map((trip) => getTripField(trip, "departure_city", lang) ?? "")),
+    cities: sortUniqueStrings(
+      trips.flatMap((trip) => tripDepartureCityLabelsForFilter(trip, lang)),
+    ),
     transportSlugs: collectTransportSlugsFromTrips(trips),
     hasFeaturedTrips: trips.some((trip) => trip.is_featured),
     months: [...monthSet].sort((a, b) => a - b),
@@ -270,9 +273,9 @@ export const tripFilterReducer = (
 export const getCityLabelMap = (trips: Trip[], lang: TripLang) => {
   const labels = new Map<string, string>();
   for (const trip of trips) {
-    const city = getTripField(trip, "departure_city", lang);
-    if (!labels.has(city)) {
-      labels.set(city, city);
+    for (const city of tripDepartureCityLabelsForFilter(trip, lang)) {
+      if (!city) continue;
+      if (!labels.has(city)) labels.set(city, city);
     }
   }
   return labels;
@@ -299,13 +302,7 @@ export const buildAvailableTripFacets = (
     "duration",
     (trip) => effectiveTripListDuration(trip) ?? 0,
   );
-  const cityCounts = buildFacetCounts(
-    trips,
-    state,
-    lang,
-    "city",
-    (trip) => getTripField(trip, "departure_city", lang) ?? "",
-  );
+  const cityCounts = buildCityFacetCounts(trips, state, lang);
   const transportCounts = buildTransportFacetCounts(trips, state, lang);
   const monthCounts = buildMonthFacetCounts(trips, state, lang);
 
@@ -443,6 +440,26 @@ export const areTripFilterStatesEqual = (
 const arraysEqual = <T extends string | number>(left: T[], right: T[]) => {
   if (left.length !== right.length) return false;
   return left.every((value, index) => value === right[index]);
+};
+
+const buildCityFacetCounts = (
+  trips: Trip[],
+  state: TripFilterState,
+  lang: TripLang,
+): Map<string, number> => {
+  const counts = new Map<string, number>();
+
+  for (const trip of trips) {
+    if (!matchesTripFilters(trip, state, lang, "city")) continue;
+    const seen = new Set<string>();
+    for (const city of tripDepartureCityLabelsForFilter(trip, lang)) {
+      if (!city || seen.has(city)) continue;
+      seen.add(city);
+      addCount(counts, city);
+    }
+  }
+
+  return counts;
 };
 
 const buildTransportFacetCounts = (
@@ -587,12 +604,12 @@ const matchesTripFilters = (
     return false;
   }
 
-  if (
-    excludedFacet !== "city" &&
-    state.selectedCities.length > 0 &&
-    !state.selectedCities.includes(getTripField(trip, "departure_city", lang) ?? "")
-  ) {
-    return false;
+  if (excludedFacet !== "city" && state.selectedCities.length > 0) {
+    const labels = tripDepartureCityLabelsForFilter(trip, lang);
+    const overlaps = state.selectedCities.some((c) => labels.includes(c));
+    if (!overlaps) {
+      return false;
+    }
   }
 
   if (excludedFacet !== "transport" && state.selectedTransportSlugs.length > 0) {

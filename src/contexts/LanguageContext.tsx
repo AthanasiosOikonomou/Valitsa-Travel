@@ -109,6 +109,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "detail.departureDatesDaysCol": "Days",
     "detail.pricingSegmentsTitle": "Departures and prices",
     "detail.pricingDepartures": "Departures",
+    "detail.pricingDepartureCity": "Departure city",
     "detail.pricingHotelCol": "Hotel",
     "detail.pricingDurationCol": "Duration",
     "detail.pricingDoubleCol": "Double",
@@ -326,12 +327,19 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripSaved": "Trip saved",
     "admin.tripSaveFailed": "Could not save trip",
     "admin.tripValidationFailed": "Please fix the form errors",
+    "admin.tripValidationToastPricingRow": "Pricing row {n}",
+    "admin.tripValidationToastDepartureRow": "Departure row {n}",
+    "admin.tripValidationToastFlight": "Flight details",
+    "admin.tripValidationSavedSectionOtherErrors":
+      "This section was saved. Other required fields on the main form still need attention before saving the trip.",
     "admin.tripPricingDepartureMismatch":
       "Each pricing row must use the same month as the departure row in the same position.",
     "admin.tripPricingDepartureDaysMismatch":
       "Each pricing row must use the same days as the departure row in the same position.",
     "admin.tripPricingDepartureRowMissing":
       "Each pricing row needs a matching departure row (same order). Add departures first or remove extra pricing rows.",
+    "admin.tripPricingDepartureNoMatchingWindow":
+      "This month and days must match exactly one departure row (same dates). Reorder rows if needed, or fix the departure dates editor.",
     "admin.tripFlightLegCountMismatch":
       "Flight details must have exactly one leg per departure row (same count and order).",
     "admin.tripDepartureModalTitle": "Departure dates",
@@ -345,6 +353,17 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripDepartureUnsavedSaveAndClose": "Save and close",
     "admin.tripDepartureUnsavedDiscard": "Leave without saving",
     "admin.tripDepartureUnsavedKeepEditing": "Keep editing",
+    "admin.tripPricingModalTitle": "Pricing per departure (hotel & rooms)",
+    "admin.tripPricingModalOpenButton": "Edit pricing per departure",
+    "admin.tripPricingModalSummary": "{count} pricing row(s)",
+    "admin.tripPricingModalSave": "Save",
+    "admin.tripPricingModalCancel": "Cancel",
+    "admin.tripPricingUnsavedTitle": "Unsaved pricing changes",
+    "admin.tripPricingUnsavedDescription":
+      "You have unsaved changes to departure pricing. Save them before closing, or leave without saving.",
+    "admin.tripPricingUnsavedSaveAndClose": "Save and close",
+    "admin.tripPricingUnsavedDiscard": "Leave without saving",
+    "admin.tripPricingUnsavedKeepEditing": "Keep editing",
     "admin.tabGreek": "Ελληνικά",
     "admin.tabEnglish": "English",
     "admin.tripSinglePhotoHint":
@@ -638,6 +657,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "detail.departureDatesDaysCol": "Ημέρες",
     "detail.pricingSegmentsTitle": "Αναχωρήσεις και τιμές",
     "detail.pricingDepartures": "Αναχωρήσεις",
+    "detail.pricingDepartureCity": "Πόλη αναχώρησης",
     "detail.pricingHotelCol": "Ξενοδοχείο",
     "detail.pricingDurationCol": "Διάρκεια",
     "detail.pricingDoubleCol": "Δίκλινο",
@@ -855,12 +875,19 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripSaved": "Το ταξίδι αποθηκεύτηκε",
     "admin.tripSaveFailed": "Αποτυχία αποθήκευσης ταξιδιού",
     "admin.tripValidationFailed": "Διορθώστε τα σφάλματα στη φόρμα",
+    "admin.tripValidationToastPricingRow": "Γραμμή τιμών {n}",
+    "admin.tripValidationToastDepartureRow": "Γραμμή αναχώρησης {n}",
+    "admin.tripValidationToastFlight": "Λεπτομέρειες πτήσης",
+    "admin.tripValidationSavedSectionOtherErrors":
+      "Αυτή η ενότητα αποθηκεύτηκε. Άλλα υποχρεωτικά πεδία στη φόρμα χρειάζονται ακόμη διόρθωση πριν την αποθήκευση του ταξιδιού.",
     "admin.tripPricingDepartureMismatch":
       "Κάθε γραμμή τιμολόγησης πρέπει να έχει τον ίδιο μήνα με την αντίστοιχη γραμμή αναχώρησης.",
     "admin.tripPricingDepartureDaysMismatch":
       "Κάθε γραμμή τιμολόγησης πρέπει να έχει τις ίδιες ημέρες με την αντίστοιχη γραμμή αναχώρησης.",
     "admin.tripPricingDepartureRowMissing":
       "Κάθε γραμμή τιμολόγησης χρειάζεται αντίστοιχη γραμμή αναχώρησης (ίδια σειρά). Προσθέστε αναχωρήσεις πρώτα ή αφαιρέστε επιπλέον γραμμές τιμολόγησης.",
+    "admin.tripPricingDepartureNoMatchingWindow":
+      "Ο μήνας και οι ημέρες πρέπει να ταιριάζουν ακριβώς με μία γραμμή αναχώρησης (ίδιες ημερομηνίες). Αλλάξτε τη σειρά γραμμών αν χρειάζεται ή διορθώστε τις ημερομηνίες αναχώρησης.",
     "admin.tripFlightLegCountMismatch":
       "Οι λεπτομέρειες πτήσης πρέπει να έχουν ακριβώς ένα σκέλος ανά γραμμή αναχώρησης (ίδιο πλήθος και σειρά).",
     "admin.tripDepartureModalTitle": "Ημερομηνίες αναχώρησης",
@@ -874,6 +901,17 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripDepartureUnsavedSaveAndClose": "Αποθήκευση και κλείσιμο",
     "admin.tripDepartureUnsavedDiscard": "Έξοδος χωρίς αποθήκευση",
     "admin.tripDepartureUnsavedKeepEditing": "Συνέχεια επεξεργασίας",
+    "admin.tripPricingModalTitle": "Τιμές ανά αναχώρηση (ξενοδοχείο και δωμάτια)",
+    "admin.tripPricingModalOpenButton": "Επεξεργασία τιμών ανά αναχώρηση",
+    "admin.tripPricingModalSummary": "{count} γραμμή/ές τιμολόγησης",
+    "admin.tripPricingModalSave": "Αποθήκευση",
+    "admin.tripPricingModalCancel": "Ακύρωση",
+    "admin.tripPricingUnsavedTitle": "Μη αποθηκευμένες αλλαγές τιμών",
+    "admin.tripPricingUnsavedDescription":
+      "Έχετε μη αποθηκευμένες αλλαγές στις τιμές ανά αναχώρηση. Αποθηκεύστε πριν το κλείσιμο ή εγκαταλείψτε χωρίς αποθήκευση.",
+    "admin.tripPricingUnsavedSaveAndClose": "Αποθήκευση και κλείσιμο",
+    "admin.tripPricingUnsavedDiscard": "Έξοδος χωρίς αποθήκευση",
+    "admin.tripPricingUnsavedKeepEditing": "Συνέχεια επεξεργασίας",
     "admin.tabGreek": "Ελληνικά",
     "admin.tabEnglish": "English",
     "admin.tripSinglePhotoHint":

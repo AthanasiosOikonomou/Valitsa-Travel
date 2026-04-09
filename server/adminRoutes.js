@@ -338,6 +338,8 @@ function normalizePricingSegmentsArray(arr) {
     out.push({
       month,
       days,
+      departure_city: strOrNull(raw.departure_city),
+      departure_city_el: strOrNull(raw.departure_city_el),
       hotel_en: strOrNull(raw.hotel_en),
       hotel_el: strOrNull(raw.hotel_el),
       duration_days: intOrNull(raw.duration_days),
@@ -501,6 +503,8 @@ const adminTripPutSchema = z
         z.object({
           month: z.coerce.number().int().min(1).max(12),
           days: z.array(z.coerce.number().int().min(1).max(31)),
+          departure_city: z.string().nullable().optional(),
+          departure_city_el: z.string().nullable().optional(),
           hotel_en: z.string().nullable().optional(),
           hotel_el: z.string().nullable().optional(),
           duration_days: z.coerce.number().int().nullable().optional(),

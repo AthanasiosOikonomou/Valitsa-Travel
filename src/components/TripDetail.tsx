@@ -59,43 +59,63 @@ function PricingSegmentCard({
   langKey,
   lang,
   t,
+  tripFallbackDepartureCity,
 }: {
   segment: TripPricingSegment;
   langKey: "en" | "gr";
   lang: "en" | "gr";
   t: (key: string) => string;
+  /** When a segment has no stored city (legacy trips), use trip-level departure city. */
+  tripFallbackDepartureCity: string;
 }) {
   const hotel =
     langKey === "gr"
       ? String(s.hotel_el ?? s.hotel_en ?? "").trim()
       : String(s.hotel_en ?? s.hotel_el ?? "").trim();
+  const departureCity =
+    (langKey === "gr"
+      ? String(s.departure_city_el ?? s.departure_city ?? "").trim()
+      : String(s.departure_city ?? s.departure_city_el ?? "").trim()) || tripFallbackDepartureCity;
   const daysText = formatDaysForMonth(s.days, langKey);
   const departuresLine = `${formatMonthNameLong(s.month, langKey)} · ${daysText}`;
   const hero = segmentHeroPrice(s);
 
   return (
     <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <p className="min-w-0 flex-1 font-semibold leading-snug text-foreground line-clamp-3">
-          {hotel || "—"}
-        </p>
-        <p className="shrink-0 text-lg font-bold tabular-nums text-foreground">
-          {formatTripPrice(hero, lang)}
-        </p>
-      </div>
-      <div className="mt-3 space-y-2.5 text-sm">
-        <div>
-          <p className="label-ui text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-foreground-muted">
-            {t("detail.pricingDepartures")}
+      <p className="font-semibold leading-snug text-foreground line-clamp-3">{hotel || "—"}</p>
+      <div className="mt-3 space-y-3 text-sm">
+        <div className="flex items-end justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <p className="label-ui text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-foreground-muted">
+              {t("detail.pricingDepartures")}
+            </p>
+            <p className="mt-1 leading-snug text-foreground">{departuresLine}</p>
+          </div>
+          <p className="shrink-0 text-lg font-bold tabular-nums leading-none text-foreground">
+            {formatTripPrice(hero, lang)}
           </p>
-          <p className="mt-1 leading-snug text-foreground">{departuresLine}</p>
         </div>
-        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <span className="label-ui text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-foreground-muted">
-            {t("detail.pricingDurationCol")}
-          </span>
-          <span className="text-right text-foreground">{formatTripDuration(s.duration_days, lang)}</span>
+        <div
+          className={cn(
+            "flex items-start gap-4",
+            departureCity ? "justify-between" : "justify-end",
+          )}
+        >
+          {departureCity ? (
+            <p className="flex min-w-0 flex-1 items-start gap-1.5 leading-snug text-foreground">
+              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary/70" aria-hidden />
+              <span className="min-w-0 break-words">{departureCity}</span>
+            </p>
+          ) : null}
+          <div className="shrink-0 text-right">
+            <p className="label-ui text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-foreground-muted">
+              {t("detail.pricingDurationCol")}
+            </p>
+            <p className="mt-1 text-foreground">{formatTripDuration(s.duration_days, lang)}</p>
+          </div>
         </div>
+      </div>
+      <div className="mt-3 text-sm">
         <div className="grid grid-cols-1 gap-3 border-t border-border/80 pt-3 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <p className="label-ui text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-foreground-muted">
@@ -808,6 +828,10 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                               {(() => {
                                 const langKey = lang === "gr" ? "gr" : "en";
                                 const segments = normalizePricingSegments(trip.pricing_segments);
+                                const tripFallbackDepartureCity =
+                                  langKey === "gr"
+                                    ? String(trip.departure_city_el ?? trip.departure_city ?? "").trim()
+                                    : String(trip.departure_city ?? trip.departure_city_el ?? "").trim();
                                 if (segments.length > 0) {
                                   return (
                                     <div className="space-y-4 border-t border-slate-200/90 pt-8 dark:border-white/10">
@@ -822,6 +846,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                                             langKey={langKey}
                                             lang={lang}
                                             t={t}
+                                            tripFallbackDepartureCity={tripFallbackDepartureCity}
                                           />
                                         ))}
                                       </div>

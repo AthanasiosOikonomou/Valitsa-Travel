@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { CalendarDays, Plus, Trash2, X } from "lucide-react";
+import { Banknote, CalendarDays, Plus, Trash2, X } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -10,7 +10,6 @@ import {
   useFieldArray,
   useForm,
   useWatch,
-  type Control,
   type FieldErrors,
 } from "react-hook-form";
 import { z } from "zod";
@@ -40,6 +39,7 @@ import { TripGalleryGrid } from "@/admin/components/TripGalleryGrid";
 import { ProgramTimelineEditor } from "@/admin/components/trip-edit/ProgramTimelineEditor";
 import { StringArrayField } from "@/admin/components/trip-edit/StringArrayField";
 import { DepartureWindowsModal } from "@/admin/components/trip-edit/DepartureWindowsModal";
+import { PricingSegmentsModal } from "@/admin/components/trip-edit/PricingSegmentsModal";
 import { TransportMultiSelect } from "@/admin/components/trip-edit/TransportMultiSelect";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
@@ -47,6 +47,7 @@ import { isValidDayForMonth } from "@/lib/departureWindows";
 import {
   pricingSegmentsDbToForm,
   pricingSegmentsFormToPayload,
+  type PricingSegmentFormRow,
 } from "@/lib/tripPricing";
 import { normalizeFlightDetails } from "@/lib/tripFlightDetails";
 
@@ -71,6 +72,44 @@ function daysSortedEqual(a: number[], b: number[]) {
   const sa = [...a].sort((x, y) => x - y);
   const sb = [...b].sort((x, y) => x - y);
   return sa.every((v, i) => v === sb[i]);
+}
+
+/** Full-trip schema errors that belong to pricing / departures / flight cross-checks (modal saves). */
+const MODAL_RELATED_ROOT_KEYS = new Set([
+  "pricing_segments",
+  "departure_windows",
+  "flight_details",
+]);
+
+function filterModalRelatedZodIssues(issues: z.ZodIssue[]): z.ZodIssue[] {
+  return issues.filter((i) => MODAL_RELATED_ROOT_KEYS.has(String(i.path[0])));
+}
+
+function formatZodIssueForTripModalToast(issue: z.ZodIssue, t: (key: string) => string): string {
+  const msg = issue.message;
+  const p = issue.path;
+  const root = String(p[0] ?? "");
+  if (root === "pricing_segments" && typeof p[1] === "number") {
+    const label = t("admin.tripValidationToastPricingRow").replace("{n}", String((p[1] as number) + 1));
+    const field = p[2];
+    const fieldHint =
+      field === "departure_city_el"
+        ? ` — ${t("admin.tripDepartureCityEl")}`
+        : field === "departure_city"
+          ? ` — ${t("admin.tripDepartureCityEn")}`
+          : field === "days" || field === "month"
+            ? ` — ${t("admin.tripDepartureDates")}`
+            : "";
+    return `${label}${fieldHint}: ${msg}`;
+  }
+  if (root === "departure_windows" && typeof p[1] === "number") {
+    const label = t("admin.tripValidationToastDepartureRow").replace("{n}", String((p[1] as number) + 1));
+    return `${label}: ${msg}`;
+  }
+  if (root === "flight_details") {
+    return `${t("admin.tripValidationToastFlight")}: ${msg}`;
+  }
+  return msg;
 }
 
 function pricingSegmentRowHasContent(row: {
@@ -116,6 +155,8 @@ function buildTripFormSchema(t: (key: string) => string) {
     .object({
       month: z.number().int().min(1).max(12),
       days: z.array(z.number().int()),
+      departure_city: z.string(),
+      departure_city_el: z.string(),
       hotel_en: z.string(),
       hotel_el: z.string(),
       duration_days: z.number().int().nullable(),
@@ -193,7 +234,6 @@ function buildTripFormSchema(t: (key: string) => string) {
       pricing_segments: z.array(pricingSegmentRowSchema),
       flight_details_enabled: z.boolean(),
       flight_details: z.array(flightLegRowSchema),
-      departure_city_el: z.string().trim().min(1, fieldReq),
       description_el: z.string().refine((h) => !isHtmlEmpty(h), { message: richReq }),
       trip_notes_el: z.string(),
       program_el: z
@@ -218,7 +258,6 @@ function buildTripFormSchema(t: (key: string) => string) {
       trip_notes: z.string(),
       location: z.string(),
       country: z.string(),
-      departure_city: z.string(),
       program: z.array(programStepSchema),
       included: z.array(z.string()),
       not_included: z.array(z.string()),
@@ -241,30 +280,45 @@ function buildTripFormSchema(t: (key: string) => string) {
       }
 
       const dep = data.departure_windows;
+      const usedDepartureIdx = new Set<number>();
       for (let i = 0; i < data.pricing_segments.length; i++) {
         const row = data.pricing_segments[i];
         if (!pricingSegmentRowHasContent(row)) continue;
-        if (i >= dep.length) {
+        let matchIdx = -1;
+        for (let j = 0; j < dep.length; j++) {
+          if (usedDepartureIdx.has(j)) continue;
+          const w = dep[j];
+          if (w.month === row.month && daysSortedEqual(w.days, row.days)) {
+            matchIdx = j;
+            break;
+          }
+        }
+        if (matchIdx < 0) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: t("admin.tripPricingDepartureRowMissing"),
-            path: ["pricing_segments", i],
+            message: t("admin.tripPricingDepartureNoMatchingWindow"),
+            path: ["pricing_segments", i, "days"],
           });
           continue;
         }
-        const w = dep[i];
-        if (w.month !== row.month) {
+        usedDepartureIdx.add(matchIdx);
+      }
+
+      for (let i = 0; i < data.pricing_segments.length; i++) {
+        const row = data.pricing_segments[i];
+        if (!pricingSegmentRowHasContent(row)) continue;
+        if (!row.departure_city_el.trim()) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: t("admin.tripPricingDepartureMismatch"),
-            path: ["pricing_segments", i, "month"],
+            message: fieldReq,
+            path: ["pricing_segments", i, "departure_city_el"],
           });
         }
-        if (!daysSortedEqual(w.days, row.days)) {
+        if (data.hasEnglish && !row.departure_city.trim()) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: t("admin.tripPricingDepartureDaysMismatch"),
-            path: ["pricing_segments", i, "days"],
+            message: fieldReq,
+            path: ["pricing_segments", i, "departure_city"],
           });
         }
       }
@@ -327,59 +381,6 @@ function tabForDepartureWindowErrors(
   return "el";
 }
 
-function PricingSegmentDayPickerRow({
-  control,
-  index,
-  t,
-}: {
-  control: Control<TripFormValues>;
-  index: number;
-  t: (key: string) => string;
-}) {
-  const month = useWatch({ control, name: `pricing_segments.${index}.month` }) ?? 1;
-  return (
-    <Controller
-      name={`pricing_segments.${index}.days`}
-      control={control}
-      render={({ field }) => (
-        <div className="space-y-2 sm:col-span-2">
-          <Label>{t("admin.tripDepartureDaysPick")}</Label>
-          <div className="flex flex-wrap gap-1.5">
-            {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => {
-              const disabled = !isValidDayForMonth(month, day);
-              const value = Array.isArray(field.value) ? field.value : [];
-              const selected = value.includes(day);
-              return (
-                <button
-                  key={day}
-                  type="button"
-                  disabled={disabled}
-                  className={cn(
-                    "min-h-9 min-w-9 rounded-md border text-xs font-medium transition-colors",
-                    disabled && "cursor-not-allowed opacity-25",
-                    selected
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-background hover:bg-muted",
-                  )}
-                  onClick={() => {
-                    if (disabled) return;
-                    const next = new Set(value);
-                    if (next.has(day)) next.delete(day);
-                    else next.add(day);
-                    field.onChange([...next].sort((a, b) => a - b));
-                  }}
-                >
-                  {day}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    />
-  );
-}
-
 const GREEK_FIELD_ORDER = [
   "title_el",
   "location_el",
@@ -388,7 +389,6 @@ const GREEK_FIELD_ORDER = [
   "departure_windows",
   "pricing_segments",
   "flight_details",
-  "departure_city_el",
   "description_el",
   "trip_notes_el",
   "program_el",
@@ -400,7 +400,6 @@ const ENGLISH_FIELD_ORDER = [
   "title",
   "location",
   "country",
-  "departure_city",
   "description",
   "trip_notes",
   "program",
@@ -431,6 +430,9 @@ function buildTripPayload(values: TripFormValues) {
   const depWin = departureWindowsFormToPayload(values.departure_windows);
   const pricingSeg = pricingSegmentsFormToPayload(values.pricing_segments);
   const flightLegs = normalizeFlightDetails(values.flight_details);
+  const firstPricingSeg = values.pricing_segments.find(pricingSegmentRowHasContent);
+  const departureCityEl = firstPricingSeg?.departure_city_el.trim() || null;
+  const departureCityEn = firstPricingSeg?.departure_city.trim() || null;
   const base = {
     title_el: titleEl,
     location_el: values.location_el.trim(),
@@ -443,7 +445,7 @@ function buildTripPayload(values: TripFormValues) {
     flight_details: flightLegs,
     date_range: null,
     date_range_el: null,
-    departure_city_el: values.departure_city_el.trim(),
+    departure_city_el: departureCityEl,
     description_el: values.description_el || null,
     trip_notes_el: !isHtmlEmpty(values.trip_notes_el) ? values.trip_notes_el : null,
     program_el: formStepsToDbPayload(values.program_el),
@@ -493,7 +495,7 @@ function buildTripPayload(values: TripFormValues) {
     title: titleEn || titleEl || null,
     location: values.location.trim() || null,
     country: values.country.trim() || null,
-    departure_city: values.departure_city.trim() || null,
+    departure_city: departureCityEn,
     description: !isHtmlEmpty(values.description) ? values.description : null,
     trip_notes: !isHtmlEmpty(values.trip_notes) ? values.trip_notes : null,
     program: progEn.length > 0 ? formStepsToDbPayload(progEn) : null,
@@ -529,7 +531,6 @@ const defaultForm = (): TripFormValues => ({
   pricing_segments: [],
   flight_details_enabled: false,
   flight_details: [],
-  departure_city_el: "",
   description_el: "",
   trip_notes_el: "",
   program_el: [{ days: "1", title: "", description: "" }],
@@ -543,7 +544,6 @@ const defaultForm = (): TripFormValues => ({
   trip_notes: "",
   location: "",
   country: "",
-  departure_city: "",
   program: [{ days: "1", title: "", description: "" }],
   included: [],
   not_included: [],
@@ -562,6 +562,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
   const { t, lang } = useLanguage();
   const [tab, setTab] = useState<"el" | "en">("el");
   const [departureModalOpen, setDepartureModalOpen] = useState(false);
+  const [pricingModalOpen, setPricingModalOpen] = useState(false);
   const langTabsScrollAnchorRef = useRef<HTMLDivElement>(null);
   const isCreate = tripId === ADMIN_TRIP_CREATE_ID;
 
@@ -613,11 +614,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
     name: "departure_windows",
   });
 
-  const {
-    fields: pricingSegmentFields,
-    append: appendPricingSegment,
-    remove: removePricingSegment,
-  } = useFieldArray({
+  const { fields: pricingSegmentFields } = useFieldArray({
     control,
     name: "pricing_segments",
   });
@@ -641,6 +638,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
   const isSeasonalOn = useWatch({ control, name: "is_seasonal" });
   const flightDetailsEnabled = useWatch({ control, name: "flight_details_enabled" });
   const watchedDepartureWindows = useWatch({ control, name: "departure_windows" });
+  const watchedPricingSegments = useWatch({ control, name: "pricing_segments" });
 
   const activeSeasonalConfigs =
     seasonalConfigsQ.data?.configs.filter((c) => c.is_active) ?? [];
@@ -677,7 +675,11 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
       country_el: String(row.country_el ?? ""),
       transport_mode_slugs: mergeTransportSlugsFromColumns(row.transport_el, row.transport),
       departure_windows: depWin,
-      pricing_segments: pricingSegmentsDbToForm(row),
+      pricing_segments: pricingSegmentsDbToForm(row).map((seg) => ({
+        ...seg,
+        departure_city_el: seg.departure_city_el || String(row.departure_city_el ?? ""),
+        departure_city: seg.departure_city || String(row.departure_city ?? ""),
+      })),
       flight_details_enabled: Boolean(row.flight_details_enabled),
       flight_details: (() => {
         let legs = normalizeFlightDetails(row.flight_details);
@@ -688,7 +690,6 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
         }
         return legs;
       })(),
-      departure_city_el: String(row.departure_city_el ?? ""),
       description_el: asHtml(row.description_el),
       trip_notes_el: asHtml(row.trip_notes_el),
       program_el: programEl,
@@ -702,7 +703,6 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
       trip_notes: asHtml(row.trip_notes),
       location: String(row.location ?? ""),
       country: String(row.country ?? ""),
-      departure_city: String(row.departure_city ?? ""),
       program: programEn,
       included: stringListDbToForm(row.included),
       not_included: stringListDbToForm(row.not_included),
@@ -765,7 +765,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
       if (errs.pricing_segments) {
         setTab("el");
         document
-          .getElementById("trip-field-pricing_segments_el")
+          .getElementById("trip-field-pricing_segments")
           ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
         return;
       }
@@ -796,7 +796,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
             : name === "departure_windows"
               ? "trip-field-departure_windows"
               : name === "pricing_segments"
-                ? "trip-field-pricing_segments_el"
+                ? "trip-field-pricing_segments"
                 : name === "flight_details"
                   ? "trip-field-flight_details_el"
                   : `trip-field-${name}`;
@@ -842,14 +842,58 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
 
   const handleDepartureSave = useCallback(
     async (rows: DepartureWindowFormRow[]) => {
-      setValue("departure_windows", rows, { shouldValidate: true, shouldDirty: true });
-      const ok = await trigger("departure_windows");
-      if (ok) {
+      const merged = { ...getValues(), departure_windows: rows };
+      const result = schema.safeParse(merged);
+      if (!result.success) {
+        const related = filterModalRelatedZodIssues(result.error.issues);
+        if (related.length > 0) {
+          const first = related[0];
+          toast.error(t("admin.tripValidationFailed"), {
+            description: formatZodIssueForTripModalToast(first, t),
+            duration: 8000,
+          });
+          setValue("departure_windows", rows, { shouldDirty: true, shouldValidate: true });
+          await trigger();
+          return;
+        }
+        setValue("departure_windows", rows, { shouldDirty: true, shouldValidate: true });
         syncFlightLegsToDepartureCount();
         setDepartureModalOpen(false);
+        toast.info(t("admin.tripValidationSavedSectionOtherErrors"), { duration: 6000 });
+        return;
       }
+      setValue("departure_windows", rows, { shouldDirty: true, shouldValidate: true });
+      syncFlightLegsToDepartureCount();
+      setDepartureModalOpen(false);
     },
-    [setValue, syncFlightLegsToDepartureCount, trigger],
+    [getValues, schema, setValue, syncFlightLegsToDepartureCount, t, trigger],
+  );
+
+  const handlePricingSave = useCallback(
+    async (rows: PricingSegmentFormRow[]) => {
+      const merged = { ...getValues(), pricing_segments: rows };
+      const result = schema.safeParse(merged);
+      if (!result.success) {
+        const related = filterModalRelatedZodIssues(result.error.issues);
+        if (related.length > 0) {
+          const first = related[0];
+          toast.error(t("admin.tripValidationFailed"), {
+            description: formatZodIssueForTripModalToast(first, t),
+            duration: 8000,
+          });
+          setValue("pricing_segments", rows, { shouldDirty: true, shouldValidate: true });
+          await trigger();
+          return;
+        }
+        setValue("pricing_segments", rows, { shouldDirty: true, shouldValidate: true });
+        setPricingModalOpen(false);
+        toast.info(t("admin.tripValidationSavedSectionOtherErrors"), { duration: 6000 });
+        return;
+      }
+      setValue("pricing_segments", rows, { shouldDirty: true, shouldValidate: true });
+      setPricingModalOpen(false);
+    },
+    [getValues, schema, setValue, t, trigger],
   );
 
   useEffect(() => {
@@ -878,7 +922,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
   const flightTextareaClass =
     "flex w-full min-h-[88px] resize-y rounded-xl border border-input bg-background px-3 py-2 text-base md:text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50";
 
-  type GreekTextKey = "location_el" | "country_el" | "departure_city_el";
+  type GreekTextKey = "location_el" | "country_el";
 
   const GreekTextField = ({
     name,
@@ -907,7 +951,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
     );
   };
 
-  type EnTextKey = "location" | "country" | "departure_city";
+  type EnTextKey = "location" | "country";
 
   const EnglishTextField = ({
     name,
@@ -1234,6 +1278,44 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                 />
 
                 <div
+                  id="trip-field-pricing_segments"
+                  className={cn(
+                    fieldClass("pricing_segments"),
+                    "mt-6 flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-white/10 dark:bg-zinc-950/50 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between",
+                  )}
+                >
+                  <div className="min-w-0 space-y-1">
+                    <Label className="text-sm font-medium">{t("admin.tripPricingSegmentsTitle")}</Label>
+                    <p className="text-xs text-slate-600 dark:text-zinc-400">
+                      {t("admin.tripPricingModalSummary").replace(
+                        "{count}",
+                        String(pricingSegmentFields.length),
+                      )}
+                    </p>
+                    {errors.pricing_segments &&
+                    typeof (errors.pricing_segments as { message?: string }).message === "string" ? (
+                      <p className="text-xs text-destructive">
+                        {(errors.pricing_segments as { message: string }).message}
+                      </p>
+                    ) : null}
+                  </div>
+                  <Button type="button" variant="outline" className="shrink-0" onClick={() => setPricingModalOpen(true)}>
+                    <Banknote className="mr-2 h-4 w-4" aria-hidden />
+                    {t("admin.tripPricingModalOpenButton")}
+                  </Button>
+                </div>
+                <PricingSegmentsModal
+                  open={pricingModalOpen}
+                  onOpenChange={setPricingModalOpen}
+                  rows={(watchedPricingSegments ?? []) as PricingSegmentFormRow[]}
+                  onSave={handlePricingSave}
+                  t={t}
+                  lang={lang}
+                  tripInputClass={tripInputClass}
+                  hasEnglish={hasEnglishOn}
+                />
+
+                <div
                   id="trip-edit-lang-tabs"
                   ref={langTabsScrollAnchorRef}
                   className="mt-8 scroll-mt-4"
@@ -1274,11 +1356,6 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                           sectionId="trip-field-country_el"
                           label={t("admin.tripCountryEl")}
                         />
-                        <GreekTextField
-                          name="departure_city_el"
-                          sectionId="trip-field-departure_city_el"
-                          label={t("admin.tripDepartureCityEl")}
-                        />
                       </div>
 
                       <div
@@ -1300,266 +1377,6 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                             {(errors.transport_mode_slugs as { message?: string }).message}
                           </p>
                         ) : null}
-                      </div>
-
-                      <div
-                        className={cn(fieldClass("pricing_segments"), "space-y-3 sm:col-span-2")}
-                        id="trip-field-pricing_segments_el"
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div>
-                            <Label>{t("admin.tripPricingSegmentsTitle")}</Label>
-                            <p className="mt-1 text-xs text-slate-600 dark:text-zinc-400">
-                              {t("admin.tripPricingSegmentsHint")}
-                            </p>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="shrink-0"
-                            onClick={() =>
-                              appendPricingSegment({
-                                month: 1,
-                                days: [],
-                                hotel_en: "",
-                                hotel_el: "",
-                                duration_days: null,
-                                price_double: null,
-                                price_single: null,
-                                price_triple: null,
-                                price_child: null,
-                              })
-                            }
-                          >
-                            <Plus className="mr-1 h-4 w-4" />
-                            {t("admin.tripPricingSegmentAdd")}
-                          </Button>
-                        </div>
-                        {pricingSegmentFields.length === 0 ? (
-                          <p className="text-sm text-slate-600 dark:text-zinc-400">
-                            {t("admin.tripPricingSegmentsEmpty")}
-                          </p>
-                        ) : null}
-                        {pricingSegmentFields.map((row, index) => (
-                          <div
-                            key={row.id}
-                            className="space-y-3 rounded-xl border border-border bg-muted/20 p-3"
-                          >
-                            <div className="flex justify-end">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="text-destructive hover:text-destructive"
-                                onClick={() => removePricingSegment(index)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">{t("admin.tripPricingSegmentRemove")}</span>
-                              </Button>
-                            </div>
-                            <div className="grid gap-3 sm:grid-cols-2">
-                              <div className="space-y-2 sm:col-span-2">
-                                <Label htmlFor={`ps-month-el-${index}`}>{t("admin.tripDepartureMonth")}</Label>
-                                <Controller
-                                  name={`pricing_segments.${index}.month`}
-                                  control={control}
-                                  render={({ field }) => (
-                                    <select
-                                      id={`ps-month-el-${index}`}
-                                      className={cn(
-                                        tripInputClass,
-                                        "flex h-11 w-full rounded-md border border-input bg-background px-3 py-2",
-                                      )}
-                                      value={field.value}
-                                      onChange={(e) => {
-                                        const month = Number(e.target.value);
-                                        field.onChange(month);
-                                        const currentDays =
-                                          getValues(`pricing_segments.${index}.days`) ?? [];
-                                        const filtered = currentDays.filter((d) =>
-                                          isValidDayForMonth(month, d),
-                                        );
-                                        setValue(`pricing_segments.${index}.days`, filtered);
-                                      }}
-                                    >
-                                      {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                                        <option key={m} value={m}>
-                                          {new Intl.DateTimeFormat(lang === "gr" ? "el-GR" : "en-GB", {
-                                            month: "long",
-                                          }).format(new Date(2000, m - 1, 1))}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  )}
-                                />
-                              </div>
-                              <PricingSegmentDayPickerRow control={control} index={index} t={t} />
-                              {(errors.pricing_segments as unknown as Record<number, { days?: { message?: string } }>)?.[
-                                index
-                              ]?.days ? (
-                                <p className="text-xs text-destructive sm:col-span-2">
-                                  {
-                                    (errors.pricing_segments as unknown as Record<
-                                      number,
-                                      { days?: { message?: string } }
-                                    >)?.[index]?.days?.message
-                                  }
-                                </p>
-                              ) : null}
-                              <div className="space-y-2 sm:col-span-2">
-                                <Label htmlFor={`ps-hotel-el-${index}`}>{t("admin.tripPricingHotelEl")}</Label>
-                                <Controller
-                                  name={`pricing_segments.${index}.hotel_el`}
-                                  control={control}
-                                  render={({ field }) => (
-                                    <Input
-                                      id={`ps-hotel-el-${index}`}
-                                      className={tripInputClass}
-                                      {...field}
-                                      autoComplete="off"
-                                    />
-                                  )}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor={`ps-dur-${index}`}>{t("admin.tripDurationDays")}</Label>
-                                <Controller
-                                  name={`pricing_segments.${index}.duration_days`}
-                                  control={control}
-                                  render={({ field }) => (
-                                    <Input
-                                      id={`ps-dur-el-${index}`}
-                                      type="number"
-                                      inputMode="numeric"
-                                      step={1}
-                                      min={0}
-                                      className={tripInputClass}
-                                      value={field.value ?? ""}
-                                      onChange={(e) => {
-                                        const v = e.target.value;
-                                        if (v === "") {
-                                          field.onChange(null);
-                                          return;
-                                        }
-                                        const n = Math.trunc(Number(v));
-                                        field.onChange(Number.isFinite(n) ? n : null);
-                                      }}
-                                    />
-                                  )}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor={`ps-pd-${index}`}>{t("admin.tripPricingDouble")}</Label>
-                                <Controller
-                                  name={`pricing_segments.${index}.price_double`}
-                                  control={control}
-                                  render={({ field }) => (
-                                    <Input
-                                      id={`ps-pd-el-${index}`}
-                                      type="number"
-                                      inputMode="decimal"
-                                      step="any"
-                                      min={0}
-                                      className={tripInputClass}
-                                      value={field.value ?? ""}
-                                      onChange={(e) => {
-                                        const v = e.target.value;
-                                        if (v === "") {
-                                          field.onChange(null);
-                                          return;
-                                        }
-                                        const n = Number(v);
-                                        field.onChange(Number.isFinite(n) ? n : null);
-                                      }}
-                                    />
-                                  )}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor={`ps-ps-${index}`}>{t("admin.tripPricingSingle")}</Label>
-                                <Controller
-                                  name={`pricing_segments.${index}.price_single`}
-                                  control={control}
-                                  render={({ field }) => (
-                                    <Input
-                                      id={`ps-ps-el-${index}`}
-                                      type="number"
-                                      inputMode="decimal"
-                                      step="any"
-                                      min={0}
-                                      className={tripInputClass}
-                                      value={field.value ?? ""}
-                                      onChange={(e) => {
-                                        const v = e.target.value;
-                                        if (v === "") {
-                                          field.onChange(null);
-                                          return;
-                                        }
-                                        const n = Number(v);
-                                        field.onChange(Number.isFinite(n) ? n : null);
-                                      }}
-                                    />
-                                  )}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor={`ps-pt-${index}`}>{t("admin.tripPricingTriple")}</Label>
-                                <Controller
-                                  name={`pricing_segments.${index}.price_triple`}
-                                  control={control}
-                                  render={({ field }) => (
-                                    <Input
-                                      id={`ps-pt-el-${index}`}
-                                      type="number"
-                                      inputMode="decimal"
-                                      step="any"
-                                      min={0}
-                                      className={tripInputClass}
-                                      value={field.value ?? ""}
-                                      onChange={(e) => {
-                                        const v = e.target.value;
-                                        if (v === "") {
-                                          field.onChange(null);
-                                          return;
-                                        }
-                                        const n = Number(v);
-                                        field.onChange(Number.isFinite(n) ? n : null);
-                                      }}
-                                    />
-                                  )}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor={`ps-pc-${index}`}>{t("admin.tripPricingChild")}</Label>
-                                <Controller
-                                  name={`pricing_segments.${index}.price_child`}
-                                  control={control}
-                                  render={({ field }) => (
-                                    <Input
-                                      id={`ps-pc-el-${index}`}
-                                      type="number"
-                                      inputMode="decimal"
-                                      step="any"
-                                      min={0}
-                                      className={tripInputClass}
-                                      value={field.value ?? ""}
-                                      onChange={(e) => {
-                                        const v = e.target.value;
-                                        if (v === "") {
-                                          field.onChange(null);
-                                          return;
-                                        }
-                                        const n = Number(v);
-                                        field.onChange(Number.isFinite(n) ? n : null);
-                                      }}
-                                    />
-                                  )}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        ))}
                       </div>
 
                       <div
@@ -1848,266 +1665,6 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                       </div>
 
                       <div
-                        className={cn(fieldClass("pricing_segments"), "space-y-3 sm:col-span-2")}
-                        id="trip-field-pricing_segments_en"
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div>
-                            <Label>{t("admin.tripPricingSegmentsTitle")}</Label>
-                            <p className="mt-1 text-xs text-slate-600 dark:text-zinc-400">
-                              {t("admin.tripPricingSegmentsHint")}
-                            </p>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="shrink-0"
-                            onClick={() =>
-                              appendPricingSegment({
-                                month: 1,
-                                days: [],
-                                hotel_en: "",
-                                hotel_el: "",
-                                duration_days: null,
-                                price_double: null,
-                                price_single: null,
-                                price_triple: null,
-                                price_child: null,
-                              })
-                            }
-                          >
-                            <Plus className="mr-1 h-4 w-4" />
-                            {t("admin.tripPricingSegmentAdd")}
-                          </Button>
-                        </div>
-                        {pricingSegmentFields.length === 0 ? (
-                          <p className="text-sm text-slate-600 dark:text-zinc-400">
-                            {t("admin.tripPricingSegmentsEmpty")}
-                          </p>
-                        ) : null}
-                        {pricingSegmentFields.map((row, index) => (
-                          <div
-                            key={row.id}
-                            className="space-y-3 rounded-xl border border-border bg-muted/20 p-3"
-                          >
-                            <div className="flex justify-end">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="text-destructive hover:text-destructive"
-                                onClick={() => removePricingSegment(index)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">{t("admin.tripPricingSegmentRemove")}</span>
-                              </Button>
-                            </div>
-                            <div className="grid gap-3 sm:grid-cols-2">
-                              <div className="space-y-2 sm:col-span-2">
-                                <Label htmlFor={`ps-month-en-${index}`}>{t("admin.tripDepartureMonth")}</Label>
-                                <Controller
-                                  name={`pricing_segments.${index}.month`}
-                                  control={control}
-                                  render={({ field }) => (
-                                    <select
-                                      id={`ps-month-en-${index}`}
-                                      className={cn(
-                                        tripInputClass,
-                                        "flex h-11 w-full rounded-md border border-input bg-background px-3 py-2",
-                                      )}
-                                      value={field.value}
-                                      onChange={(e) => {
-                                        const month = Number(e.target.value);
-                                        field.onChange(month);
-                                        const currentDays =
-                                          getValues(`pricing_segments.${index}.days`) ?? [];
-                                        const filtered = currentDays.filter((d) =>
-                                          isValidDayForMonth(month, d),
-                                        );
-                                        setValue(`pricing_segments.${index}.days`, filtered);
-                                      }}
-                                    >
-                                      {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                                        <option key={m} value={m}>
-                                          {new Intl.DateTimeFormat(lang === "gr" ? "el-GR" : "en-GB", {
-                                            month: "long",
-                                          }).format(new Date(2000, m - 1, 1))}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  )}
-                                />
-                              </div>
-                              <PricingSegmentDayPickerRow control={control} index={index} t={t} />
-                              {(errors.pricing_segments as unknown as Record<number, { days?: { message?: string } }>)?.[
-                                index
-                              ]?.days ? (
-                                <p className="text-xs text-destructive sm:col-span-2">
-                                  {
-                                    (errors.pricing_segments as unknown as Record<
-                                      number,
-                                      { days?: { message?: string } }
-                                    >)?.[index]?.days?.message
-                                  }
-                                </p>
-                              ) : null}
-                              <div className="space-y-2 sm:col-span-2">
-                                <Label htmlFor={`ps-hotel-en-tab-${index}`}>{t("admin.tripPricingHotelEn")}</Label>
-                                <Controller
-                                  name={`pricing_segments.${index}.hotel_en`}
-                                  control={control}
-                                  render={({ field }) => (
-                                    <Input
-                                      id={`ps-hotel-en-tab-${index}`}
-                                      className={tripInputClass}
-                                      {...field}
-                                      autoComplete="off"
-                                    />
-                                  )}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor={`ps-dur-${index}`}>{t("admin.tripDurationDays")}</Label>
-                                <Controller
-                                  name={`pricing_segments.${index}.duration_days`}
-                                  control={control}
-                                  render={({ field }) => (
-                                    <Input
-                                      id={`ps-dur-en-${index}`}
-                                      type="number"
-                                      inputMode="numeric"
-                                      step={1}
-                                      min={0}
-                                      className={tripInputClass}
-                                      value={field.value ?? ""}
-                                      onChange={(e) => {
-                                        const v = e.target.value;
-                                        if (v === "") {
-                                          field.onChange(null);
-                                          return;
-                                        }
-                                        const n = Math.trunc(Number(v));
-                                        field.onChange(Number.isFinite(n) ? n : null);
-                                      }}
-                                    />
-                                  )}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor={`ps-pd-${index}`}>{t("admin.tripPricingDouble")}</Label>
-                                <Controller
-                                  name={`pricing_segments.${index}.price_double`}
-                                  control={control}
-                                  render={({ field }) => (
-                                    <Input
-                                      id={`ps-pd-en-${index}`}
-                                      type="number"
-                                      inputMode="decimal"
-                                      step="any"
-                                      min={0}
-                                      className={tripInputClass}
-                                      value={field.value ?? ""}
-                                      onChange={(e) => {
-                                        const v = e.target.value;
-                                        if (v === "") {
-                                          field.onChange(null);
-                                          return;
-                                        }
-                                        const n = Number(v);
-                                        field.onChange(Number.isFinite(n) ? n : null);
-                                      }}
-                                    />
-                                  )}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor={`ps-ps-${index}`}>{t("admin.tripPricingSingle")}</Label>
-                                <Controller
-                                  name={`pricing_segments.${index}.price_single`}
-                                  control={control}
-                                  render={({ field }) => (
-                                    <Input
-                                      id={`ps-ps-en-${index}`}
-                                      type="number"
-                                      inputMode="decimal"
-                                      step="any"
-                                      min={0}
-                                      className={tripInputClass}
-                                      value={field.value ?? ""}
-                                      onChange={(e) => {
-                                        const v = e.target.value;
-                                        if (v === "") {
-                                          field.onChange(null);
-                                          return;
-                                        }
-                                        const n = Number(v);
-                                        field.onChange(Number.isFinite(n) ? n : null);
-                                      }}
-                                    />
-                                  )}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor={`ps-pt-${index}`}>{t("admin.tripPricingTriple")}</Label>
-                                <Controller
-                                  name={`pricing_segments.${index}.price_triple`}
-                                  control={control}
-                                  render={({ field }) => (
-                                    <Input
-                                      id={`ps-pt-en-${index}`}
-                                      type="number"
-                                      inputMode="decimal"
-                                      step="any"
-                                      min={0}
-                                      className={tripInputClass}
-                                      value={field.value ?? ""}
-                                      onChange={(e) => {
-                                        const v = e.target.value;
-                                        if (v === "") {
-                                          field.onChange(null);
-                                          return;
-                                        }
-                                        const n = Number(v);
-                                        field.onChange(Number.isFinite(n) ? n : null);
-                                      }}
-                                    />
-                                  )}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor={`ps-pc-${index}`}>{t("admin.tripPricingChild")}</Label>
-                                <Controller
-                                  name={`pricing_segments.${index}.price_child`}
-                                  control={control}
-                                  render={({ field }) => (
-                                    <Input
-                                      id={`ps-pc-en-${index}`}
-                                      type="number"
-                                      inputMode="decimal"
-                                      step="any"
-                                      min={0}
-                                      className={tripInputClass}
-                                      value={field.value ?? ""}
-                                      onChange={(e) => {
-                                        const v = e.target.value;
-                                        if (v === "") {
-                                          field.onChange(null);
-                                          return;
-                                        }
-                                        const n = Number(v);
-                                        field.onChange(Number.isFinite(n) ? n : null);
-                                      }}
-                                    />
-                                  )}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div
                         className={cn(fieldClass("flight_details"), "space-y-3 sm:col-span-2")}
                         id="trip-field-flight_details_en"
                       >
@@ -2261,11 +1818,6 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                               name="country"
                               sectionId="trip-field-country"
                               label={t("admin.tripCountryEn")}
-                            />
-                            <EnglishTextField
-                              name="departure_city"
-                              sectionId="trip-field-departure_city"
-                              label={t("admin.tripDepartureCityEn")}
                             />
                           </div>
                           <div className={fieldClass("description")} id="trip-field-description">

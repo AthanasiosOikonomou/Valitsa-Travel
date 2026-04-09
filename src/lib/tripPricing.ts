@@ -1,6 +1,9 @@
 import type { Trip, TripPricingSegment } from "@/types/Trip";
 import { isValidDayForMonth, tripDepartureMonths } from "@/lib/departureWindows";
 
+/** Trip filter UI language (matches `TripLang` in tripFilters). */
+export type TripFilterLang = "en" | "gr";
+
 function dedupeSortDays(days: number[]): number[] {
   return [...new Set(days.filter((d) => Number.isInteger(d)))].sort((a, b) => a - b);
 }
@@ -41,6 +44,8 @@ export function normalizePricingSegments(raw: unknown): TripPricingSegment[] {
     out.push({
       month,
       days,
+      departure_city: strOrNull(o.departure_city),
+      departure_city_el: strOrNull(o.departure_city_el),
       hotel_en: strOrNull(o.hotel_en),
       hotel_el: strOrNull(o.hotel_el),
       duration_days: intOrNull(o.duration_days),
@@ -88,9 +93,39 @@ export function tripHasPricingSegments(trip: Pick<Trip, "pricing_segments">): bo
   return normalizePricingSegments(trip.pricing_segments).length > 0;
 }
 
+/**
+ * Distinct departure city labels for filters: one entry per pricing row (per language),
+ * plus legacy trip-level `departure_city` when segments have no cities.
+ */
+export function tripDepartureCityLabelsForFilter(trip: Trip, lang: TripFilterLang): string[] {
+  const segs = normalizePricingSegments(trip.pricing_segments);
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const s of segs) {
+    const label =
+      lang === "gr"
+        ? (s.departure_city_el?.trim() || s.departure_city?.trim() || "")
+        : (s.departure_city?.trim() || s.departure_city_el?.trim() || "");
+    if (label && !seen.has(label)) {
+      seen.add(label);
+      out.push(label);
+    }
+  }
+  if (out.length === 0) {
+    const legacy =
+      lang === "gr"
+        ? (trip.departure_city_el?.trim() || trip.departure_city?.trim() || "")
+        : (trip.departure_city?.trim() || trip.departure_city_el?.trim() || "");
+    if (legacy) out.push(legacy);
+  }
+  return out;
+}
+
 export type PricingSegmentFormRow = {
   month: number;
   days: number[];
+  departure_city: string;
+  departure_city_el: string;
   hotel_en: string;
   hotel_el: string;
   duration_days?: number | null;
@@ -105,6 +140,8 @@ export function pricingSegmentsDbToForm(row: Record<string, unknown>): PricingSe
   return segs.map((s) => ({
     month: s.month,
     days: [...s.days],
+    departure_city: s.departure_city ?? "",
+    departure_city_el: s.departure_city_el ?? "",
     hotel_en: s.hotel_en ?? "",
     hotel_el: s.hotel_el ?? "",
     duration_days: s.duration_days ?? null,
@@ -120,6 +157,8 @@ export function pricingSegmentsFormToPayload(
   rows: Array<{
     month: number;
     days: number[];
+    departure_city: string;
+    departure_city_el: string;
     hotel_en: string;
     hotel_el: string;
     duration_days?: number | null;
@@ -133,6 +172,8 @@ export function pricingSegmentsFormToPayload(
     rows.map((r) => ({
       month: r.month,
       days: r.days,
+      departure_city: r.departure_city.trim() || null,
+      departure_city_el: r.departure_city_el.trim() || null,
       hotel_en: r.hotel_en.trim() || null,
       hotel_el: r.hotel_el.trim() || null,
       duration_days: r.duration_days ?? null,

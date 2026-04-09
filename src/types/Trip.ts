@@ -37,6 +37,10 @@ export type DepartureScheduleEntry = DepartureMonthBlock | DepartureWindow;
 export type TripPricingSegment = {
   month: number;
   days: number[];
+  /** Departure city for this priced departure (English). */
+  departure_city?: string | null;
+  /** Departure city for this priced departure (Greek). */
+  departure_city_el?: string | null;
   hotel_en?: string | null;
   hotel_el?: string | null;
   duration_days?: number | null;
