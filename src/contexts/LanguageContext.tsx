@@ -325,6 +325,15 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.saving": "Saving…",
     "admin.tripSaved": "Trip saved",
     "admin.tripSaveFailed": "Could not save trip",
+    "admin.tripValidationFailed": "Please fix the form errors",
+    "admin.tripPricingDepartureMismatch":
+      "Each pricing row must use the same month as the departure row in the same position.",
+    "admin.tripPricingDepartureDaysMismatch":
+      "Each pricing row must use the same days as the departure row in the same position.",
+    "admin.tripPricingDepartureRowMissing":
+      "Each pricing row needs a matching departure row (same order). Add departures first or remove extra pricing rows.",
+    "admin.tripFlightLegCountMismatch":
+      "Flight details must have exactly one leg per departure row (same count and order).",
     "admin.tabGreek": "Ελληνικά",
     "admin.tabEnglish": "English",
     "admin.tripSinglePhotoHint":
@@ -362,6 +371,21 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripDepartureEnd": "End date",
     "admin.tripDepartureLabelEl": "Label (Greek, optional)",
     "admin.tripDepartureLabelEn": "Label (English, optional)",
+    "admin.tripDepartureLabelsElSection": "Departure window labels (Greek)",
+    "admin.tripLogisticsOnEnglishTabHint":
+      "Dates, prices, and English labels are edited in the English tab.",
+    "admin.tripDepartureLabelsElEmpty":
+      "No departure windows yet. Add them in the English tab to enter Greek labels here.",
+    "admin.tripDepartureRowGreek": "Departure {n} (Greek label)",
+    "admin.tripPricingHotelElSection": "Hotel names (Greek)",
+    "admin.tripPricingHotelElEmpty":
+      "No pricing segments yet. Add segments in the English tab to enter Greek hotel names here.",
+    "admin.tripPricingRowGreek": "Segment {n} (Greek hotel)",
+    "admin.tripFlightDetailsElSection": "Flight details (Greek)",
+    "admin.tripFlightDetailsElDisabled":
+      "Turn on flight details in the English tab to enter Greek text here.",
+    "admin.tripFlightDetailsElEmpty":
+      "No flight legs yet. Add legs in the English tab to enter Greek text here.",
     "admin.tripDepartureLabelOptional": "Overrides automatic date text if set",
     "admin.tripDepartureRangeOrder": "End date must be on or after start date.",
     "admin.tripDepartureCityEn": "Departure city (English)",
@@ -819,6 +843,15 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.saving": "Αποθήκευση…",
     "admin.tripSaved": "Το ταξίδι αποθηκεύτηκε",
     "admin.tripSaveFailed": "Αποτυχία αποθήκευσης ταξιδιού",
+    "admin.tripValidationFailed": "Διορθώστε τα σφάλματα στη φόρμα",
+    "admin.tripPricingDepartureMismatch":
+      "Κάθε γραμμή τιμολόγησης πρέπει να έχει τον ίδιο μήνα με την αντίστοιχη γραμμή αναχώρησης.",
+    "admin.tripPricingDepartureDaysMismatch":
+      "Κάθε γραμμή τιμολόγησης πρέπει να έχει τις ίδιες ημέρες με την αντίστοιχη γραμμή αναχώρησης.",
+    "admin.tripPricingDepartureRowMissing":
+      "Κάθε γραμμή τιμολόγησης χρειάζεται αντίστοιχη γραμμή αναχώρησης (ίδια σειρά). Προσθέστε αναχωρήσεις πρώτα ή αφαιρέστε επιπλέον γραμμές τιμολόγησης.",
+    "admin.tripFlightLegCountMismatch":
+      "Οι λεπτομέρειες πτήσης πρέπει να έχουν ακριβώς ένα σκέλος ανά γραμμή αναχώρησης (ίδιο πλήθος και σειρά).",
     "admin.tabGreek": "Ελληνικά",
     "admin.tabEnglish": "English",
     "admin.tripSinglePhotoHint":
@@ -856,6 +889,21 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripDepartureEnd": "Ημερομηνία λήξης",
     "admin.tripDepartureLabelEl": "Ετικέτα (ελληνικά, προαιρετικό)",
     "admin.tripDepartureLabelEn": "Ετικέτα (αγγλικά, προαιρετικό)",
+    "admin.tripDepartureLabelsElSection": "Ετικέτες παραθύρων αναχώρησης (ελληνικά)",
+    "admin.tripLogisticsOnEnglishTabHint":
+      "Ημερομηνίες, τιμές και αγγλικές ετικέτες επεξεργάζονται στην καρτέλα «Αγγλικά».",
+    "admin.tripDepartureLabelsElEmpty":
+      "Δεν υπάρχουν ακόμα παράθυρα αναχώρησης. Προσθέστε τα στην καρτέλα «Αγγλικά» για να εισάγετε ελληνικές ετικέτες εδώ.",
+    "admin.tripDepartureRowGreek": "Αναχώρηση {n} (ελληνική ετικέτα)",
+    "admin.tripPricingHotelElSection": "Ονόματα ξενοδοχείων (ελληνικά)",
+    "admin.tripPricingHotelElEmpty":
+      "Δεν υπάρχουν ακόμα τμήματα τιμολόγησης. Προσθέστε τμήματα στην καρτέλα «Αγγλικά» για να εισάγετε ελληνικά ονόματα ξενοδοχείων εδώ.",
+    "admin.tripPricingRowGreek": "Τμήμα {n} (ελληνικό ξενοδοχείο)",
+    "admin.tripFlightDetailsElSection": "Λεπτομέρειες πτήσης (ελληνικά)",
+    "admin.tripFlightDetailsElDisabled":
+      "Ενεργοποιήστε τις λεπτομέρειες πτήσης στην καρτέλα «Αγγλικά» για να εισάγετε ελληνικό κείμενο εδώ.",
+    "admin.tripFlightDetailsElEmpty":
+      "Δεν υπάρχουν ακόμα σκέλη πτήσης. Προσθέστε σκέλη στην καρτέλα «Αγγλικά» για να εισάγετε ελληνικό κείμενο εδώ.",
     "admin.tripDepartureLabelOptional": "Αντικαθιστά το αυτόματο κείμενο ημερομηνιών αν συμπληρωθεί",
     "admin.tripDepartureRangeOrder": "Η ημερομηνία λήξης πρέπει να είναι ίδια ή μετά την έναρξη.",
     "admin.tripDepartureCityEn": "Πόλη αναχώρησης (αγγλικά)",

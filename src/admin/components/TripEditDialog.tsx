@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Plus, Trash2, X } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -62,6 +62,35 @@ function coercePayloadInt(n: number | null | undefined): number | null {
   if (n === null || n === undefined) return null;
   const x = Math.trunc(Number(n));
   return Number.isFinite(x) ? x : null;
+}
+
+function daysSortedEqual(a: number[], b: number[]) {
+  if (a.length !== b.length) return false;
+  const sa = [...a].sort((x, y) => x - y);
+  const sb = [...b].sort((x, y) => x - y);
+  return sa.every((v, i) => v === sb[i]);
+}
+
+function pricingSegmentRowHasContent(row: {
+  days: number[];
+  hotel_en: string;
+  hotel_el: string;
+  duration_days?: number | null;
+  price_double?: number | null;
+  price_single?: number | null;
+  price_triple?: number | null;
+  price_child?: number | null;
+}): boolean {
+  return (
+    row.days.length > 0 ||
+    row.hotel_en.trim().length > 0 ||
+    row.hotel_el.trim().length > 0 ||
+    row.duration_days != null ||
+    row.price_double != null ||
+    row.price_single != null ||
+    row.price_triple != null ||
+    row.price_child != null
+  );
 }
 
 const transportModeEnum = z.enum(["bus", "plane", "ship", "train"]);
@@ -208,6 +237,44 @@ function buildTripFormSchema(t: (key: string) => string) {
           path: ["seasonal_name"],
         });
       }
+
+      const dep = data.departure_windows;
+      for (let i = 0; i < data.pricing_segments.length; i++) {
+        const row = data.pricing_segments[i];
+        if (!pricingSegmentRowHasContent(row)) continue;
+        if (i >= dep.length) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: t("admin.tripPricingDepartureRowMissing"),
+            path: ["pricing_segments", i],
+          });
+          continue;
+        }
+        const w = dep[i];
+        if (w.month !== row.month) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: t("admin.tripPricingDepartureMismatch"),
+            path: ["pricing_segments", i, "month"],
+          });
+        }
+        if (!daysSortedEqual(w.days, row.days)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: t("admin.tripPricingDepartureDaysMismatch"),
+            path: ["pricing_segments", i, "days"],
+          });
+        }
+      }
+
+      if (data.flight_details_enabled && data.flight_details.length !== data.departure_windows.length) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: t("admin.tripFlightLegCountMismatch"),
+          path: ["flight_details"],
+        });
+      }
+
       if (!data.hasEnglish) return;
       if (!data.title.trim()) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: fieldReq, path: ["title"] });
@@ -225,6 +292,38 @@ function buildTripFormSchema(t: (key: string) => string) {
 }
 
 export type TripFormValues = z.infer<ReturnType<typeof buildTripFormSchema>>;
+
+function firstFieldErrorMessage(err: FieldErrors<TripFormValues>): string | undefined {
+  const walk = (v: unknown): string | undefined => {
+    if (v == null || typeof v !== "object") return undefined;
+    const o = v as Record<string, unknown>;
+    if (typeof o.message === "string" && o.message) return o.message;
+    for (const x of Object.values(o)) {
+      const r = walk(x);
+      if (r) return r;
+    }
+    return undefined;
+  };
+  return walk(err);
+}
+
+function tabForDepartureWindowErrors(
+  errs: FieldErrors<TripFormValues>,
+): "el" | "en" {
+  const dw = errs.departure_windows;
+  if (dw && typeof dw === "object" && !("message" in dw && typeof (dw as { message?: string }).message === "string")) {
+    const rows = dw as unknown as Record<string, { label_el?: { message?: string }; label_en?: { message?: string } }>;
+    for (const k of Object.keys(rows)) {
+      const row = rows[k];
+      if (row?.label_en?.message) return "en";
+    }
+    for (const k of Object.keys(rows)) {
+      const row = rows[k];
+      if (row?.label_el?.message) return "el";
+    }
+  }
+  return "el";
+}
 
 function PricingSegmentDayPickerRow({
   control,
@@ -620,18 +719,21 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
     }
     const st = row.status;
     const statusVal = st === "active" ? "active" : "inactive";
+    const depWin = departureWindowsDbToForm(row);
     reset({
       title_el: String(row.title_el ?? ""),
       location_el: String(row.location_el ?? ""),
       country_el: String(row.country_el ?? ""),
       transport_mode_slugs: mergeTransportSlugsFromColumns(row.transport_el, row.transport),
-      departure_windows: departureWindowsDbToForm(row),
+      departure_windows: depWin,
       pricing_segments: pricingSegmentsDbToForm(row),
       flight_details_enabled: Boolean(row.flight_details_enabled),
       flight_details: (() => {
-        const legs = normalizeFlightDetails(row.flight_details);
-        if (Boolean(row.flight_details_enabled) && legs.length === 0) {
-          return [{ ...EMPTY_FLIGHT_LEG }];
+        let legs = normalizeFlightDetails(row.flight_details);
+        if (Boolean(row.flight_details_enabled) && depWin.length > 0) {
+          const n = depWin.length;
+          while (legs.length < n) legs.push({ ...EMPTY_FLIGHT_LEG });
+          legs = legs.slice(0, n);
         }
         return legs;
       })(),
@@ -697,37 +799,59 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
   };
 
   const onInvalid = (errs: FieldErrors<TripFormValues>) => {
+    const firstMsg = firstFieldErrorMessage(errs);
+    if (firstMsg) {
+      toast.error(t("admin.tripValidationFailed"), { description: firstMsg });
+    }
     requestAnimationFrame(() => {
+      if (errs.transport_mode_slugs) {
+        setTab("el");
+        document
+          .getElementById("trip-field-transport_mode_slugs_el")
+          ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        return;
+      }
       if (errs.pricing_segments) {
         setTab("el");
         document
-          .getElementById("trip-field-pricing_segments")
+          .getElementById("trip-field-pricing_segments_el")
           ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
         return;
       }
       if (errs.flight_details) {
         setTab("el");
         document
-          .getElementById("trip-field-flight_details")
+          .getElementById("trip-field-flight_details_el")
           ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
         return;
       }
       if (errs.departure_windows) {
-        setTab("el");
+        const ttab = tabForDepartureWindowErrors(errs);
+        setTab(ttab);
         document
-          .getElementById("trip-field-departure_windows")
+          .getElementById(
+            ttab === "en" ? "trip-field-departure_windows_en" : "trip-field-departure_windows_el",
+          )
           ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
         return;
       }
       for (const name of GREEK_FIELD_ORDER) {
         if (!errs[name]) continue;
         setTab("el");
-        if (name === "title_el" || name === "transport_mode_slugs") {
-          setFocus(name);
+        if (name === "title_el") {
+          setFocus("title_el");
         }
-        document
-          .getElementById(`trip-field-${name}`)
-          ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        const sectionId =
+          name === "transport_mode_slugs"
+            ? "trip-field-transport_mode_slugs_el"
+            : name === "departure_windows"
+              ? "trip-field-departure_windows_el"
+              : name === "pricing_segments"
+                ? "trip-field-pricing_segments_el"
+                : name === "flight_details"
+                  ? "trip-field-flight_details_el"
+                  : `trip-field-${name}`;
+        document.getElementById(sectionId)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
         return;
       }
       if (getValues("hasEnglish")) {
@@ -752,6 +876,37 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
         }
       }
     });
+  };
+
+  /** Keep flight leg rows aligned with departure rows (same form field on both language tabs). */
+  const syncFlightLegsToDepartureCount = useCallback(() => {
+    if (!getValues("flight_details_enabled")) return;
+    const dep = getValues("departure_windows") ?? [];
+    const n = dep.length;
+    if (n === 0) return;
+    let legs = [...(getValues("flight_details") ?? [])];
+    if (legs.length === n) return;
+    while (legs.length < n) legs.push({ ...EMPTY_FLIGHT_LEG });
+    legs = legs.slice(0, n);
+    setValue("flight_details", legs, { shouldValidate: false });
+  }, [getValues, setValue]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (!flightDetailsEnabled) return;
+    const depLen = departureWindowFields.length;
+    if (depLen === 0) return;
+    const legs = getValues("flight_details") ?? [];
+    if (legs.length === depLen) return;
+    let next = [...legs];
+    if (next.length > depLen) next = next.slice(0, depLen);
+    while (next.length < depLen) next.push({ ...EMPTY_FLIGHT_LEG });
+    setValue("flight_details", next, { shouldValidate: false });
+  }, [open, flightDetailsEnabled, departureWindowFields.length, getValues, setValue]);
+
+  const onFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+    syncFlightLegsToDepartureCount();
+    handleSubmit(onValid, onInvalid)(e);
   };
 
   const fieldClass = (name: keyof TripFormValues) =>
@@ -873,7 +1028,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
           ) : (
             <form
               className="flex min-h-0 flex-1 flex-col"
-              onSubmit={handleSubmit(onValid, onInvalid)}
+              onSubmit={onFormSubmit}
               noValidate
             >
               <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4">
@@ -1104,604 +1259,541 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                           sectionId="trip-field-country_el"
                           label={t("admin.tripCountryEl")}
                         />
-                        <div
-                          className={cn(fieldClass("transport_mode_slugs"), "space-y-2 sm:col-span-2")}
-                          id="trip-field-transport_mode_slugs"
-                        >
-                          <Label htmlFor="trip-transport-el">{t("admin.tripTransportEl")}</Label>
-                          <TransportMultiSelect
-                            {...transportModeFieldRest}
-                            ref={transportModeRef}
-                            id="trip-transport-el"
-                            lang="gr"
-                            placeholder={t("admin.transportPlaceholder")}
-                            menuLabel={t("admin.transportMenu")}
-                            aria-invalid={transportModeInvalid}
-                          />
-                          {errors.transport_mode_slugs ? (
-                            <p className="mt-1 text-xs text-destructive">
-                              {(errors.transport_mode_slugs as { message?: string }).message}
-                            </p>
-                          ) : null}
-                        </div>
-                        <div
-                          className={cn(fieldClass("departure_windows"), "space-y-3 sm:col-span-2")}
-                          id="trip-field-departure_windows"
-                        >
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <Label>{t("admin.tripDepartureDates")}</Label>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="shrink-0"
-                              onClick={() =>
-                                appendDepartureWindow({
-                                  month: 1,
-                                  days: [],
-                                  label_en: "",
-                                  label_el: "",
-                                })
-                              }
-                            >
-                              <Plus className="mr-1 h-4 w-4" />
-                              {t("admin.tripDepartureAddRow")}
-                            </Button>
-                          </div>
-                          {departureWindowFields.map((row, index) => (
-                            <div
-                              key={row.id}
-                              className="space-y-3 rounded-xl border border-border bg-muted/20 p-3"
-                            >
-                              <div className="flex justify-end">
-                                {departureWindowFields.length > 1 ? (
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-destructive hover:text-destructive"
-                                    onClick={() => removeDepartureWindow(index)}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                    <span className="sr-only">{t("admin.tripDepartureRemoveRow")}</span>
-                                  </Button>
-                                ) : null}
-                              </div>
-                              <div className="grid gap-3 sm:grid-cols-2">
-                                <div className="space-y-2 sm:col-span-2">
-                                  <Label htmlFor={`dep-month-${index}`}>{t("admin.tripDepartureMonth")}</Label>
-                                  <Controller
-                                    name={`departure_windows.${index}.month`}
-                                    control={control}
-                                    render={({ field }) => (
-                                      <select
-                                        id={`dep-month-${index}`}
-                                        className={cn(
-                                          tripInputClass,
-                                          "flex h-11 w-full rounded-md border border-input bg-background px-3 py-2",
-                                        )}
-                                        value={field.value}
-                                        onChange={(e) => {
-                                          const month = Number(e.target.value);
-                                          field.onChange(month);
-                                          const currentDays =
-                                            getValues(`departure_windows.${index}.days`) ?? [];
-                                          const filtered = currentDays.filter((d) =>
-                                            isValidDayForMonth(month, d),
-                                          );
-                                          setValue(`departure_windows.${index}.days`, filtered);
-                                        }}
-                                      >
-                                        {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                                          <option key={m} value={m}>
-                                            {new Intl.DateTimeFormat(lang === "gr" ? "el-GR" : "en-GB", {
-                                              month: "long",
-                                            }).format(new Date(2000, m - 1, 1))}
-                                          </option>
-                                        ))}
-                                      </select>
-                                    )}
-                                  />
-                                </div>
-                                <DepartureDayPickerRow control={control} index={index} t={t} />
-                                {(errors.departure_windows as unknown as Record<number, { days?: { message?: string } }>)?.[
-                                  index
-                                ]?.days ? (
-                                  <p className="text-xs text-destructive sm:col-span-2">
-                                    {
-                                      (errors.departure_windows as unknown as Record<number, { days?: { message?: string } }>)?.[
-                                        index
-                                      ]?.days?.message
-                                    }
-                                  </p>
-                                ) : null}
-                                <div className="space-y-2 sm:col-span-2">
-                                  <Label htmlFor={`dep-label-el-${index}`}>{t("admin.tripDepartureLabelEl")}</Label>
-                                  <Controller
-                                    name={`departure_windows.${index}.label_el`}
-                                    control={control}
-                                    render={({ field }) => (
-                                      <Input
-                                        id={`dep-label-el-${index}`}
-                                        className={tripInputClass}
-                                        {...field}
-                                        autoComplete="off"
-                                        placeholder={t("admin.tripDepartureLabelOptional")}
-                                      />
-                                    )}
-                                  />
-                                </div>
-                                <div className="space-y-2 sm:col-span-2">
-                                  <Label htmlFor={`dep-label-en-${index}`}>{t("admin.tripDepartureLabelEn")}</Label>
-                                  <Controller
-                                    name={`departure_windows.${index}.label_en`}
-                                    control={control}
-                                    render={({ field }) => (
-                                      <Input
-                                        id={`dep-label-en-${index}`}
-                                        className={tripInputClass}
-                                        {...field}
-                                        autoComplete="off"
-                                        placeholder={t("admin.tripDepartureLabelOptional")}
-                                      />
-                                    )}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                          {errors.departure_windows &&
-                          typeof (errors.departure_windows as { message?: string }).message === "string" ? (
-                            <p className="text-xs text-destructive">
-                              {(errors.departure_windows as { message: string }).message}
-                            </p>
-                          ) : null}
-                        </div>
-                        <div
-                          className={cn(fieldClass("pricing_segments"), "space-y-3 sm:col-span-2")}
-                          id="trip-field-pricing_segments"
-                        >
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div>
-                              <Label>{t("admin.tripPricingSegmentsTitle")}</Label>
-                              <p className="mt-1 text-xs text-slate-600 dark:text-zinc-400">
-                                {t("admin.tripPricingSegmentsHint")}
-                              </p>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="shrink-0"
-                              onClick={() =>
-                                appendPricingSegment({
-                                  month: 1,
-                                  days: [],
-                                  hotel_en: "",
-                                  hotel_el: "",
-                                  duration_days: null,
-                                  price_double: null,
-                                  price_single: null,
-                                  price_triple: null,
-                                  price_child: null,
-                                })
-                              }
-                            >
-                              <Plus className="mr-1 h-4 w-4" />
-                              {t("admin.tripPricingSegmentAdd")}
-                            </Button>
-                          </div>
-                          {pricingSegmentFields.length === 0 ? (
-                            <p className="text-sm text-slate-600 dark:text-zinc-400">
-                              {t("admin.tripPricingSegmentsEmpty")}
-                            </p>
-                          ) : null}
-                          {pricingSegmentFields.map((row, index) => (
-                            <div
-                              key={row.id}
-                              className="space-y-3 rounded-xl border border-border bg-muted/20 p-3"
-                            >
-                              <div className="flex justify-end">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-destructive hover:text-destructive"
-                                  onClick={() => removePricingSegment(index)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                  <span className="sr-only">{t("admin.tripPricingSegmentRemove")}</span>
-                                </Button>
-                              </div>
-                              <div className="grid gap-3 sm:grid-cols-2">
-                                <div className="space-y-2 sm:col-span-2">
-                                  <Label htmlFor={`ps-month-${index}`}>{t("admin.tripDepartureMonth")}</Label>
-                                  <Controller
-                                    name={`pricing_segments.${index}.month`}
-                                    control={control}
-                                    render={({ field }) => (
-                                      <select
-                                        id={`ps-month-${index}`}
-                                        className={cn(
-                                          tripInputClass,
-                                          "flex h-11 w-full rounded-md border border-input bg-background px-3 py-2",
-                                        )}
-                                        value={field.value}
-                                        onChange={(e) => {
-                                          const month = Number(e.target.value);
-                                          field.onChange(month);
-                                          const currentDays =
-                                            getValues(`pricing_segments.${index}.days`) ?? [];
-                                          const filtered = currentDays.filter((d) =>
-                                            isValidDayForMonth(month, d),
-                                          );
-                                          setValue(`pricing_segments.${index}.days`, filtered);
-                                        }}
-                                      >
-                                        {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                                          <option key={m} value={m}>
-                                            {new Intl.DateTimeFormat(lang === "gr" ? "el-GR" : "en-GB", {
-                                              month: "long",
-                                            }).format(new Date(2000, m - 1, 1))}
-                                          </option>
-                                        ))}
-                                      </select>
-                                    )}
-                                  />
-                                </div>
-                                <PricingSegmentDayPickerRow control={control} index={index} t={t} />
-                                {(errors.pricing_segments as unknown as Record<number, { days?: { message?: string } }>)?.[
-                                  index
-                                ]?.days ? (
-                                  <p className="text-xs text-destructive sm:col-span-2">
-                                    {
-                                      (errors.pricing_segments as unknown as Record<
-                                        number,
-                                        { days?: { message?: string } }
-                                      >)?.[index]?.days?.message
-                                    }
-                                  </p>
-                                ) : null}
-                                <div className="space-y-2 sm:col-span-2">
-                                  <Label htmlFor={`ps-hotel-el-${index}`}>{t("admin.tripPricingHotelEl")}</Label>
-                                  <Controller
-                                    name={`pricing_segments.${index}.hotel_el`}
-                                    control={control}
-                                    render={({ field }) => (
-                                      <Input
-                                        id={`ps-hotel-el-${index}`}
-                                        className={tripInputClass}
-                                        {...field}
-                                        autoComplete="off"
-                                      />
-                                    )}
-                                  />
-                                </div>
-                                <div className="space-y-2 sm:col-span-2">
-                                  <Label htmlFor={`ps-hotel-en-${index}`}>{t("admin.tripPricingHotelEn")}</Label>
-                                  <Controller
-                                    name={`pricing_segments.${index}.hotel_en`}
-                                    control={control}
-                                    render={({ field }) => (
-                                      <Input
-                                        id={`ps-hotel-en-${index}`}
-                                        className={tripInputClass}
-                                        {...field}
-                                        autoComplete="off"
-                                      />
-                                    )}
-                                  />
-                                </div>
-                                <div className="space-y-2">
-                                  <Label htmlFor={`ps-dur-${index}`}>{t("admin.tripDurationDays")}</Label>
-                                  <Controller
-                                    name={`pricing_segments.${index}.duration_days`}
-                                    control={control}
-                                    render={({ field }) => (
-                                      <Input
-                                        id={`ps-dur-${index}`}
-                                        type="number"
-                                        inputMode="numeric"
-                                        step={1}
-                                        min={0}
-                                        className={tripInputClass}
-                                        value={field.value ?? ""}
-                                        onChange={(e) => {
-                                          const v = e.target.value;
-                                          if (v === "") {
-                                            field.onChange(null);
-                                            return;
-                                          }
-                                          const n = Math.trunc(Number(v));
-                                          field.onChange(Number.isFinite(n) ? n : null);
-                                        }}
-                                      />
-                                    )}
-                                  />
-                                </div>
-                                <div className="space-y-2">
-                                  <Label htmlFor={`ps-pd-${index}`}>{t("admin.tripPricingDouble")}</Label>
-                                  <Controller
-                                    name={`pricing_segments.${index}.price_double`}
-                                    control={control}
-                                    render={({ field }) => (
-                                      <Input
-                                        id={`ps-pd-${index}`}
-                                        type="number"
-                                        inputMode="decimal"
-                                        step="any"
-                                        min={0}
-                                        className={tripInputClass}
-                                        value={field.value ?? ""}
-                                        onChange={(e) => {
-                                          const v = e.target.value;
-                                          if (v === "") {
-                                            field.onChange(null);
-                                            return;
-                                          }
-                                          const n = Number(v);
-                                          field.onChange(Number.isFinite(n) ? n : null);
-                                        }}
-                                      />
-                                    )}
-                                  />
-                                </div>
-                                <div className="space-y-2">
-                                  <Label htmlFor={`ps-ps-${index}`}>{t("admin.tripPricingSingle")}</Label>
-                                  <Controller
-                                    name={`pricing_segments.${index}.price_single`}
-                                    control={control}
-                                    render={({ field }) => (
-                                      <Input
-                                        id={`ps-ps-${index}`}
-                                        type="number"
-                                        inputMode="decimal"
-                                        step="any"
-                                        min={0}
-                                        className={tripInputClass}
-                                        value={field.value ?? ""}
-                                        onChange={(e) => {
-                                          const v = e.target.value;
-                                          if (v === "") {
-                                            field.onChange(null);
-                                            return;
-                                          }
-                                          const n = Number(v);
-                                          field.onChange(Number.isFinite(n) ? n : null);
-                                        }}
-                                      />
-                                    )}
-                                  />
-                                </div>
-                                <div className="space-y-2">
-                                  <Label htmlFor={`ps-pt-${index}`}>{t("admin.tripPricingTriple")}</Label>
-                                  <Controller
-                                    name={`pricing_segments.${index}.price_triple`}
-                                    control={control}
-                                    render={({ field }) => (
-                                      <Input
-                                        id={`ps-pt-${index}`}
-                                        type="number"
-                                        inputMode="decimal"
-                                        step="any"
-                                        min={0}
-                                        className={tripInputClass}
-                                        value={field.value ?? ""}
-                                        onChange={(e) => {
-                                          const v = e.target.value;
-                                          if (v === "") {
-                                            field.onChange(null);
-                                            return;
-                                          }
-                                          const n = Number(v);
-                                          field.onChange(Number.isFinite(n) ? n : null);
-                                        }}
-                                      />
-                                    )}
-                                  />
-                                </div>
-                                <div className="space-y-2">
-                                  <Label htmlFor={`ps-pc-${index}`}>{t("admin.tripPricingChild")}</Label>
-                                  <Controller
-                                    name={`pricing_segments.${index}.price_child`}
-                                    control={control}
-                                    render={({ field }) => (
-                                      <Input
-                                        id={`ps-pc-${index}`}
-                                        type="number"
-                                        inputMode="decimal"
-                                        step="any"
-                                        min={0}
-                                        className={tripInputClass}
-                                        value={field.value ?? ""}
-                                        onChange={(e) => {
-                                          const v = e.target.value;
-                                          if (v === "") {
-                                            field.onChange(null);
-                                            return;
-                                          }
-                                          const n = Number(v);
-                                          field.onChange(Number.isFinite(n) ? n : null);
-                                        }}
-                                      />
-                                    )}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        <div
-                          className={cn(fieldClass("flight_details"), "space-y-3 sm:col-span-2")}
-                          id="trip-field-flight_details"
-                        >
-                          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-white/10 dark:bg-zinc-950/50">
-                            <div>
-                              <p className="text-sm font-medium text-slate-900 dark:text-zinc-100">
-                                {t("admin.tripFlightDetailsSection")}
-                              </p>
-                              <p className="mt-1 text-xs text-slate-600 dark:text-zinc-400">
-                                {t("admin.tripFlightDetailsHint")}
-                              </p>
-                            </div>
-                            <Controller
-                              name="flight_details_enabled"
-                              control={control}
-                              render={({ field }) => (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs font-medium text-slate-600 dark:text-zinc-300">
-                                    {field.value
-                                      ? t("admin.tripFlightDetailsOn")
-                                      : t("admin.tripFlightDetailsOff")}
-                                  </span>
-                                  <Switch
-                                    checked={field.value}
-                                    onCheckedChange={(on) => {
-                                      field.onChange(on);
-                                      if (on && (getValues("flight_details") ?? []).length === 0) {
-                                        appendFlightLeg({ ...EMPTY_FLIGHT_LEG });
-                                      }
-                                    }}
-                                    aria-label={t("admin.tripFlightDetailsEnable")}
-                                  />
-                                </div>
-                              )}
-                            />
-                          </div>
-                          {flightDetailsEnabled ? (
-                            <>
-                              <div className="flex justify-end">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  className="w-full sm:w-auto"
-                                  onClick={() => appendFlightLeg({ ...EMPTY_FLIGHT_LEG })}
-                                >
-                                  <Plus className="mr-1 h-4 w-4" />
-                                  {t("admin.tripFlightLegAdd")}
-                                </Button>
-                              </div>
-                              {flightDetailFields.length === 0 ? (
-                                <p className="text-sm text-slate-600 dark:text-zinc-400">
-                                  {t("admin.tripFlightLegsEmpty")}
-                                </p>
-                              ) : null}
-                              {flightDetailFields.map((row, index) => (
-                                <div
-                                  key={row.id}
-                                  className="space-y-3 rounded-xl border border-border bg-muted/20 p-3"
-                                >
-                                  <div className="flex items-center justify-between gap-2">
-                                    <p className="text-sm font-medium text-foreground">
-                                      {t("admin.tripFlightLegLabel").replace("{n}", String(index + 1))}
-                                    </p>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="sm"
-                                      className="shrink-0 text-destructive hover:text-destructive"
-                                      onClick={() => removeFlightLeg(index)}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                      <span className="sr-only">{t("admin.tripFlightLegRemove")}</span>
-                                    </Button>
-                                  </div>
-                                  <div className="grid gap-3 md:grid-cols-2">
-                                    <p className="text-xs text-muted-foreground md:col-span-2">
-                                      {t("admin.tripFlightLangEl")}
-                                    </p>
-                                    <div className="space-y-2">
-                                      <Label htmlFor={`fd-dep-el-${index}`}>
-                                        {t("detail.flightDepartureLabel")}
-                                      </Label>
-                                      <Controller
-                                        name={`flight_details.${index}.departure_el`}
-                                        control={control}
-                                        render={({ field }) => (
-                                          <textarea
-                                            id={`fd-dep-el-${index}`}
-                                            className={flightTextareaClass}
-                                            rows={3}
-                                            autoComplete="off"
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                          />
-                                        )}
-                                      />
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label htmlFor={`fd-ret-el-${index}`}>
-                                        {t("detail.flightReturnLabel")}
-                                      </Label>
-                                      <Controller
-                                        name={`flight_details.${index}.return_el`}
-                                        control={control}
-                                        render={({ field }) => (
-                                          <textarea
-                                            id={`fd-ret-el-${index}`}
-                                            className={flightTextareaClass}
-                                            rows={3}
-                                            autoComplete="off"
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                          />
-                                        )}
-                                      />
-                                    </div>
-                                    <p className="pt-1 text-xs text-muted-foreground md:col-span-2">
-                                      {t("admin.tripFlightLangEn")}
-                                    </p>
-                                    <div className="space-y-2">
-                                      <Label htmlFor={`fd-dep-en-${index}`}>
-                                        {t("detail.flightDepartureLabel")}
-                                      </Label>
-                                      <Controller
-                                        name={`flight_details.${index}.departure_en`}
-                                        control={control}
-                                        render={({ field }) => (
-                                          <textarea
-                                            id={`fd-dep-en-${index}`}
-                                            className={flightTextareaClass}
-                                            rows={3}
-                                            autoComplete="off"
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                          />
-                                        )}
-                                      />
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label htmlFor={`fd-ret-en-${index}`}>
-                                        {t("detail.flightReturnLabel")}
-                                      </Label>
-                                      <Controller
-                                        name={`flight_details.${index}.return_en`}
-                                        control={control}
-                                        render={({ field }) => (
-                                          <textarea
-                                            id={`fd-ret-en-${index}`}
-                                            className={flightTextareaClass}
-                                            rows={3}
-                                            autoComplete="off"
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                          />
-                                        )}
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </>
-                          ) : null}
-                        </div>
                         <GreekTextField
                           name="departure_city_el"
                           sectionId="trip-field-departure_city_el"
                           label={t("admin.tripDepartureCityEl")}
                         />
                       </div>
+
+                      <div
+                        className={cn(fieldClass("transport_mode_slugs"), "space-y-2 sm:col-span-2")}
+                        id="trip-field-transport_mode_slugs_el"
+                      >
+                        <Label htmlFor="trip-transport-el">{t("admin.tripTransportEl")}</Label>
+                        <TransportMultiSelect
+                          {...transportModeFieldRest}
+                          ref={transportModeRef}
+                          id="trip-transport-el"
+                          lang="gr"
+                          placeholder={t("admin.transportPlaceholder")}
+                          menuLabel={t("admin.transportMenu")}
+                          aria-invalid={transportModeInvalid}
+                        />
+                        {errors.transport_mode_slugs ? (
+                          <p className="mt-1 text-xs text-destructive">
+                            {(errors.transport_mode_slugs as { message?: string }).message}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <div
+                        className={cn(fieldClass("departure_windows"), "space-y-3 sm:col-span-2")}
+                        id="trip-field-departure_windows_el"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <Label>{t("admin.tripDepartureDates")}</Label>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="shrink-0"
+                            onClick={() =>
+                              appendDepartureWindow({
+                                month: 1,
+                                days: [],
+                                label_en: "",
+                                label_el: "",
+                              })
+                            }
+                          >
+                            <Plus className="mr-1 h-4 w-4" />
+                            {t("admin.tripDepartureAddRow")}
+                          </Button>
+                        </div>
+                        {departureWindowFields.map((row, index) => (
+                          <div
+                            key={row.id}
+                            className="space-y-3 rounded-xl border border-border bg-muted/20 p-3"
+                          >
+                            <div className="flex justify-end">
+                              {departureWindowFields.length > 1 ? (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-destructive hover:text-destructive"
+                                  onClick={() => removeDepartureWindow(index)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  <span className="sr-only">{t("admin.tripDepartureRemoveRow")}</span>
+                                </Button>
+                              ) : null}
+                            </div>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <div className="space-y-2 sm:col-span-2">
+                                <Label htmlFor={`dep-month-el-${index}`}>{t("admin.tripDepartureMonth")}</Label>
+                                <Controller
+                                  name={`departure_windows.${index}.month`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <select
+                                      id={`dep-month-el-${index}`}
+                                      className={cn(
+                                        tripInputClass,
+                                        "flex h-11 w-full rounded-md border border-input bg-background px-3 py-2",
+                                      )}
+                                      value={field.value}
+                                      onChange={(e) => {
+                                        const month = Number(e.target.value);
+                                        field.onChange(month);
+                                        const currentDays =
+                                          getValues(`departure_windows.${index}.days`) ?? [];
+                                        const filtered = currentDays.filter((d) =>
+                                          isValidDayForMonth(month, d),
+                                        );
+                                        setValue(`departure_windows.${index}.days`, filtered);
+                                      }}
+                                    >
+                                      {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                                        <option key={m} value={m}>
+                                          {new Intl.DateTimeFormat(lang === "gr" ? "el-GR" : "en-GB", {
+                                            month: "long",
+                                          }).format(new Date(2000, m - 1, 1))}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  )}
+                                />
+                              </div>
+                              <DepartureDayPickerRow control={control} index={index} t={t} />
+                              {(errors.departure_windows as unknown as Record<number, { days?: { message?: string } }>)?.[
+                                index
+                              ]?.days ? (
+                                <p className="text-xs text-destructive sm:col-span-2">
+                                  {
+                                    (errors.departure_windows as unknown as Record<number, { days?: { message?: string } }>)?.[
+                                      index
+                                    ]?.days?.message
+                                  }
+                                </p>
+                              ) : null}
+                              <div className="space-y-2 sm:col-span-2">
+                                <Label htmlFor={`dep-label-el-${index}`}>{t("admin.tripDepartureLabelEl")}</Label>
+                                <Controller
+                                  name={`departure_windows.${index}.label_el`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <Input
+                                      id={`dep-label-el-${index}`}
+                                      className={tripInputClass}
+                                      {...field}
+                                      autoComplete="off"
+                                      placeholder={t("admin.tripDepartureLabelOptional")}
+                                    />
+                                  )}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        {errors.departure_windows &&
+                        typeof (errors.departure_windows as { message?: string }).message === "string" ? (
+                          <p className="text-xs text-destructive">
+                            {(errors.departure_windows as { message: string }).message}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <div
+                        className={cn(fieldClass("pricing_segments"), "space-y-3 sm:col-span-2")}
+                        id="trip-field-pricing_segments_el"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <Label>{t("admin.tripPricingSegmentsTitle")}</Label>
+                            <p className="mt-1 text-xs text-slate-600 dark:text-zinc-400">
+                              {t("admin.tripPricingSegmentsHint")}
+                            </p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="shrink-0"
+                            onClick={() =>
+                              appendPricingSegment({
+                                month: 1,
+                                days: [],
+                                hotel_en: "",
+                                hotel_el: "",
+                                duration_days: null,
+                                price_double: null,
+                                price_single: null,
+                                price_triple: null,
+                                price_child: null,
+                              })
+                            }
+                          >
+                            <Plus className="mr-1 h-4 w-4" />
+                            {t("admin.tripPricingSegmentAdd")}
+                          </Button>
+                        </div>
+                        {pricingSegmentFields.length === 0 ? (
+                          <p className="text-sm text-slate-600 dark:text-zinc-400">
+                            {t("admin.tripPricingSegmentsEmpty")}
+                          </p>
+                        ) : null}
+                        {pricingSegmentFields.map((row, index) => (
+                          <div
+                            key={row.id}
+                            className="space-y-3 rounded-xl border border-border bg-muted/20 p-3"
+                          >
+                            <div className="flex justify-end">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => removePricingSegment(index)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">{t("admin.tripPricingSegmentRemove")}</span>
+                              </Button>
+                            </div>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <div className="space-y-2 sm:col-span-2">
+                                <Label htmlFor={`ps-month-el-${index}`}>{t("admin.tripDepartureMonth")}</Label>
+                                <Controller
+                                  name={`pricing_segments.${index}.month`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <select
+                                      id={`ps-month-el-${index}`}
+                                      className={cn(
+                                        tripInputClass,
+                                        "flex h-11 w-full rounded-md border border-input bg-background px-3 py-2",
+                                      )}
+                                      value={field.value}
+                                      onChange={(e) => {
+                                        const month = Number(e.target.value);
+                                        field.onChange(month);
+                                        const currentDays =
+                                          getValues(`pricing_segments.${index}.days`) ?? [];
+                                        const filtered = currentDays.filter((d) =>
+                                          isValidDayForMonth(month, d),
+                                        );
+                                        setValue(`pricing_segments.${index}.days`, filtered);
+                                      }}
+                                    >
+                                      {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                                        <option key={m} value={m}>
+                                          {new Intl.DateTimeFormat(lang === "gr" ? "el-GR" : "en-GB", {
+                                            month: "long",
+                                          }).format(new Date(2000, m - 1, 1))}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  )}
+                                />
+                              </div>
+                              <PricingSegmentDayPickerRow control={control} index={index} t={t} />
+                              {(errors.pricing_segments as unknown as Record<number, { days?: { message?: string } }>)?.[
+                                index
+                              ]?.days ? (
+                                <p className="text-xs text-destructive sm:col-span-2">
+                                  {
+                                    (errors.pricing_segments as unknown as Record<
+                                      number,
+                                      { days?: { message?: string } }
+                                    >)?.[index]?.days?.message
+                                  }
+                                </p>
+                              ) : null}
+                              <div className="space-y-2 sm:col-span-2">
+                                <Label htmlFor={`ps-hotel-el-${index}`}>{t("admin.tripPricingHotelEl")}</Label>
+                                <Controller
+                                  name={`pricing_segments.${index}.hotel_el`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <Input
+                                      id={`ps-hotel-el-${index}`}
+                                      className={tripInputClass}
+                                      {...field}
+                                      autoComplete="off"
+                                    />
+                                  )}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`ps-dur-${index}`}>{t("admin.tripDurationDays")}</Label>
+                                <Controller
+                                  name={`pricing_segments.${index}.duration_days`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <Input
+                                      id={`ps-dur-el-${index}`}
+                                      type="number"
+                                      inputMode="numeric"
+                                      step={1}
+                                      min={0}
+                                      className={tripInputClass}
+                                      value={field.value ?? ""}
+                                      onChange={(e) => {
+                                        const v = e.target.value;
+                                        if (v === "") {
+                                          field.onChange(null);
+                                          return;
+                                        }
+                                        const n = Math.trunc(Number(v));
+                                        field.onChange(Number.isFinite(n) ? n : null);
+                                      }}
+                                    />
+                                  )}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`ps-pd-${index}`}>{t("admin.tripPricingDouble")}</Label>
+                                <Controller
+                                  name={`pricing_segments.${index}.price_double`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <Input
+                                      id={`ps-pd-el-${index}`}
+                                      type="number"
+                                      inputMode="decimal"
+                                      step="any"
+                                      min={0}
+                                      className={tripInputClass}
+                                      value={field.value ?? ""}
+                                      onChange={(e) => {
+                                        const v = e.target.value;
+                                        if (v === "") {
+                                          field.onChange(null);
+                                          return;
+                                        }
+                                        const n = Number(v);
+                                        field.onChange(Number.isFinite(n) ? n : null);
+                                      }}
+                                    />
+                                  )}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`ps-ps-${index}`}>{t("admin.tripPricingSingle")}</Label>
+                                <Controller
+                                  name={`pricing_segments.${index}.price_single`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <Input
+                                      id={`ps-ps-el-${index}`}
+                                      type="number"
+                                      inputMode="decimal"
+                                      step="any"
+                                      min={0}
+                                      className={tripInputClass}
+                                      value={field.value ?? ""}
+                                      onChange={(e) => {
+                                        const v = e.target.value;
+                                        if (v === "") {
+                                          field.onChange(null);
+                                          return;
+                                        }
+                                        const n = Number(v);
+                                        field.onChange(Number.isFinite(n) ? n : null);
+                                      }}
+                                    />
+                                  )}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`ps-pt-${index}`}>{t("admin.tripPricingTriple")}</Label>
+                                <Controller
+                                  name={`pricing_segments.${index}.price_triple`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <Input
+                                      id={`ps-pt-el-${index}`}
+                                      type="number"
+                                      inputMode="decimal"
+                                      step="any"
+                                      min={0}
+                                      className={tripInputClass}
+                                      value={field.value ?? ""}
+                                      onChange={(e) => {
+                                        const v = e.target.value;
+                                        if (v === "") {
+                                          field.onChange(null);
+                                          return;
+                                        }
+                                        const n = Number(v);
+                                        field.onChange(Number.isFinite(n) ? n : null);
+                                      }}
+                                    />
+                                  )}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`ps-pc-${index}`}>{t("admin.tripPricingChild")}</Label>
+                                <Controller
+                                  name={`pricing_segments.${index}.price_child`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <Input
+                                      id={`ps-pc-el-${index}`}
+                                      type="number"
+                                      inputMode="decimal"
+                                      step="any"
+                                      min={0}
+                                      className={tripInputClass}
+                                      value={field.value ?? ""}
+                                      onChange={(e) => {
+                                        const v = e.target.value;
+                                        if (v === "") {
+                                          field.onChange(null);
+                                          return;
+                                        }
+                                        const n = Number(v);
+                                        field.onChange(Number.isFinite(n) ? n : null);
+                                      }}
+                                    />
+                                  )}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div
+                        className={cn(fieldClass("flight_details"), "space-y-3 sm:col-span-2")}
+                        id="trip-field-flight_details_el"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-white/10 dark:bg-zinc-950/50">
+                          <div>
+                            <p className="text-sm font-medium text-slate-900 dark:text-zinc-100">
+                              {t("admin.tripFlightDetailsSection")}
+                            </p>
+                            <p className="mt-1 text-xs text-slate-600 dark:text-zinc-400">
+                              {t("admin.tripFlightDetailsHint")}
+                            </p>
+                          </div>
+                          <Controller
+                            name="flight_details_enabled"
+                            control={control}
+                            render={({ field }) => (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-medium text-slate-600 dark:text-zinc-300">
+                                  {field.value
+                                    ? t("admin.tripFlightDetailsOn")
+                                    : t("admin.tripFlightDetailsOff")}
+                                </span>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={(on) => {
+                                    field.onChange(on);
+                                    if (on && (getValues("flight_details") ?? []).length === 0) {
+                                      appendFlightLeg({ ...EMPTY_FLIGHT_LEG });
+                                    }
+                                  }}
+                                  aria-label={t("admin.tripFlightDetailsEnable")}
+                                />
+                              </div>
+                            )}
+                          />
+                        </div>
+                        {errors.flight_details &&
+                        typeof (errors.flight_details as { message?: string }).message === "string" ? (
+                          <p className="mt-2 text-xs text-destructive" role="alert">
+                            {(errors.flight_details as { message: string }).message}
+                          </p>
+                        ) : null}
+                        {flightDetailsEnabled ? (
+                          <>
+                            <div className="flex justify-end">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="w-full sm:w-auto"
+                                onClick={() => appendFlightLeg({ ...EMPTY_FLIGHT_LEG })}
+                              >
+                                <Plus className="mr-1 h-4 w-4" />
+                                {t("admin.tripFlightLegAdd")}
+                              </Button>
+                            </div>
+                            {flightDetailFields.length === 0 ? (
+                              <p className="text-sm text-slate-600 dark:text-zinc-400">
+                                {t("admin.tripFlightLegsEmpty")}
+                              </p>
+                            ) : null}
+                            {flightDetailFields.map((row, index) => (
+                              <div
+                                key={row.id}
+                                className="space-y-3 rounded-xl border border-border bg-muted/20 p-3"
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="text-sm font-medium text-foreground">
+                                    {t("admin.tripFlightLegLabel").replace("{n}", String(index + 1))}
+                                  </p>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="shrink-0 text-destructive hover:text-destructive"
+                                    onClick={() => removeFlightLeg(index)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                    <span className="sr-only">{t("admin.tripFlightLegRemove")}</span>
+                                  </Button>
+                                </div>
+                                <p className="text-xs text-muted-foreground">{t("admin.tripFlightLangEl")}</p>
+                                <div className="grid gap-3 md:grid-cols-2">
+                                  <div className="space-y-2">
+                                    <Label htmlFor={`fd-dep-el-${index}`}>
+                                      {t("detail.flightDepartureLabel")}
+                                    </Label>
+                                    <Controller
+                                      name={`flight_details.${index}.departure_el`}
+                                      control={control}
+                                      render={({ field }) => (
+                                        <textarea
+                                          id={`fd-dep-el-${index}`}
+                                          className={flightTextareaClass}
+                                          rows={3}
+                                          autoComplete="off"
+                                          value={field.value}
+                                          onChange={field.onChange}
+                                        />
+                                      )}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor={`fd-ret-el-${index}`}>
+                                      {t("detail.flightReturnLabel")}
+                                    </Label>
+                                    <Controller
+                                      name={`flight_details.${index}.return_el`}
+                                      control={control}
+                                      render={({ field }) => (
+                                        <textarea
+                                          id={`fd-ret-el-${index}`}
+                                          className={flightTextareaClass}
+                                          rows={3}
+                                          autoComplete="off"
+                                          value={field.value}
+                                          onChange={field.onChange}
+                                        />
+                                      )}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </>
+                        ) : null}
+                      </div>
+
                       <div className={fieldClass("description_el")} id="trip-field-description_el">
                         <Label>{t("admin.descriptionEl")}</Label>
                         <Controller
@@ -1837,6 +1929,534 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                           )}
                         />
                       </div>
+
+                      <div
+                        className={cn(fieldClass("transport_mode_slugs"), "space-y-2 sm:col-span-2")}
+                        id="trip-field-transport_mode_slugs_en"
+                      >
+                        <Label htmlFor="trip-transport-en">{t("admin.tripTransportEn")}</Label>
+                        <TransportMultiSelect
+                          {...transportModeFieldRest}
+                          id="trip-transport-en"
+                          lang="en"
+                          placeholder={t("admin.transportPlaceholder")}
+                          menuLabel={t("admin.transportMenu")}
+                          aria-invalid={transportModeInvalid}
+                        />
+                        {errors.transport_mode_slugs ? (
+                          <p className="mt-1 text-xs text-destructive">
+                            {(errors.transport_mode_slugs as { message?: string }).message}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <div
+                        className={cn(fieldClass("departure_windows"), "space-y-3 sm:col-span-2")}
+                        id="trip-field-departure_windows_en"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <Label>{t("admin.tripDepartureDates")}</Label>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="shrink-0"
+                            onClick={() =>
+                              appendDepartureWindow({
+                                month: 1,
+                                days: [],
+                                label_en: "",
+                                label_el: "",
+                              })
+                            }
+                          >
+                            <Plus className="mr-1 h-4 w-4" />
+                            {t("admin.tripDepartureAddRow")}
+                          </Button>
+                        </div>
+                        {departureWindowFields.map((row, index) => (
+                          <div
+                            key={row.id}
+                            className="space-y-3 rounded-xl border border-border bg-muted/20 p-3"
+                          >
+                            <div className="flex justify-end">
+                              {departureWindowFields.length > 1 ? (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-destructive hover:text-destructive"
+                                  onClick={() => removeDepartureWindow(index)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  <span className="sr-only">{t("admin.tripDepartureRemoveRow")}</span>
+                                </Button>
+                              ) : null}
+                            </div>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <div className="space-y-2 sm:col-span-2">
+                                <Label htmlFor={`dep-month-en-${index}`}>{t("admin.tripDepartureMonth")}</Label>
+                                <Controller
+                                  name={`departure_windows.${index}.month`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <select
+                                      id={`dep-month-en-${index}`}
+                                      className={cn(
+                                        tripInputClass,
+                                        "flex h-11 w-full rounded-md border border-input bg-background px-3 py-2",
+                                      )}
+                                      value={field.value}
+                                      onChange={(e) => {
+                                        const month = Number(e.target.value);
+                                        field.onChange(month);
+                                        const currentDays =
+                                          getValues(`departure_windows.${index}.days`) ?? [];
+                                        const filtered = currentDays.filter((d) =>
+                                          isValidDayForMonth(month, d),
+                                        );
+                                        setValue(`departure_windows.${index}.days`, filtered);
+                                      }}
+                                    >
+                                      {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                                        <option key={m} value={m}>
+                                          {new Intl.DateTimeFormat(lang === "gr" ? "el-GR" : "en-GB", {
+                                            month: "long",
+                                          }).format(new Date(2000, m - 1, 1))}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  )}
+                                />
+                              </div>
+                              <DepartureDayPickerRow control={control} index={index} t={t} />
+                              {(errors.departure_windows as unknown as Record<number, { days?: { message?: string } }>)?.[
+                                index
+                              ]?.days ? (
+                                <p className="text-xs text-destructive sm:col-span-2">
+                                  {
+                                    (errors.departure_windows as unknown as Record<number, { days?: { message?: string } }>)?.[
+                                      index
+                                    ]?.days?.message
+                                  }
+                                </p>
+                              ) : null}
+                              <div className="space-y-2 sm:col-span-2">
+                                <Label htmlFor={`dep-label-en-${index}`}>{t("admin.tripDepartureLabelEn")}</Label>
+                                <Controller
+                                  name={`departure_windows.${index}.label_en`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <Input
+                                      id={`dep-label-en-${index}`}
+                                      className={tripInputClass}
+                                      {...field}
+                                      autoComplete="off"
+                                      placeholder={t("admin.tripDepartureLabelOptional")}
+                                    />
+                                  )}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        {errors.departure_windows &&
+                        typeof (errors.departure_windows as { message?: string }).message === "string" ? (
+                          <p className="text-xs text-destructive">
+                            {(errors.departure_windows as { message: string }).message}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <div
+                        className={cn(fieldClass("pricing_segments"), "space-y-3 sm:col-span-2")}
+                        id="trip-field-pricing_segments_en"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <Label>{t("admin.tripPricingSegmentsTitle")}</Label>
+                            <p className="mt-1 text-xs text-slate-600 dark:text-zinc-400">
+                              {t("admin.tripPricingSegmentsHint")}
+                            </p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="shrink-0"
+                            onClick={() =>
+                              appendPricingSegment({
+                                month: 1,
+                                days: [],
+                                hotel_en: "",
+                                hotel_el: "",
+                                duration_days: null,
+                                price_double: null,
+                                price_single: null,
+                                price_triple: null,
+                                price_child: null,
+                              })
+                            }
+                          >
+                            <Plus className="mr-1 h-4 w-4" />
+                            {t("admin.tripPricingSegmentAdd")}
+                          </Button>
+                        </div>
+                        {pricingSegmentFields.length === 0 ? (
+                          <p className="text-sm text-slate-600 dark:text-zinc-400">
+                            {t("admin.tripPricingSegmentsEmpty")}
+                          </p>
+                        ) : null}
+                        {pricingSegmentFields.map((row, index) => (
+                          <div
+                            key={row.id}
+                            className="space-y-3 rounded-xl border border-border bg-muted/20 p-3"
+                          >
+                            <div className="flex justify-end">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => removePricingSegment(index)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">{t("admin.tripPricingSegmentRemove")}</span>
+                              </Button>
+                            </div>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <div className="space-y-2 sm:col-span-2">
+                                <Label htmlFor={`ps-month-en-${index}`}>{t("admin.tripDepartureMonth")}</Label>
+                                <Controller
+                                  name={`pricing_segments.${index}.month`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <select
+                                      id={`ps-month-en-${index}`}
+                                      className={cn(
+                                        tripInputClass,
+                                        "flex h-11 w-full rounded-md border border-input bg-background px-3 py-2",
+                                      )}
+                                      value={field.value}
+                                      onChange={(e) => {
+                                        const month = Number(e.target.value);
+                                        field.onChange(month);
+                                        const currentDays =
+                                          getValues(`pricing_segments.${index}.days`) ?? [];
+                                        const filtered = currentDays.filter((d) =>
+                                          isValidDayForMonth(month, d),
+                                        );
+                                        setValue(`pricing_segments.${index}.days`, filtered);
+                                      }}
+                                    >
+                                      {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                                        <option key={m} value={m}>
+                                          {new Intl.DateTimeFormat(lang === "gr" ? "el-GR" : "en-GB", {
+                                            month: "long",
+                                          }).format(new Date(2000, m - 1, 1))}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  )}
+                                />
+                              </div>
+                              <PricingSegmentDayPickerRow control={control} index={index} t={t} />
+                              {(errors.pricing_segments as unknown as Record<number, { days?: { message?: string } }>)?.[
+                                index
+                              ]?.days ? (
+                                <p className="text-xs text-destructive sm:col-span-2">
+                                  {
+                                    (errors.pricing_segments as unknown as Record<
+                                      number,
+                                      { days?: { message?: string } }
+                                    >)?.[index]?.days?.message
+                                  }
+                                </p>
+                              ) : null}
+                              <div className="space-y-2 sm:col-span-2">
+                                <Label htmlFor={`ps-hotel-en-tab-${index}`}>{t("admin.tripPricingHotelEn")}</Label>
+                                <Controller
+                                  name={`pricing_segments.${index}.hotel_en`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <Input
+                                      id={`ps-hotel-en-tab-${index}`}
+                                      className={tripInputClass}
+                                      {...field}
+                                      autoComplete="off"
+                                    />
+                                  )}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`ps-dur-${index}`}>{t("admin.tripDurationDays")}</Label>
+                                <Controller
+                                  name={`pricing_segments.${index}.duration_days`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <Input
+                                      id={`ps-dur-en-${index}`}
+                                      type="number"
+                                      inputMode="numeric"
+                                      step={1}
+                                      min={0}
+                                      className={tripInputClass}
+                                      value={field.value ?? ""}
+                                      onChange={(e) => {
+                                        const v = e.target.value;
+                                        if (v === "") {
+                                          field.onChange(null);
+                                          return;
+                                        }
+                                        const n = Math.trunc(Number(v));
+                                        field.onChange(Number.isFinite(n) ? n : null);
+                                      }}
+                                    />
+                                  )}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`ps-pd-${index}`}>{t("admin.tripPricingDouble")}</Label>
+                                <Controller
+                                  name={`pricing_segments.${index}.price_double`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <Input
+                                      id={`ps-pd-en-${index}`}
+                                      type="number"
+                                      inputMode="decimal"
+                                      step="any"
+                                      min={0}
+                                      className={tripInputClass}
+                                      value={field.value ?? ""}
+                                      onChange={(e) => {
+                                        const v = e.target.value;
+                                        if (v === "") {
+                                          field.onChange(null);
+                                          return;
+                                        }
+                                        const n = Number(v);
+                                        field.onChange(Number.isFinite(n) ? n : null);
+                                      }}
+                                    />
+                                  )}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`ps-ps-${index}`}>{t("admin.tripPricingSingle")}</Label>
+                                <Controller
+                                  name={`pricing_segments.${index}.price_single`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <Input
+                                      id={`ps-ps-en-${index}`}
+                                      type="number"
+                                      inputMode="decimal"
+                                      step="any"
+                                      min={0}
+                                      className={tripInputClass}
+                                      value={field.value ?? ""}
+                                      onChange={(e) => {
+                                        const v = e.target.value;
+                                        if (v === "") {
+                                          field.onChange(null);
+                                          return;
+                                        }
+                                        const n = Number(v);
+                                        field.onChange(Number.isFinite(n) ? n : null);
+                                      }}
+                                    />
+                                  )}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`ps-pt-${index}`}>{t("admin.tripPricingTriple")}</Label>
+                                <Controller
+                                  name={`pricing_segments.${index}.price_triple`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <Input
+                                      id={`ps-pt-en-${index}`}
+                                      type="number"
+                                      inputMode="decimal"
+                                      step="any"
+                                      min={0}
+                                      className={tripInputClass}
+                                      value={field.value ?? ""}
+                                      onChange={(e) => {
+                                        const v = e.target.value;
+                                        if (v === "") {
+                                          field.onChange(null);
+                                          return;
+                                        }
+                                        const n = Number(v);
+                                        field.onChange(Number.isFinite(n) ? n : null);
+                                      }}
+                                    />
+                                  )}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`ps-pc-${index}`}>{t("admin.tripPricingChild")}</Label>
+                                <Controller
+                                  name={`pricing_segments.${index}.price_child`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <Input
+                                      id={`ps-pc-en-${index}`}
+                                      type="number"
+                                      inputMode="decimal"
+                                      step="any"
+                                      min={0}
+                                      className={tripInputClass}
+                                      value={field.value ?? ""}
+                                      onChange={(e) => {
+                                        const v = e.target.value;
+                                        if (v === "") {
+                                          field.onChange(null);
+                                          return;
+                                        }
+                                        const n = Number(v);
+                                        field.onChange(Number.isFinite(n) ? n : null);
+                                      }}
+                                    />
+                                  )}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div
+                        className={cn(fieldClass("flight_details"), "space-y-3 sm:col-span-2")}
+                        id="trip-field-flight_details_en"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-white/10 dark:bg-zinc-950/50">
+                          <div>
+                            <p className="text-sm font-medium text-slate-900 dark:text-zinc-100">
+                              {t("admin.tripFlightDetailsSection")}
+                            </p>
+                            <p className="mt-1 text-xs text-slate-600 dark:text-zinc-400">
+                              {t("admin.tripFlightDetailsHint")}
+                            </p>
+                          </div>
+                          <Controller
+                            name="flight_details_enabled"
+                            control={control}
+                            render={({ field }) => (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-medium text-slate-600 dark:text-zinc-300">
+                                  {field.value
+                                    ? t("admin.tripFlightDetailsOn")
+                                    : t("admin.tripFlightDetailsOff")}
+                                </span>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={(on) => {
+                                    field.onChange(on);
+                                    if (on && (getValues("flight_details") ?? []).length === 0) {
+                                      appendFlightLeg({ ...EMPTY_FLIGHT_LEG });
+                                    }
+                                  }}
+                                  aria-label={t("admin.tripFlightDetailsEnable")}
+                                />
+                              </div>
+                            )}
+                          />
+                        </div>
+                        {errors.flight_details &&
+                        typeof (errors.flight_details as { message?: string }).message === "string" ? (
+                          <p className="mt-2 text-xs text-destructive" role="alert">
+                            {(errors.flight_details as { message: string }).message}
+                          </p>
+                        ) : null}
+                        {flightDetailsEnabled ? (
+                          <>
+                            <div className="flex justify-end">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="w-full sm:w-auto"
+                                onClick={() => appendFlightLeg({ ...EMPTY_FLIGHT_LEG })}
+                              >
+                                <Plus className="mr-1 h-4 w-4" />
+                                {t("admin.tripFlightLegAdd")}
+                              </Button>
+                            </div>
+                            {flightDetailFields.length === 0 ? (
+                              <p className="text-sm text-slate-600 dark:text-zinc-400">
+                                {t("admin.tripFlightLegsEmpty")}
+                              </p>
+                            ) : null}
+                            {flightDetailFields.map((row, index) => (
+                              <div
+                                key={row.id}
+                                className="space-y-3 rounded-xl border border-border bg-muted/20 p-3"
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="text-sm font-medium text-foreground">
+                                    {t("admin.tripFlightLegLabel").replace("{n}", String(index + 1))}
+                                  </p>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="shrink-0 text-destructive hover:text-destructive"
+                                    onClick={() => removeFlightLeg(index)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                    <span className="sr-only">{t("admin.tripFlightLegRemove")}</span>
+                                  </Button>
+                                </div>
+                                <p className="text-xs text-muted-foreground">{t("admin.tripFlightLangEn")}</p>
+                                <div className="grid gap-3 md:grid-cols-2">
+                                  <div className="space-y-2">
+                                    <Label htmlFor={`fd-dep-en-tab-${index}`}>
+                                      {t("detail.flightDepartureLabel")}
+                                    </Label>
+                                    <Controller
+                                      name={`flight_details.${index}.departure_en`}
+                                      control={control}
+                                      render={({ field }) => (
+                                        <textarea
+                                          id={`fd-dep-en-tab-${index}`}
+                                          className={flightTextareaClass}
+                                          rows={3}
+                                          autoComplete="off"
+                                          value={field.value}
+                                          onChange={field.onChange}
+                                        />
+                                      )}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor={`fd-ret-en-tab-${index}`}>
+                                      {t("detail.flightReturnLabel")}
+                                    </Label>
+                                    <Controller
+                                      name={`flight_details.${index}.return_en`}
+                                      control={control}
+                                      render={({ field }) => (
+                                        <textarea
+                                          id={`fd-ret-en-tab-${index}`}
+                                          className={flightTextareaClass}
+                                          rows={3}
+                                          autoComplete="off"
+                                          value={field.value}
+                                          onChange={field.onChange}
+                                        />
+                                      )}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </>
+                        ) : null}
+                      </div>
+
                       {hasEnglishOn ? (
                         <div className="space-y-5">
                           <div className="grid gap-4 sm:grid-cols-2">
@@ -1863,28 +2483,6 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                               sectionId="trip-field-country"
                               label={t("admin.tripCountryEn")}
                             />
-                            <div
-                              className={cn(
-                                fieldClass("transport_mode_slugs"),
-                                "space-y-2 sm:col-span-2",
-                              )}
-                              id="trip-field-transport_mode_slugs_en"
-                            >
-                              <Label htmlFor="trip-transport-en">{t("admin.tripTransportEn")}</Label>
-                              <TransportMultiSelect
-                                {...transportModeFieldRest}
-                                id="trip-transport-en"
-                                lang="en"
-                                placeholder={t("admin.transportPlaceholder")}
-                                menuLabel={t("admin.transportMenu")}
-                                aria-invalid={transportModeInvalid}
-                              />
-                              {errors.transport_mode_slugs ? (
-                                <p className="mt-1 text-xs text-destructive">
-                                  {(errors.transport_mode_slugs as { message?: string }).message}
-                                </p>
-                              ) : null}
-                            </div>
                             <EnglishTextField
                               name="departure_city"
                               sectionId="trip-field-departure_city"
