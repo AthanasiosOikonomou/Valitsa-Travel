@@ -910,37 +910,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                     />
                   </div>
                   <div className="space-y-2 sm:col-span-2">
-                    <div className="flex flex-wrap items-end justify-between gap-2">
-                      <Label htmlFor="trip-price">{t("admin.tripPriceNum")}</Label>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="shrink-0"
-                        onClick={() => {
-                          const segs = pricingSegmentsFormToPayload(getValues("pricing_segments"));
-                          const doubles = segs
-                            .map((s) => s.price_double)
-                            .filter((n): n is number => n != null && Number.isFinite(n));
-                          const durs = segs
-                            .map((s) => s.duration_days)
-                            .filter((n): n is number => n != null && Number.isFinite(n));
-                          if (doubles.length > 0) {
-                            setValue("price_num", Math.min(...doubles));
-                          }
-                          if (durs.length > 0) {
-                            setValue("duration_days", Math.min(...durs));
-                          }
-                          if (doubles.length === 0 && durs.length === 0) {
-                            toast.message(t("admin.tripSyncPriceFromSegmentsNone"));
-                          } else {
-                            toast.success(t("admin.tripSyncPriceFromSegmentsDone"));
-                          }
-                        }}
-                      >
-                        {t("admin.tripSyncPriceFromSegments")}
-                      </Button>
-                    </div>
+                    <Label htmlFor="trip-price">{t("admin.tripPriceNum")}</Label>
                     <Controller
                       name="price_num"
                       control={control}

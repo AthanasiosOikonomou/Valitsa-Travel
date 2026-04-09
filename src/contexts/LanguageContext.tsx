@@ -372,9 +372,6 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.transportPlaceholder": "Select transport modes",
     "admin.tripPriceNum": "Price",
     "admin.tripDurationDays": "Duration (days)",
-    "admin.tripSyncPriceFromSegments": "Sync list price from segments",
-    "admin.tripSyncPriceFromSegmentsDone": "List price and duration updated from segments.",
-    "admin.tripSyncPriceFromSegmentsNone": "Add segment prices or durations to sync.",
     "admin.tripPricingSegmentsTitle": "Per-departure pricing (hotel and rooms)",
     "admin.tripPricingSegmentsHint":
       "Each row is a separate offer. Overlapping days across rows are allowed for display but avoid if they conflict.",
@@ -869,9 +866,6 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.transportPlaceholder": "Επιλέξτε μέσα μεταφοράς",
     "admin.tripPriceNum": "Τιμή",
     "admin.tripDurationDays": "Διάρκεια (ημέρες)",
-    "admin.tripSyncPriceFromSegments": "Συγχρονισμός τιμής λίστας από τμήματα",
-    "admin.tripSyncPriceFromSegmentsDone": "Η τιμή και η διάρκεια λίστας ενημερώθηκαν από τα τμήματα.",
-    "admin.tripSyncPriceFromSegmentsNone": "Προσθέστε τιμές ή διάρκειες σε τμήματα για συγχρονισμό.",
     "admin.tripPricingSegmentsTitle": "Τιμές ανά αναχώρηση (ξενοδοχείο και δωμάτια)",
     "admin.tripPricingSegmentsHint":
       "Κάθε γραμμή είναι ξεχωριστή προσφορά. Επικαλυπτόμενες ημέρες επιτρέπονται για εμφάνιση, αλλά αποφύγετε αν συγκρούονται.",
