@@ -47,6 +47,14 @@ export type TripPricingSegment = {
   price_child?: number | null;
 };
 
+/** Stored in `trips.flight_details` jsonb — bilingual departure/return free text per row. */
+export type TripFlightLeg = {
+  departure_el: string;
+  departure_en: string;
+  return_el: string;
+  return_en: string;
+};
+
 export type Trip = {
   id: string;
   title: string;
@@ -91,6 +99,10 @@ export type Trip = {
   seasonal_name?: string | null;
   /** Independent per-departure offers (hotel, duration, room prices); not merged like `departure_windows`. */
   pricing_segments?: TripPricingSegment[] | null;
+  /** When true, show `flight_details` on the public trip detail page. */
+  flight_details_enabled?: boolean | null;
+  /** Repeatable flight legs (αναχώρηση / επιστροφή) per trip. */
+  flight_details?: TripFlightLeg[] | null;
 };
 
 /** Flat payload for admin PUT `/api/admin/trips/:id` (matches `adminTripPutSchema`). */
@@ -129,4 +141,6 @@ export type TripUpdate = Partial<{
   is_seasonal: boolean | null;
   seasonal_name: string | null;
   pricing_segments: TripPricingSegment[] | null;
+  flight_details_enabled: boolean | null;
+  flight_details: TripFlightLeg[] | null;
 }>;

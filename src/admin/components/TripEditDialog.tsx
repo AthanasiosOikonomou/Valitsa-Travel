@@ -46,6 +46,7 @@ import {
   pricingSegmentsDbToForm,
   pricingSegmentsFormToPayload,
 } from "@/lib/tripPricing";
+import { normalizeFlightDetails } from "@/lib/tripFlightDetails";
 
 function asHtml(v: unknown): string {
   return typeof v === "string" ? v : "";
@@ -121,6 +122,12 @@ function buildTripFormSchema(t: (key: string) => string) {
         }
       }
     });
+  const flightLegRowSchema = z.object({
+    departure_el: z.string(),
+    departure_en: z.string(),
+    return_el: z.string(),
+    return_en: z.string(),
+  });
   return z
     .object({
       title_el: z.string().trim().min(1, fieldReq),
@@ -153,6 +160,8 @@ function buildTripFormSchema(t: (key: string) => string) {
           }
         }),
       pricing_segments: z.array(pricingSegmentRowSchema),
+      flight_details_enabled: z.boolean(),
+      flight_details: z.array(flightLegRowSchema),
       departure_city_el: z.string().trim().min(1, fieldReq),
       description_el: z.string().refine((h) => !isHtmlEmpty(h), { message: richReq }),
       trip_notes_el: z.string(),
@@ -330,6 +339,7 @@ const GREEK_FIELD_ORDER = [
   "transport_mode_slugs",
   "departure_windows",
   "pricing_segments",
+  "flight_details",
   "departure_city_el",
   "description_el",
   "trip_notes_el",
@@ -352,6 +362,13 @@ const ENGLISH_FIELD_ORDER = [
 
 export const ADMIN_TRIP_CREATE_ID = "new";
 
+const EMPTY_FLIGHT_LEG = {
+  departure_el: "",
+  departure_en: "",
+  return_el: "",
+  return_en: "",
+} as const;
+
 /** Greek/English tabs: full cell + brand purple active (overrides shared TabsTrigger dark zinc). */
 const TRIP_LANG_TAB_TRIGGER_CLASS =
   "flex h-full min-h-0 w-full min-w-0 items-center justify-center px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground";
@@ -365,6 +382,7 @@ function buildTripPayload(values: TripFormValues) {
   const titleEl = values.title_el.trim();
   const depWin = departureWindowsFormToPayload(values.departure_windows);
   const pricingSeg = pricingSegmentsFormToPayload(values.pricing_segments);
+  const flightLegs = normalizeFlightDetails(values.flight_details);
   const base = {
     title_el: titleEl,
     location_el: values.location_el.trim(),
@@ -373,6 +391,8 @@ function buildTripPayload(values: TripFormValues) {
     transport_el: slugsToLabelArray(slugs, "gr"),
     departure_windows: depWin,
     pricing_segments: pricingSeg,
+    flight_details_enabled: values.flight_details_enabled,
+    flight_details: flightLegs,
     date_range: null,
     date_range_el: null,
     departure_city_el: values.departure_city_el.trim(),
@@ -459,6 +479,8 @@ const defaultForm = (): TripFormValues => ({
   transport_mode_slugs: [],
   departure_windows: [{ month: 1, days: [], label_en: "", label_el: "" }],
   pricing_segments: [],
+  flight_details_enabled: false,
+  flight_details: [],
   departure_city_el: "",
   description_el: "",
   trip_notes_el: "",
@@ -552,6 +574,15 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
   });
 
   const {
+    fields: flightDetailFields,
+    append: appendFlightLeg,
+    remove: removeFlightLeg,
+  } = useFieldArray({
+    control,
+    name: "flight_details",
+  });
+
+  const {
     field: transportModeField,
     fieldState: { invalid: transportModeInvalid },
   } = useController({ name: "transport_mode_slugs", control });
@@ -559,6 +590,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
 
   const hasEnglishOn = useWatch({ control, name: "hasEnglish" });
   const isSeasonalOn = useWatch({ control, name: "is_seasonal" });
+  const flightDetailsEnabled = useWatch({ control, name: "flight_details_enabled" });
 
   const activeSeasonalConfigs =
     seasonalConfigsQ.data?.configs.filter((c) => c.is_active) ?? [];
@@ -595,6 +627,14 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
       transport_mode_slugs: mergeTransportSlugsFromColumns(row.transport_el, row.transport),
       departure_windows: departureWindowsDbToForm(row),
       pricing_segments: pricingSegmentsDbToForm(row),
+      flight_details_enabled: Boolean(row.flight_details_enabled),
+      flight_details: (() => {
+        const legs = normalizeFlightDetails(row.flight_details);
+        if (Boolean(row.flight_details_enabled) && legs.length === 0) {
+          return [{ ...EMPTY_FLIGHT_LEG }];
+        }
+        return legs;
+      })(),
       departure_city_el: String(row.departure_city_el ?? ""),
       description_el: asHtml(row.description_el),
       trip_notes_el: asHtml(row.trip_notes_el),
@@ -665,6 +705,13 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
           ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
         return;
       }
+      if (errs.flight_details) {
+        setTab("el");
+        document
+          .getElementById("trip-field-flight_details")
+          ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        return;
+      }
       if (errs.departure_windows) {
         setTab("el");
         document
@@ -711,6 +758,9 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
     cn(errors[name] && "rounded-xl ring-2 ring-destructive/50 border-destructive/40");
 
   const tripInputClass = "mt-1.5 min-h-11 text-base md:text-sm";
+
+  const flightTextareaClass =
+    "flex w-full min-h-[88px] resize-y rounded-xl border border-input bg-background px-3 py-2 text-base md:text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50";
 
   type GreekTextKey = "location_el" | "country_el" | "departure_city_el";
 
@@ -1510,6 +1560,171 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                               </div>
                             </div>
                           ))}
+                        </div>
+                        <div
+                          className={cn(fieldClass("flight_details"), "space-y-3 sm:col-span-2")}
+                          id="trip-field-flight_details"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-white/10 dark:bg-zinc-950/50">
+                            <div>
+                              <p className="text-sm font-medium text-slate-900 dark:text-zinc-100">
+                                {t("admin.tripFlightDetailsSection")}
+                              </p>
+                              <p className="mt-1 text-xs text-slate-600 dark:text-zinc-400">
+                                {t("admin.tripFlightDetailsHint")}
+                              </p>
+                            </div>
+                            <Controller
+                              name="flight_details_enabled"
+                              control={control}
+                              render={({ field }) => (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-medium text-slate-600 dark:text-zinc-300">
+                                    {field.value
+                                      ? t("admin.tripFlightDetailsOn")
+                                      : t("admin.tripFlightDetailsOff")}
+                                  </span>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={(on) => {
+                                      field.onChange(on);
+                                      if (on && (getValues("flight_details") ?? []).length === 0) {
+                                        appendFlightLeg({ ...EMPTY_FLIGHT_LEG });
+                                      }
+                                    }}
+                                    aria-label={t("admin.tripFlightDetailsEnable")}
+                                  />
+                                </div>
+                              )}
+                            />
+                          </div>
+                          {flightDetailsEnabled ? (
+                            <>
+                              <div className="flex justify-end">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full sm:w-auto"
+                                  onClick={() => appendFlightLeg({ ...EMPTY_FLIGHT_LEG })}
+                                >
+                                  <Plus className="mr-1 h-4 w-4" />
+                                  {t("admin.tripFlightLegAdd")}
+                                </Button>
+                              </div>
+                              {flightDetailFields.length === 0 ? (
+                                <p className="text-sm text-slate-600 dark:text-zinc-400">
+                                  {t("admin.tripFlightLegsEmpty")}
+                                </p>
+                              ) : null}
+                              {flightDetailFields.map((row, index) => (
+                                <div
+                                  key={row.id}
+                                  className="space-y-3 rounded-xl border border-border bg-muted/20 p-3"
+                                >
+                                  <div className="flex items-center justify-between gap-2">
+                                    <p className="text-sm font-medium text-foreground">
+                                      {t("admin.tripFlightLegLabel").replace("{n}", String(index + 1))}
+                                    </p>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="shrink-0 text-destructive hover:text-destructive"
+                                      onClick={() => removeFlightLeg(index)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                      <span className="sr-only">{t("admin.tripFlightLegRemove")}</span>
+                                    </Button>
+                                  </div>
+                                  <div className="grid gap-3 md:grid-cols-2">
+                                    <p className="text-xs text-muted-foreground md:col-span-2">
+                                      {t("admin.tripFlightLangEl")}
+                                    </p>
+                                    <div className="space-y-2">
+                                      <Label htmlFor={`fd-dep-el-${index}`}>
+                                        {t("detail.flightDepartureLabel")}
+                                      </Label>
+                                      <Controller
+                                        name={`flight_details.${index}.departure_el`}
+                                        control={control}
+                                        render={({ field }) => (
+                                          <textarea
+                                            id={`fd-dep-el-${index}`}
+                                            className={flightTextareaClass}
+                                            rows={3}
+                                            autoComplete="off"
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                          />
+                                        )}
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label htmlFor={`fd-ret-el-${index}`}>
+                                        {t("detail.flightReturnLabel")}
+                                      </Label>
+                                      <Controller
+                                        name={`flight_details.${index}.return_el`}
+                                        control={control}
+                                        render={({ field }) => (
+                                          <textarea
+                                            id={`fd-ret-el-${index}`}
+                                            className={flightTextareaClass}
+                                            rows={3}
+                                            autoComplete="off"
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                          />
+                                        )}
+                                      />
+                                    </div>
+                                    <p className="pt-1 text-xs text-muted-foreground md:col-span-2">
+                                      {t("admin.tripFlightLangEn")}
+                                    </p>
+                                    <div className="space-y-2">
+                                      <Label htmlFor={`fd-dep-en-${index}`}>
+                                        {t("detail.flightDepartureLabel")}
+                                      </Label>
+                                      <Controller
+                                        name={`flight_details.${index}.departure_en`}
+                                        control={control}
+                                        render={({ field }) => (
+                                          <textarea
+                                            id={`fd-dep-en-${index}`}
+                                            className={flightTextareaClass}
+                                            rows={3}
+                                            autoComplete="off"
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                          />
+                                        )}
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label htmlFor={`fd-ret-en-${index}`}>
+                                        {t("detail.flightReturnLabel")}
+                                      </Label>
+                                      <Controller
+                                        name={`flight_details.${index}.return_en`}
+                                        control={control}
+                                        render={({ field }) => (
+                                          <textarea
+                                            id={`fd-ret-en-${index}`}
+                                            className={flightTextareaClass}
+                                            rows={3}
+                                            autoComplete="off"
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                          />
+                                        )}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </>
+                          ) : null}
                         </div>
                         <GreekTextField
                           name="departure_city_el"

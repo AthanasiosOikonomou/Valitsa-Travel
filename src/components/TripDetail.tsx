@@ -9,7 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import type { Trip, TripPricingSegment } from "@/types/Trip";
+import type { Trip, TripFlightLeg, TripPricingSegment } from "@/types/Trip";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { createInquiry } from "@/lib/inquiries";
 import { toast } from "sonner";
@@ -39,6 +39,11 @@ import {
   effectiveTripListPrice,
   normalizePricingSegments,
 } from "@/lib/tripPricing";
+import {
+  flightLegHasContent,
+  normalizeFlightDetails,
+  shouldShowFlightDetails,
+} from "@/lib/tripFlightDetails";
 import { buildResponsiveImageSet, cn } from "@/lib/utils";
 
 function segmentHeroPrice(s: TripPricingSegment): number | null {
@@ -124,6 +129,43 @@ function PricingSegmentCard({
               {formatTripPrice(s.price_child, lang)}
             </p>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FlightLegCard({
+  leg,
+  lang,
+  t,
+}: {
+  leg: TripFlightLeg;
+  lang: "en" | "gr";
+  t: (key: string) => string;
+}) {
+  const dep =
+    lang === "gr"
+      ? String(leg.departure_el || leg.departure_en || "").trim()
+      : String(leg.departure_en || leg.departure_el || "").trim();
+  const ret =
+    lang === "gr"
+      ? String(leg.return_el || leg.return_en || "").trim()
+      : String(leg.return_en || leg.return_el || "").trim();
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+      <div className="space-y-3 text-sm">
+        <div>
+          <p className="label-ui text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-foreground-muted">
+            {t("detail.flightDepartureLabel")}
+          </p>
+          <p className="mt-1 whitespace-pre-wrap leading-relaxed text-foreground">{dep || "—"}</p>
+        </div>
+        <div>
+          <p className="label-ui text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-foreground-muted">
+            {t("detail.flightReturnLabel")}
+          </p>
+          <p className="mt-1 whitespace-pre-wrap leading-relaxed text-foreground">{ret || "—"}</p>
         </div>
       </div>
     </div>
@@ -848,6 +890,20 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                                   </div>
                                 );
                               })()}
+                              {shouldShowFlightDetails(trip) ? (
+                                <div className="space-y-4 border-t border-slate-200/90 pt-8 dark:border-white/10">
+                                  <h3 className="label-ui text-xs font-semibold uppercase tracking-[0.2em] text-foreground-muted">
+                                    {t("detail.flightDetailsTitle")}
+                                  </h3>
+                                  <div className="space-y-3">
+                                    {normalizeFlightDetails(trip.flight_details)
+                                      .filter(flightLegHasContent)
+                                      .map((leg, idx) => (
+                                        <FlightLegCard key={idx} leg={leg} lang={lang} t={t} />
+                                      ))}
+                                  </div>
+                                </div>
+                              ) : null}
                             </div>
                           )}
                           {activeTab === "program" && (

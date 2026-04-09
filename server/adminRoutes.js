@@ -369,6 +369,41 @@ function normalizePricingSegmentsField(value) {
   return [];
 }
 
+function normalizeFlightDetailsArray(arr) {
+  if (!Array.isArray(arr)) return [];
+  const out = [];
+  for (const raw of arr) {
+    if (!raw || typeof raw !== "object") continue;
+    const strip = (v) => (v == null ? "" : String(v).trim());
+    out.push({
+      departure_el: strip(raw.departure_el),
+      departure_en: strip(raw.departure_en),
+      return_el: strip(raw.return_el),
+      return_en: strip(raw.return_en),
+    });
+  }
+  return out;
+}
+
+function normalizeFlightDetailsField(value) {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (typeof value === "string") {
+    const s = value.trim();
+    if (!s) return [];
+    try {
+      const parsed = JSON.parse(s);
+      return normalizeFlightDetailsArray(parsed);
+    } catch {
+      return [];
+    }
+  }
+  if (Array.isArray(value)) {
+    return normalizeFlightDetailsArray(value);
+  }
+  return [];
+}
+
 const LEGACY_TRIP_BODY_KEYS = ["type", "type_el", "category", "category_el"];
 
 function normalizeTripPutBody(body) {
@@ -408,6 +443,12 @@ function normalizeTripPutBody(body) {
   }
   if ("pricing_segments" in out) {
     out.pricing_segments = normalizePricingSegmentsField(out.pricing_segments);
+  }
+  if ("flight_details" in out) {
+    out.flight_details = normalizeFlightDetailsField(out.flight_details);
+  }
+  if ("flight_details_enabled" in out) {
+    out.flight_details_enabled = Boolean(out.flight_details_enabled);
   }
   if (out.is_seasonal === false) {
     out.seasonal_name = null;
@@ -479,6 +520,18 @@ const adminTripPutSchema = z
     status: z.enum(["active", "inactive"]).optional(),
     is_seasonal: z.boolean().optional(),
     seasonal_name: z.string().nullable().optional(),
+    flight_details_enabled: z.boolean().optional(),
+    flight_details: z
+      .array(
+        z.object({
+          departure_el: z.string(),
+          departure_en: z.string(),
+          return_el: z.string(),
+          return_en: z.string(),
+        }),
+      )
+      .nullable()
+      .optional(),
   })
   .strict();
 
