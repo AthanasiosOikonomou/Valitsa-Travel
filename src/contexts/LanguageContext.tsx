@@ -340,8 +340,6 @@ const translations: Record<Lang, Record<string, string>> = {
       "Each pricing row needs a matching departure row (same order). Add departures first or remove extra pricing rows.",
     "admin.tripPricingDepartureNoMatchingWindow":
       "This month and days must match exactly one departure row (same dates). Reorder rows if needed, or fix the departure dates editor.",
-    "admin.tripFlightLegCountMismatch":
-      "Flight details must have exactly one leg per departure row (same count and order).",
     "admin.tripDepartureModalTitle": "Departure dates",
     "admin.tripDepartureModalOpenButton": "Edit departure dates",
     "admin.tripDepartureModalSummary": "{count} departure window(s)",
@@ -364,6 +362,21 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripPricingUnsavedSaveAndClose": "Save and close",
     "admin.tripPricingUnsavedDiscard": "Leave without saving",
     "admin.tripPricingUnsavedKeepEditing": "Keep editing",
+    "admin.tripFlightModalTitle": "Flight details",
+    "admin.tripFlightModalOpenButton": "Edit flight details",
+    "admin.tripFlightModalSummary": "{count} flight leg(s) · {state}",
+    "admin.tripFlightModalSummaryOn": "On",
+    "admin.tripFlightModalSummaryOff": "Off",
+    "admin.tripFlightModalLegsHint":
+      "Each block is one leg on the trip page. Add or remove blocks as you need.",
+    "admin.tripFlightModalSave": "Save",
+    "admin.tripFlightModalCancel": "Cancel",
+    "admin.tripFlightUnsavedTitle": "Unsaved flight details",
+    "admin.tripFlightUnsavedDescription":
+      "You have unsaved changes to flight details. Save them before closing, or leave without saving.",
+    "admin.tripFlightUnsavedSaveAndClose": "Save and close",
+    "admin.tripFlightUnsavedDiscard": "Leave without saving",
+    "admin.tripFlightUnsavedKeepEditing": "Keep editing",
     "admin.tabGreek": "Ελληνικά",
     "admin.tabEnglish": "English",
     "admin.tripSinglePhotoHint":
@@ -888,8 +901,6 @@ const translations: Record<Lang, Record<string, string>> = {
       "Κάθε γραμμή τιμολόγησης χρειάζεται αντίστοιχη γραμμή αναχώρησης (ίδια σειρά). Προσθέστε αναχωρήσεις πρώτα ή αφαιρέστε επιπλέον γραμμές τιμολόγησης.",
     "admin.tripPricingDepartureNoMatchingWindow":
       "Ο μήνας και οι ημέρες πρέπει να ταιριάζουν ακριβώς με μία γραμμή αναχώρησης (ίδιες ημερομηνίες). Αλλάξτε τη σειρά γραμμών αν χρειάζεται ή διορθώστε τις ημερομηνίες αναχώρησης.",
-    "admin.tripFlightLegCountMismatch":
-      "Οι λεπτομέρειες πτήσης πρέπει να έχουν ακριβώς ένα σκέλος ανά γραμμή αναχώρησης (ίδιο πλήθος και σειρά).",
     "admin.tripDepartureModalTitle": "Ημερομηνίες αναχώρησης",
     "admin.tripDepartureModalOpenButton": "Επεξεργασία ημερομηνιών αναχώρησης",
     "admin.tripDepartureModalSummary": "{count} παράθυρο(α) αναχώρησης",
@@ -912,6 +923,21 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripPricingUnsavedSaveAndClose": "Αποθήκευση και κλείσιμο",
     "admin.tripPricingUnsavedDiscard": "Έξοδος χωρίς αποθήκευση",
     "admin.tripPricingUnsavedKeepEditing": "Συνέχεια επεξεργασίας",
+    "admin.tripFlightModalTitle": "Λεπτομέρειες πτήσεων",
+    "admin.tripFlightModalOpenButton": "Επεξεργασία λεπτομερειών πτήσεων",
+    "admin.tripFlightModalSummary": "{count} σκέλος/η πτήσης · {state}",
+    "admin.tripFlightModalSummaryOn": "Ενεργό",
+    "admin.tripFlightModalSummaryOff": "Ανενεργό",
+    "admin.tripFlightModalLegsHint":
+      "Κάθε μπλοκ είναι ένα σκέλος στη σελίδα του ταξιδιού. Προσθέστε ή αφαιρέστε μπλοκ όπως χρειάζεται.",
+    "admin.tripFlightModalSave": "Αποθήκευση",
+    "admin.tripFlightModalCancel": "Ακύρωση",
+    "admin.tripFlightUnsavedTitle": "Μη αποθηκευμένες λεπτομέρειες πτήσεων",
+    "admin.tripFlightUnsavedDescription":
+      "Έχετε μη αποθηκευμένες αλλαγές στις λεπτομέρειες πτήσεων. Αποθηκεύστε πριν το κλείσιμο ή εγκαταλείψτε χωρίς αποθήκευση.",
+    "admin.tripFlightUnsavedSaveAndClose": "Αποθήκευση και κλείσιμο",
+    "admin.tripFlightUnsavedDiscard": "Έξοδος χωρίς αποθήκευση",
+    "admin.tripFlightUnsavedKeepEditing": "Συνέχεια επεξεργασίας",
     "admin.tabGreek": "Ελληνικά",
     "admin.tabEnglish": "English",
     "admin.tripSinglePhotoHint":

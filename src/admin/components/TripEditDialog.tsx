@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Banknote, CalendarDays, Plus, Trash2, X } from "lucide-react";
+import { Banknote, CalendarDays, Plane, X } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -39,6 +39,7 @@ import { TripGalleryGrid } from "@/admin/components/TripGalleryGrid";
 import { ProgramTimelineEditor } from "@/admin/components/trip-edit/ProgramTimelineEditor";
 import { StringArrayField } from "@/admin/components/trip-edit/StringArrayField";
 import { DepartureWindowsModal } from "@/admin/components/trip-edit/DepartureWindowsModal";
+import { FlightDetailsModal } from "@/admin/components/trip-edit/FlightDetailsModal";
 import { PricingSegmentsModal } from "@/admin/components/trip-edit/PricingSegmentsModal";
 import { TransportMultiSelect } from "@/admin/components/trip-edit/TransportMultiSelect";
 import { Switch } from "@/components/ui/switch";
@@ -323,14 +324,6 @@ function buildTripFormSchema(t: (key: string) => string) {
         }
       }
 
-      if (data.flight_details_enabled && data.flight_details.length !== data.departure_windows.length) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: t("admin.tripFlightLegCountMismatch"),
-          path: ["flight_details"],
-        });
-      }
-
       if (!data.hasEnglish) return;
       if (!data.title.trim()) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: fieldReq, path: ["title"] });
@@ -563,6 +556,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
   const [tab, setTab] = useState<"el" | "en">("el");
   const [departureModalOpen, setDepartureModalOpen] = useState(false);
   const [pricingModalOpen, setPricingModalOpen] = useState(false);
+  const [flightModalOpen, setFlightModalOpen] = useState(false);
   const langTabsScrollAnchorRef = useRef<HTMLDivElement>(null);
   const isCreate = tripId === ADMIN_TRIP_CREATE_ID;
 
@@ -620,15 +614,6 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
   });
 
   const {
-    fields: flightDetailFields,
-    append: appendFlightLeg,
-    remove: removeFlightLeg,
-  } = useFieldArray({
-    control,
-    name: "flight_details",
-  });
-
-  const {
     field: transportModeField,
     fieldState: { invalid: transportModeInvalid },
   } = useController({ name: "transport_mode_slugs", control });
@@ -639,6 +624,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
   const flightDetailsEnabled = useWatch({ control, name: "flight_details_enabled" });
   const watchedDepartureWindows = useWatch({ control, name: "departure_windows" });
   const watchedPricingSegments = useWatch({ control, name: "pricing_segments" });
+  const watchedFlightDetails = useWatch({ control, name: "flight_details" });
 
   const activeSeasonalConfigs =
     seasonalConfigsQ.data?.configs.filter((c) => c.is_active) ?? [];
@@ -681,15 +667,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
         departure_city: seg.departure_city || String(row.departure_city ?? ""),
       })),
       flight_details_enabled: Boolean(row.flight_details_enabled),
-      flight_details: (() => {
-        let legs = normalizeFlightDetails(row.flight_details);
-        if (Boolean(row.flight_details_enabled) && depWin.length > 0) {
-          const n = depWin.length;
-          while (legs.length < n) legs.push({ ...EMPTY_FLIGHT_LEG });
-          legs = legs.slice(0, n);
-        }
-        return legs;
-      })(),
+      flight_details: normalizeFlightDetails(row.flight_details),
       description_el: asHtml(row.description_el),
       trip_notes_el: asHtml(row.trip_notes_el),
       program_el: programEl,
@@ -772,7 +750,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
       if (errs.flight_details) {
         setTab("el");
         document
-          .getElementById("trip-field-flight_details_el")
+          .getElementById("trip-field-flight_details")
           ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
         return;
       }
@@ -798,7 +776,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
               : name === "pricing_segments"
                 ? "trip-field-pricing_segments"
                 : name === "flight_details"
-                  ? "trip-field-flight_details_el"
+                  ? "trip-field-flight_details"
                   : `trip-field-${name}`;
         document.getElementById(sectionId)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
         return;
@@ -827,19 +805,6 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
     });
   };
 
-  /** Keep flight leg rows aligned with departure rows (same form field on both language tabs). */
-  const syncFlightLegsToDepartureCount = useCallback(() => {
-    if (!getValues("flight_details_enabled")) return;
-    const dep = getValues("departure_windows") ?? [];
-    const n = dep.length;
-    if (n === 0) return;
-    let legs = [...(getValues("flight_details") ?? [])];
-    if (legs.length === n) return;
-    while (legs.length < n) legs.push({ ...EMPTY_FLIGHT_LEG });
-    legs = legs.slice(0, n);
-    setValue("flight_details", legs, { shouldValidate: false });
-  }, [getValues, setValue]);
-
   const handleDepartureSave = useCallback(
     async (rows: DepartureWindowFormRow[]) => {
       const merged = { ...getValues(), departure_windows: rows };
@@ -857,16 +822,14 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
           return;
         }
         setValue("departure_windows", rows, { shouldDirty: true, shouldValidate: true });
-        syncFlightLegsToDepartureCount();
         setDepartureModalOpen(false);
         toast.info(t("admin.tripValidationSavedSectionOtherErrors"), { duration: 6000 });
         return;
       }
       setValue("departure_windows", rows, { shouldDirty: true, shouldValidate: true });
-      syncFlightLegsToDepartureCount();
       setDepartureModalOpen(false);
     },
-    [getValues, schema, setValue, syncFlightLegsToDepartureCount, t, trigger],
+    [getValues, schema, setValue, t, trigger],
   );
 
   const handlePricingSave = useCallback(
@@ -896,21 +859,50 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
     [getValues, schema, setValue, t, trigger],
   );
 
-  useEffect(() => {
-    if (!open) return;
-    if (!flightDetailsEnabled) return;
-    const depLen = departureWindowFields.length;
-    if (depLen === 0) return;
-    const legs = getValues("flight_details") ?? [];
-    if (legs.length === depLen) return;
-    let next = [...legs];
-    if (next.length > depLen) next = next.slice(0, depLen);
-    while (next.length < depLen) next.push({ ...EMPTY_FLIGHT_LEG });
-    setValue("flight_details", next, { shouldValidate: false });
-  }, [open, flightDetailsEnabled, departureWindowFields.length, getValues, setValue]);
+  const handleFlightSave = useCallback(
+    async (payload: { flight_details_enabled: boolean; flight_details: TripFormValues["flight_details"] }) => {
+      const merged = {
+        ...getValues(),
+        flight_details_enabled: payload.flight_details_enabled,
+        flight_details: payload.flight_details,
+      };
+      const result = schema.safeParse(merged);
+      if (!result.success) {
+        const related = filterModalRelatedZodIssues(result.error.issues);
+        if (related.length > 0) {
+          const first = related[0];
+          toast.error(t("admin.tripValidationFailed"), {
+            description: formatZodIssueForTripModalToast(first, t),
+            duration: 8000,
+          });
+          setValue("flight_details_enabled", payload.flight_details_enabled, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+          setValue("flight_details", payload.flight_details, { shouldDirty: true, shouldValidate: true });
+          await trigger();
+          return;
+        }
+        setValue("flight_details_enabled", payload.flight_details_enabled, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+        setValue("flight_details", payload.flight_details, { shouldDirty: true, shouldValidate: true });
+        setFlightModalOpen(false);
+        toast.info(t("admin.tripValidationSavedSectionOtherErrors"), { duration: 6000 });
+        return;
+      }
+      setValue("flight_details_enabled", payload.flight_details_enabled, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      setValue("flight_details", payload.flight_details, { shouldDirty: true, shouldValidate: true });
+      setFlightModalOpen(false);
+    },
+    [getValues, schema, setValue, t, trigger],
+  );
 
   const onFormSubmit = (e: FormEvent<HTMLFormElement>) => {
-    syncFlightLegsToDepartureCount();
     handleSubmit(onValid, onInvalid)(e);
   };
 
@@ -1316,6 +1308,47 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                 />
 
                 <div
+                  id="trip-field-flight_details"
+                  className={cn(
+                    fieldClass("flight_details"),
+                    "mt-6 flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-white/10 dark:bg-zinc-950/50 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between",
+                  )}
+                >
+                  <div className="min-w-0 space-y-1">
+                    <Label className="text-sm font-medium">{t("admin.tripFlightDetailsSection")}</Label>
+                    <p className="text-xs text-slate-600 dark:text-zinc-400">
+                      {t("admin.tripFlightModalSummary")
+                        .replace("{count}", String((watchedFlightDetails ?? []).length))
+                        .replace(
+                          "{state}",
+                          flightDetailsEnabled
+                            ? t("admin.tripFlightModalSummaryOn")
+                            : t("admin.tripFlightModalSummaryOff"),
+                        )}
+                    </p>
+                    {errors.flight_details &&
+                    typeof (errors.flight_details as { message?: string }).message === "string" ? (
+                      <p className="text-xs text-destructive">
+                        {(errors.flight_details as { message: string }).message}
+                      </p>
+                    ) : null}
+                  </div>
+                  <Button type="button" variant="outline" className="shrink-0" onClick={() => setFlightModalOpen(true)}>
+                    <Plane className="mr-2 h-4 w-4" aria-hidden />
+                    {t("admin.tripFlightModalOpenButton")}
+                  </Button>
+                </div>
+                <FlightDetailsModal
+                  open={flightModalOpen}
+                  onOpenChange={setFlightModalOpen}
+                  flightDetailsEnabled={flightDetailsEnabled}
+                  legs={watchedFlightDetails ?? []}
+                  onSave={handleFlightSave}
+                  t={t}
+                  flightTextareaClass={flightTextareaClass}
+                />
+
+                <div
                   id="trip-edit-lang-tabs"
                   ref={langTabsScrollAnchorRef}
                   className="mt-8 scroll-mt-4"
@@ -1376,135 +1409,6 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                           <p className="mt-1 text-xs text-destructive">
                             {(errors.transport_mode_slugs as { message?: string }).message}
                           </p>
-                        ) : null}
-                      </div>
-
-                      <div
-                        className={cn(fieldClass("flight_details"), "space-y-3 sm:col-span-2")}
-                        id="trip-field-flight_details_el"
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-white/10 dark:bg-zinc-950/50">
-                          <div>
-                            <p className="text-sm font-medium text-slate-900 dark:text-zinc-100">
-                              {t("admin.tripFlightDetailsSection")}
-                            </p>
-                            <p className="mt-1 text-xs text-slate-600 dark:text-zinc-400">
-                              {t("admin.tripFlightDetailsHint")}
-                            </p>
-                          </div>
-                          <Controller
-                            name="flight_details_enabled"
-                            control={control}
-                            render={({ field }) => (
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-medium text-slate-600 dark:text-zinc-300">
-                                  {field.value
-                                    ? t("admin.tripFlightDetailsOn")
-                                    : t("admin.tripFlightDetailsOff")}
-                                </span>
-                                <Switch
-                                  checked={field.value}
-                                  onCheckedChange={(on) => {
-                                    field.onChange(on);
-                                    if (on && (getValues("flight_details") ?? []).length === 0) {
-                                      appendFlightLeg({ ...EMPTY_FLIGHT_LEG });
-                                    }
-                                  }}
-                                  aria-label={t("admin.tripFlightDetailsEnable")}
-                                />
-                              </div>
-                            )}
-                          />
-                        </div>
-                        {errors.flight_details &&
-                        typeof (errors.flight_details as { message?: string }).message === "string" ? (
-                          <p className="mt-2 text-xs text-destructive" role="alert">
-                            {(errors.flight_details as { message: string }).message}
-                          </p>
-                        ) : null}
-                        {flightDetailsEnabled ? (
-                          <>
-                            <div className="flex justify-end">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="w-full sm:w-auto"
-                                onClick={() => appendFlightLeg({ ...EMPTY_FLIGHT_LEG })}
-                              >
-                                <Plus className="mr-1 h-4 w-4" />
-                                {t("admin.tripFlightLegAdd")}
-                              </Button>
-                            </div>
-                            {flightDetailFields.length === 0 ? (
-                              <p className="text-sm text-slate-600 dark:text-zinc-400">
-                                {t("admin.tripFlightLegsEmpty")}
-                              </p>
-                            ) : null}
-                            {flightDetailFields.map((row, index) => (
-                              <div
-                                key={row.id}
-                                className="space-y-3 rounded-xl border border-border bg-muted/20 p-3"
-                              >
-                                <div className="flex items-center justify-between gap-2">
-                                  <p className="text-sm font-medium text-foreground">
-                                    {t("admin.tripFlightLegLabel").replace("{n}", String(index + 1))}
-                                  </p>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="shrink-0 text-destructive hover:text-destructive"
-                                    onClick={() => removeFlightLeg(index)}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                    <span className="sr-only">{t("admin.tripFlightLegRemove")}</span>
-                                  </Button>
-                                </div>
-                                <p className="text-xs text-muted-foreground">{t("admin.tripFlightLangEl")}</p>
-                                <div className="grid gap-3 md:grid-cols-2">
-                                  <div className="space-y-2">
-                                    <Label htmlFor={`fd-dep-el-${index}`}>
-                                      {t("detail.flightDepartureLabel")}
-                                    </Label>
-                                    <Controller
-                                      name={`flight_details.${index}.departure_el`}
-                                      control={control}
-                                      render={({ field }) => (
-                                        <textarea
-                                          id={`fd-dep-el-${index}`}
-                                          className={flightTextareaClass}
-                                          rows={3}
-                                          autoComplete="off"
-                                          value={field.value}
-                                          onChange={field.onChange}
-                                        />
-                                      )}
-                                    />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label htmlFor={`fd-ret-el-${index}`}>
-                                      {t("detail.flightReturnLabel")}
-                                    </Label>
-                                    <Controller
-                                      name={`flight_details.${index}.return_el`}
-                                      control={control}
-                                      render={({ field }) => (
-                                        <textarea
-                                          id={`fd-ret-el-${index}`}
-                                          className={flightTextareaClass}
-                                          rows={3}
-                                          autoComplete="off"
-                                          value={field.value}
-                                          onChange={field.onChange}
-                                        />
-                                      )}
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </>
                         ) : null}
                       </div>
 
@@ -1661,135 +1565,6 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                           <p className="mt-1 text-xs text-destructive">
                             {(errors.transport_mode_slugs as { message?: string }).message}
                           </p>
-                        ) : null}
-                      </div>
-
-                      <div
-                        className={cn(fieldClass("flight_details"), "space-y-3 sm:col-span-2")}
-                        id="trip-field-flight_details_en"
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-white/10 dark:bg-zinc-950/50">
-                          <div>
-                            <p className="text-sm font-medium text-slate-900 dark:text-zinc-100">
-                              {t("admin.tripFlightDetailsSection")}
-                            </p>
-                            <p className="mt-1 text-xs text-slate-600 dark:text-zinc-400">
-                              {t("admin.tripFlightDetailsHint")}
-                            </p>
-                          </div>
-                          <Controller
-                            name="flight_details_enabled"
-                            control={control}
-                            render={({ field }) => (
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-medium text-slate-600 dark:text-zinc-300">
-                                  {field.value
-                                    ? t("admin.tripFlightDetailsOn")
-                                    : t("admin.tripFlightDetailsOff")}
-                                </span>
-                                <Switch
-                                  checked={field.value}
-                                  onCheckedChange={(on) => {
-                                    field.onChange(on);
-                                    if (on && (getValues("flight_details") ?? []).length === 0) {
-                                      appendFlightLeg({ ...EMPTY_FLIGHT_LEG });
-                                    }
-                                  }}
-                                  aria-label={t("admin.tripFlightDetailsEnable")}
-                                />
-                              </div>
-                            )}
-                          />
-                        </div>
-                        {errors.flight_details &&
-                        typeof (errors.flight_details as { message?: string }).message === "string" ? (
-                          <p className="mt-2 text-xs text-destructive" role="alert">
-                            {(errors.flight_details as { message: string }).message}
-                          </p>
-                        ) : null}
-                        {flightDetailsEnabled ? (
-                          <>
-                            <div className="flex justify-end">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="w-full sm:w-auto"
-                                onClick={() => appendFlightLeg({ ...EMPTY_FLIGHT_LEG })}
-                              >
-                                <Plus className="mr-1 h-4 w-4" />
-                                {t("admin.tripFlightLegAdd")}
-                              </Button>
-                            </div>
-                            {flightDetailFields.length === 0 ? (
-                              <p className="text-sm text-slate-600 dark:text-zinc-400">
-                                {t("admin.tripFlightLegsEmpty")}
-                              </p>
-                            ) : null}
-                            {flightDetailFields.map((row, index) => (
-                              <div
-                                key={row.id}
-                                className="space-y-3 rounded-xl border border-border bg-muted/20 p-3"
-                              >
-                                <div className="flex items-center justify-between gap-2">
-                                  <p className="text-sm font-medium text-foreground">
-                                    {t("admin.tripFlightLegLabel").replace("{n}", String(index + 1))}
-                                  </p>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="shrink-0 text-destructive hover:text-destructive"
-                                    onClick={() => removeFlightLeg(index)}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                    <span className="sr-only">{t("admin.tripFlightLegRemove")}</span>
-                                  </Button>
-                                </div>
-                                <p className="text-xs text-muted-foreground">{t("admin.tripFlightLangEn")}</p>
-                                <div className="grid gap-3 md:grid-cols-2">
-                                  <div className="space-y-2">
-                                    <Label htmlFor={`fd-dep-en-tab-${index}`}>
-                                      {t("detail.flightDepartureLabel")}
-                                    </Label>
-                                    <Controller
-                                      name={`flight_details.${index}.departure_en`}
-                                      control={control}
-                                      render={({ field }) => (
-                                        <textarea
-                                          id={`fd-dep-en-tab-${index}`}
-                                          className={flightTextareaClass}
-                                          rows={3}
-                                          autoComplete="off"
-                                          value={field.value}
-                                          onChange={field.onChange}
-                                        />
-                                      )}
-                                    />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label htmlFor={`fd-ret-en-tab-${index}`}>
-                                      {t("detail.flightReturnLabel")}
-                                    </Label>
-                                    <Controller
-                                      name={`flight_details.${index}.return_en`}
-                                      control={control}
-                                      render={({ field }) => (
-                                        <textarea
-                                          id={`fd-ret-en-tab-${index}`}
-                                          className={flightTextareaClass}
-                                          rows={3}
-                                          autoComplete="off"
-                                          value={field.value}
-                                          onChange={field.onChange}
-                                        />
-                                      )}
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </>
                         ) : null}
                       </div>
 
