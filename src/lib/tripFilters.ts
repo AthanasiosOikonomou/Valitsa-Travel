@@ -1,5 +1,5 @@
-
 import type { Trip } from "@/types/Trip";
+import { tripDepartureMonths } from "@/lib/departureWindows";
 import {
   TRANSPORT_MODE_SLUGS,
   mergeTransportSlugsFromColumns,
@@ -14,7 +14,8 @@ type MultiSelectKey =
   | "selectedCountries"
   | "selectedDurations"
   | "selectedCities"
-  | "selectedTransportSlugs";
+  | "selectedTransportSlugs"
+  | "selectedMonths";
 
 type FlagKey = "showFeatured";
 
@@ -24,7 +25,8 @@ type FacetKey =
   | "city"
   | "featured"
   | "price"
-  | "transport";
+  | "transport"
+  | "month";
 
 export interface RangeBounds {
   min: number;
@@ -38,6 +40,8 @@ export interface TripFilterState {
   selectedDurations: number[];
   selectedCities: string[];
   selectedTransportSlugs: TransportModeSlug[];
+  /** Calendar months 1–12; empty means no month filter. */
+  selectedMonths: number[];
   showFeatured: boolean;
   sortBy: SortOption;
   page: number;
@@ -60,6 +64,8 @@ export interface TripFilterMetadata {
   cities: string[];
   transportSlugs: TransportModeSlug[];
   hasFeaturedTrips: boolean;
+  /** Months 1–12 that appear in at least one trip’s structured departure windows. */
+  months: number[];
 }
 
 export interface AvailableTripFacets {
@@ -68,6 +74,7 @@ export interface AvailableTripFacets {
   durationCounts: Map<number, number>;
   cityCounts: Map<string, number>;
   transportCounts: Map<TransportModeSlug, number>;
+  monthCounts: Map<number, number>;
   specialCounts: {
     featured: number;
   };
@@ -145,6 +152,13 @@ export const buildTripFilterMetadata = (trips: Trip[], lang: TripLang): TripFilt
     { min: 0, max: 0 },
   );
 
+  const monthSet = new Set<number>();
+  for (const trip of trips) {
+    for (const m of tripDepartureMonths(trip)) {
+      monthSet.add(m);
+    }
+  }
+
   return {
     globalPriceBounds,
     countries: sortCountries([
@@ -156,6 +170,7 @@ export const buildTripFilterMetadata = (trips: Trip[], lang: TripLang): TripFilt
     cities: sortUniqueStrings(trips.map((trip) => getTripField(trip, "departure_city", lang) ?? "")),
     transportSlugs: collectTransportSlugsFromTrips(trips),
     hasFeaturedTrips: trips.some((trip) => trip.is_featured),
+    months: [...monthSet].sort((a, b) => a - b),
   };
 };
 
@@ -195,6 +210,7 @@ export const createInitialTripFilterState = (
     selectedDurations,
     selectedCities: [],
     selectedTransportSlugs: [],
+    selectedMonths: [],
     showFeatured: false,
     sortBy: "recommended",
     page: 1,
@@ -287,6 +303,7 @@ export const buildAvailableTripFacets = (
     (trip) => getTripField(trip, "departure_city", lang) ?? "",
   );
   const transportCounts = buildTransportFacetCounts(trips, state, lang);
+  const monthCounts = buildMonthFacetCounts(trips, state, lang);
 
   const priceBounds = getPriceBoundsForState(
     trips,
@@ -302,6 +319,7 @@ export const buildAvailableTripFacets = (
     durationCounts,
     cityCounts,
     transportCounts,
+    monthCounts,
     specialCounts,
   };
 };
@@ -391,6 +409,9 @@ export const sanitizeTripFilterState = (
     selectedTransportSlugs: state.selectedTransportSlugs.filter((value) =>
       availableFacets.transportCounts.has(value),
     ),
+    selectedMonths: state.selectedMonths.filter((value) =>
+      metadata.months.includes(value),
+    ),
     showFeatured:
       state.showFeatured &&
       metadata.hasFeaturedTrips &&
@@ -409,6 +430,7 @@ export const areTripFilterStatesEqual = (
   arraysEqual(left.selectedDurations, right.selectedDurations) &&
   arraysEqual(left.selectedCities, right.selectedCities) &&
   arraysEqual(left.selectedTransportSlugs, right.selectedTransportSlugs) &&
+  arraysEqual(left.selectedMonths, right.selectedMonths) &&
   left.showFeatured === right.showFeatured &&
   left.sortBy === right.sortBy;
 
@@ -435,6 +457,27 @@ const buildTransportFacetCounts = (
       if (seen.has(slug)) continue;
       seen.add(slug);
       addCount(counts, slug);
+    }
+  }
+
+  return counts;
+};
+
+const buildMonthFacetCounts = (
+  trips: Trip[],
+  state: TripFilterState,
+  lang: TripLang,
+): Map<number, number> => {
+  const counts = new Map<number, number>();
+
+  for (const trip of trips) {
+    if (!matchesTripFilters(trip, state, lang, "month")) continue;
+    const months = tripDepartureMonths(trip);
+    const seen = new Set<number>();
+    for (const m of months) {
+      if (seen.has(m)) continue;
+      seen.add(m);
+      addCount(counts, m);
     }
   }
 
@@ -561,6 +604,20 @@ const matchesTripFilters = (
 
   if (excludedFacet !== "featured" && state.showFeatured && !trip.is_featured) {
     return false;
+  }
+
+  if (
+    excludedFacet !== "month" &&
+    state.selectedMonths.length > 0
+  ) {
+    const tripMonths = tripDepartureMonths(trip);
+    if (tripMonths.size === 0) {
+      return false;
+    }
+    const overlaps = state.selectedMonths.some((m) => tripMonths.has(m));
+    if (!overlaps) {
+      return false;
+    }
   }
 
   return true;

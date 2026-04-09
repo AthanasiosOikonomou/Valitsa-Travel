@@ -47,6 +47,7 @@ import { SafeRichTextHtml } from "@/components/SafeRichTextHtml";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { showTrips } from "@/lib/showTrips";
 import { fetchSeasonalNavItems } from "@/lib/seasonalNavApi";
+import { formatTripDepartureSummary } from "@/lib/departureWindows";
 import {
   formatTripDuration,
   formatTripPrice,
@@ -587,6 +588,7 @@ const TripsContent = () => {
     special: true,
     seasonal: true,
     duration: true,
+    month: true,
     transport: true,
     country: true,
     city: true,
@@ -905,6 +907,48 @@ const TripsContent = () => {
           );
         })}
       </FilterSection>
+
+      {filterMetadata.months.length > 0 ? (
+        <FilterSection
+          id="month"
+          title={t("archive.departureMonth")}
+          isOpen={openSections.month}
+          onToggle={toggleSection}
+        >
+          <div className="flex flex-wrap gap-2">
+            {filterMetadata.months.map((month) => {
+              const count = availableFacets.monthCounts.get(month) ?? 0;
+              const checked = normalizedFilterState.selectedMonths.includes(month);
+              const label = new Intl.DateTimeFormat(lang === "gr" ? "el-GR" : "en-GB", {
+                month: "long",
+              }).format(new Date(2026, month - 1, 1));
+              return (
+                <button
+                  key={month}
+                  type="button"
+                  disabled={isDisabled(count, checked)}
+                  onClick={() => {
+                    window.__valitsaFilterSectionChanged = true;
+                    dispatch({
+                      type: "toggleMulti",
+                      key: "selectedMonths",
+                      value: month,
+                    });
+                  }}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                    checked
+                      ? "border-primary bg-primary/15 text-primary"
+                      : "border-border bg-background text-foreground-muted hover:border-primary/40"
+                  } ${isDisabled(count, checked) ? "opacity-40 cursor-not-allowed" : ""}`}
+                >
+                  {label}
+                  <span className="ml-1 text-[10px] opacity-70">({count})</span>
+                </button>
+              );
+            })}
+          </div>
+        </FilterSection>
+      ) : null}
 
       {filterMetadata.transportSlugs.length > 0 ? (
         <FilterSection
@@ -1235,6 +1279,8 @@ const TripResultCard = ({
     return trip[field];
   };
 
+  const departureSummary = formatTripDepartureSummary(trip, lang === "gr" ? "gr" : "en");
+
   const displayTags = pickLocalizedStringList(lang, trip.tags_el, trip.tags);
 
   return (
@@ -1278,9 +1324,9 @@ const TripResultCard = ({
 
       <div className="flex-1 p-5 md:p-6 flex flex-col justify-between min-h-0">
         <div>
-          <p className="label-ui text-primary/80 mb-2">
-            {getField("date_range")}
-          </p>
+          {departureSummary ? (
+            <p className="label-ui text-primary/80 mb-2 line-clamp-2">{departureSummary}</p>
+          ) : null}
           <h3 className="text-xl text-display mb-2 group-hover:text-primary transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] leading-tight line-clamp-2 min-h-[3.75rem]">
             {getField("title")}
           </h3>

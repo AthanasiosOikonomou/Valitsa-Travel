@@ -1,3 +1,5 @@
+import type { DepartureMonthBlock, Trip } from "@/types/Trip";
+import { normalizeDepartureBlocks } from "@/lib/departureWindows";
 import { coerceProgramSteps, coerceStringList } from "@/lib/tripLocaleArrays";
 
 export type ProgramFormStep = { days: string; title: string; description: string };
@@ -54,4 +56,49 @@ export function formStepsToDbPayload(
     title: s.title.trim(),
     description: s.description.trim(),
   }));
+}
+
+export type DepartureWindowFormRow = {
+  month: number;
+  days: number[];
+  label_en: string;
+  label_el: string;
+};
+
+/** Load departure rows: merged month blocks from DB (new + legacy ISO + legacy text fallback). */
+export function departureWindowsDbToForm(row: Record<string, unknown>): DepartureWindowFormRow[] {
+  const tripLike = {
+    departure_windows: row.departure_windows,
+    date_range: row.date_range,
+    date_range_el: row.date_range_el,
+  } as Trip;
+  const blocks = normalizeDepartureBlocks(tripLike);
+  if (blocks.length > 0) {
+    return blocks.map((b) => ({
+      month: b.month,
+      days: [...b.days],
+      label_en: b.label_en ?? "",
+      label_el: b.label_el ?? "",
+    }));
+  }
+  const fallbackEn = String(row.date_range ?? "").trim();
+  const fallbackEl = String(row.date_range_el ?? "").trim();
+  if (fallbackEn || fallbackEl) {
+    return [{ month: 1, days: [], label_en: fallbackEn, label_el: fallbackEl }];
+  }
+  return [{ month: 1, days: [], label_en: "", label_el: "" }];
+}
+
+export function departureWindowsFormToPayload(
+  rows: DepartureWindowFormRow[],
+): DepartureMonthBlock[] {
+  const tripLike = {
+    departure_windows: rows.map((r) => ({
+      month: r.month,
+      days: r.days,
+      label_en: r.label_en.trim() || null,
+      label_el: r.label_el.trim() || null,
+    })),
+  } as Trip;
+  return normalizeDepartureBlocks(tripLike);
 }

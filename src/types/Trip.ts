@@ -7,6 +7,30 @@ export type ProgramItem = {
 
 export type TripStatus = "active" | "inactive";
 
+/**
+ * Stored in `trips.departure_windows` jsonb (current shape).
+ * Year is not persisted; month + days only.
+ */
+export type DepartureMonthBlock = {
+  month: number;
+  days: number[];
+  label_en?: string | null;
+  label_el?: string | null;
+};
+
+/**
+ * Legacy `departure_windows` rows: ISO date range (still read for migration).
+ * @deprecated Prefer DepartureMonthBlock
+ */
+export type DepartureWindow = {
+  start: string;
+  end: string;
+  label_en?: string | null;
+  label_el?: string | null;
+};
+
+export type DepartureScheduleEntry = DepartureMonthBlock | DepartureWindow;
+
 export type Trip = {
   id: string;
   title: string;
@@ -25,8 +49,12 @@ export type Trip = {
   transport_el?: string[] | string | null;
   is_featured: boolean | null;
   status?: TripStatus | string | null;
+  /** @deprecated display fallback; prefer `departure_windows`. */
   date_range: string | null;
+  /** @deprecated display fallback; prefer `departure_windows`. */
   date_range_el?: string | null;
+  /** Month+days blocks and/or legacy ISO ranges; see `DepartureMonthBlock`. */
+  departure_windows?: DepartureScheduleEntry[] | null;
   departure_city: string | null;
   departure_city_el?: string | null;
   tags: string[] | null;
@@ -73,6 +101,7 @@ export type TripUpdate = Partial<{
   transport_el: string[] | null;
   date_range: string | null;
   date_range_el: string | null;
+  departure_windows: DepartureMonthBlock[] | null;
   departure_city: string | null;
   departure_city_el: string | null;
   tags: string[] | null;

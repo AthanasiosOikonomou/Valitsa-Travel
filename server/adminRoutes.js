@@ -169,6 +169,136 @@ function normalizeDurationDaysField(value) {
   return Number.isFinite(n) ? n : null;
 }
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const REF_YEAR = 2000;
+
+function daysInCalendarMonthServer(month) {
+  if (month < 1 || month > 12) return 0;
+  return new Date(REF_YEAR, month, 0).getDate();
+}
+
+function isValidDayForMonthServer(month, day) {
+  if (day < 1 || day > 31 || month < 1 || month > 12) return false;
+  return day <= daysInCalendarMonthServer(month);
+}
+
+function mergeDepartureMonthRows(rows) {
+  const map = new Map();
+  for (const r of rows) {
+    if (!r || typeof r !== "object") continue;
+    const month = Math.trunc(Number(r.month));
+    if (month < 1 || month > 12 || !Array.isArray(r.days)) continue;
+    const daySet = new Set();
+    for (const d of r.days) {
+      const day = Math.trunc(Number(d));
+      if (Number.isFinite(day) && isValidDayForMonthServer(month, day)) {
+        daySet.add(day);
+      }
+    }
+    const days = [...daySet].sort((a, b) => a - b);
+    if (days.length === 0) continue;
+    const le = r.label_en != null ? String(r.label_en).trim() : "";
+    const ll = r.label_el != null ? String(r.label_el).trim() : "";
+    const cur = map.get(month) ?? { days: new Set(), label_en: null, label_el: null };
+    for (const d of days) {
+      cur.days.add(d);
+    }
+    if (le && !cur.label_en) cur.label_en = le;
+    if (ll && !cur.label_el) cur.label_el = ll;
+    map.set(month, cur);
+  }
+  return [...map.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([month, { days, label_en, label_el }]) => ({
+      month,
+      days: [...days].sort((x, y) => x - y),
+      label_en: label_en || null,
+      label_el: label_el || null,
+    }));
+}
+
+/** Normalize legacy ISO range rows into month+days (year dropped). */
+function expandLegacyIsoRow(raw) {
+  const start = String(raw.start ?? "").trim();
+  const end = String(raw.end ?? "").trim();
+  if (!ISO_DATE.test(start) || !ISO_DATE.test(end) || start > end) return [];
+  const a = new Date(start + "T12:00:00");
+  const b = new Date(end + "T12:00:00");
+  if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime()) || a > b) return [];
+  const le = raw.label_en != null ? String(raw.label_en).trim() : "";
+  const ll = raw.label_el != null ? String(raw.label_el).trim() : "";
+  const byMonth = new Map();
+  const cur = new Date(a.getTime());
+  const endT = b.getTime();
+  while (cur.getTime() <= endT) {
+    const mo = cur.getMonth() + 1;
+    const day = cur.getDate();
+    if (!byMonth.has(mo)) byMonth.set(mo, new Set());
+    byMonth.get(mo).add(day);
+    cur.setDate(cur.getDate() + 1);
+  }
+  return [...byMonth.entries()].map(([month, set]) => ({
+    month,
+    days: [...set].sort((x, y) => x - y),
+    label_en: le || null,
+    label_el: ll || null,
+  }));
+}
+
+function normalizeDepartureWindowsArray(arr) {
+  if (!Array.isArray(arr)) return [];
+  const monthRows = [];
+  for (const raw of arr) {
+    if (!raw || typeof raw !== "object") continue;
+    if (Array.isArray(raw.days)) {
+      const month = Math.trunc(Number(raw.month));
+      if (!Number.isFinite(month) || month < 1 || month > 12) continue;
+      const daySet = new Set();
+      for (const d of raw.days) {
+        const day = Math.trunc(Number(d));
+        if (Number.isFinite(day) && isValidDayForMonthServer(month, day)) {
+          daySet.add(day);
+        }
+      }
+      const days = [...daySet].sort((a, b) => a - b);
+      if (days.length === 0) continue;
+      const le = raw.label_en != null ? String(raw.label_en).trim() : "";
+      const ll = raw.label_el != null ? String(raw.label_el).trim() : "";
+      monthRows.push({
+        month,
+        days,
+        label_en: le || null,
+        label_el: ll || null,
+      });
+      continue;
+    }
+    if (typeof raw.start === "string" && typeof raw.end === "string") {
+      monthRows.push(...expandLegacyIsoRow(raw));
+    }
+  }
+  return mergeDepartureMonthRows(monthRows);
+}
+
+/** Coerce JSON string / array into normalized departure_windows for jsonb. */
+function normalizeDepartureWindowsField(value) {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (typeof value === "string") {
+    const s = value.trim();
+    if (!s) return [];
+    try {
+      const parsed = JSON.parse(s);
+      return normalizeDepartureWindowsArray(parsed);
+    } catch {
+      return [];
+    }
+  }
+  if (Array.isArray(value)) {
+    return normalizeDepartureWindowsArray(value);
+  }
+  return [];
+}
+
 const LEGACY_TRIP_BODY_KEYS = ["type", "type_el", "category", "category_el"];
 
 function normalizeTripPutBody(body) {
@@ -202,6 +332,9 @@ function normalizeTripPutBody(body) {
   }
   if ("duration_days" in out) {
     out.duration_days = normalizeDurationDaysField(out.duration_days);
+  }
+  if ("departure_windows" in out) {
+    out.departure_windows = normalizeDepartureWindowsField(out.departure_windows);
   }
   if (out.is_seasonal === false) {
     out.seasonal_name = null;
@@ -238,6 +371,17 @@ const adminTripPutSchema = z
     transport_el: z.array(z.string()).nullable().optional(),
     date_range: z.string().nullable().optional(),
     date_range_el: z.string().nullable().optional(),
+    departure_windows: z
+      .array(
+        z.object({
+          month: z.coerce.number().int().min(1).max(12),
+          days: z.array(z.coerce.number().int().min(1).max(31)),
+          label_en: z.string().nullable().optional(),
+          label_el: z.string().nullable().optional(),
+        }),
+      )
+      .nullable()
+      .optional(),
     departure_city: z.string().nullable().optional(),
     departure_city_el: z.string().nullable().optional(),
     tags: z.array(z.string()).nullable().optional(),

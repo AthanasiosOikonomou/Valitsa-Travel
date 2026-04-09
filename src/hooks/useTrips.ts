@@ -17,6 +17,8 @@ const TRIP_LIST_FIELDS = [
   "is_featured",
   "status",
   "date_range",
+  "date_range_el",
+  "departure_windows",
   "departure_city",
   "tags",
   "tags_el",

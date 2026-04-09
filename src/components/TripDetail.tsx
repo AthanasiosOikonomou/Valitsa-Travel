@@ -28,6 +28,12 @@ import {
 } from "@/components/ItineraryTimeline";
 import { SafeRichTextHtml } from "@/components/SafeRichTextHtml";
 import { isHtmlEmpty } from "@/lib/isHtmlEmpty";
+import {
+  formatDaysForMonth,
+  formatTripDepartureSummary,
+  normalizeDepartureBlocks,
+  formatMonthNameLong,
+} from "@/lib/departureWindows";
 import { buildResponsiveImageSet, cn } from "@/lib/utils";
 
 interface TripDetailProps {
@@ -663,6 +669,70 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                                   />
                                 </div>
                               ) : null}
+                              {(() => {
+                                const langKey = lang === "gr" ? "gr" : "en";
+                                const blocks = normalizeDepartureBlocks(trip);
+                                const fallbackLine = formatTripDepartureSummary(trip, langKey);
+                                if (blocks.length === 0 && !fallbackLine) return null;
+                                return (
+                                  <div className="space-y-4 border-t border-slate-200/90 pt-8 dark:border-white/10">
+                                    <h3 className="label-ui text-xs font-semibold uppercase tracking-[0.2em] text-foreground-muted">
+                                      {t("detail.departureDates")}
+                                    </h3>
+                                    {blocks.length > 0 ? (
+                                      <div className="overflow-x-auto rounded-xl border border-border">
+                                        <table className="w-full min-w-[280px] border-collapse text-left text-base">
+                                          <thead>
+                                            <tr className="border-b border-border bg-muted/40">
+                                              <th className="px-4 py-3 font-semibold text-foreground">
+                                                {t("detail.departureDatesMonthCol")}
+                                              </th>
+                                              <th className="px-4 py-3 font-semibold text-foreground">
+                                                {t("detail.departureDatesDaysCol")}
+                                              </th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {blocks.map((b) => {
+                                              const manual =
+                                                langKey === "gr"
+                                                  ? String(b.label_el ?? "").trim()
+                                                  : String(b.label_en ?? "").trim();
+                                              const daysText = formatDaysForMonth(b.days, langKey);
+                                              return (
+                                                <tr
+                                                  key={b.month}
+                                                  className="border-b border-border last:border-b-0"
+                                                >
+                                                  <td className="px-4 py-3 align-top font-medium text-foreground">
+                                                    {formatMonthNameLong(b.month, langKey)}
+                                                  </td>
+                                                  <td className="px-4 py-3 align-top text-foreground">
+                                                    {manual ? (
+                                                      <div className="space-y-1">
+                                                        <p className="font-medium">{manual}</p>
+                                                        <p className="text-sm text-foreground-muted">
+                                                          {daysText}
+                                                        </p>
+                                                      </div>
+                                                    ) : (
+                                                      daysText
+                                                    )}
+                                                  </td>
+                                                </tr>
+                                              );
+                                            })}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    ) : (
+                                      <p className="text-body-prose text-lg leading-relaxed text-foreground">
+                                        {fallbackLine}
+                                      </p>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                             </div>
                           )}
                           {activeTab === "program" && (

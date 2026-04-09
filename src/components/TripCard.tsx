@@ -6,6 +6,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import ProgressiveImage from "@/components/ProgressiveImage";
 import { SafeRichTextHtml } from "@/components/SafeRichTextHtml";
 import { formatTripDuration, formatTripPrice } from "@/lib/tripDisplay";
+import { formatTripDepartureSummary } from "@/lib/departureWindows";
 import { SeasonalTripBadge } from "@/components/SeasonalTripBadge";
 
 interface TripCardProps {
@@ -27,6 +28,8 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
     }
     return trip[field];
   };
+
+  const departureSummary = formatTripDepartureSummary(trip, lang === "gr" ? "gr" : "en");
 
   return (
     <motion.div
@@ -103,6 +106,11 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
                 <h3 className="text-display text-[1.05rem] font-semibold leading-tight text-white line-clamp-2">
                   {getField("title")}
                 </h3>
+                {departureSummary ? (
+                  <p className="mt-2 text-[12px] font-medium leading-snug text-white/90 line-clamp-2">
+                    {departureSummary}
+                  </p>
+                ) : null}
                 <div className="mt-5 flex w-full justify-end items-center gap-2 !text-white">
                   <MapPin size={16} />
                   <span className="text-sm font-medium leading-tight line-clamp-1">
