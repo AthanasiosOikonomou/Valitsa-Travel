@@ -1,6 +1,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { Plus, Trash2, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import type { DepartureWindowFormRow } from "@/lib/tripAdminForm";
 import type { PricingSegmentFormRow } from "@/lib/tripPricing";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,8 +17,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn, scrollContainerToAlignChildTop } from "@/lib/utils";
-import { isValidDayForMonth } from "@/lib/departureWindows";
-import { DepartureDayPickerPure } from "./DepartureDayPickerPure";
+import {
+  departureDaysUnionForMonth,
+  departureMonthsWithSelectedDays,
+} from "@/lib/departureWindows";
 
 function emptyRow(): PricingSegmentFormRow {
   return {
@@ -35,10 +38,32 @@ function emptyRow(): PricingSegmentFormRow {
   };
 }
 
+function clampPricingRowToDepartures(
+  row: PricingSegmentFormRow,
+  departureWindows: DepartureWindowFormRow[],
+): PricingSegmentFormRow {
+  const months = departureMonthsWithSelectedDays(departureWindows);
+  if (months.length === 0) return row;
+  let month = row.month;
+  if (!months.includes(month)) month = months[0];
+  const union = new Set(departureDaysUnionForMonth(departureWindows, month));
+  if (union.size === 0) return { ...row, month, days: [] };
+  const filtered = row.days.filter((d) => union.has(d));
+  return { ...row, month, days: filtered };
+}
+
+function emptyRowFromDepartures(departureWindows: DepartureWindowFormRow[]): PricingSegmentFormRow {
+  const base = emptyRow();
+  const months = departureMonthsWithSelectedDays(departureWindows);
+  if (months.length === 0) return base;
+  return { ...base, month: months[0], days: [] };
+}
+
 export function PricingSegmentsModal({
   open,
   onOpenChange,
   rows,
+  departureWindows,
   onSave,
   t,
   lang,
@@ -48,6 +73,7 @@ export function PricingSegmentsModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   rows: PricingSegmentFormRow[];
+  departureWindows: DepartureWindowFormRow[];
   onSave: (rows: PricingSegmentFormRow[]) => void;
   t: (key: string) => string;
   lang: "gr" | "en";
@@ -63,10 +89,10 @@ export function PricingSegmentsModal({
 
   useEffect(() => {
     if (!open) return;
-    const init = structuredClone(rows);
+    const init = structuredClone(rows).map((r) => clampPricingRowToDepartures(r, departureWindows));
     setDraft(init);
     snapshotRef.current = JSON.stringify(init);
-  }, [open, rows]);
+  }, [open, rows, departureWindows]);
 
   useEffect(() => {
     if (!scrollToEndAfterAddRef.current) return;
@@ -83,8 +109,8 @@ export function PricingSegmentsModal({
 
   const addRow = useCallback(() => {
     scrollToEndAfterAddRef.current = true;
-    setDraft((prev) => [...prev, emptyRow()]);
-  }, []);
+    setDraft((prev) => [...prev, emptyRowFromDepartures(departureWindows)]);
+  }, [departureWindows]);
 
   const tryClose = useCallback(() => {
     if (JSON.stringify(draft) === snapshotRef.current) {
@@ -117,6 +143,8 @@ export function PricingSegmentsModal({
   };
 
   const locale = lang === "gr" ? "el-GR" : "en-GB";
+  const allowedMonths = departureMonthsWithSelectedDays(departureWindows);
+  const canAddPricing = allowedMonths.length > 0;
 
   return (
     <>
@@ -149,9 +177,25 @@ export function PricingSegmentsModal({
               className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-5"
             >
               <p className="pb-3 text-xs text-slate-600 dark:text-zinc-400">{t("admin.tripPricingSegmentsHint")}</p>
+              {canAddPricing ? (
+                <p className="pb-2 text-xs text-slate-600 dark:text-zinc-400">
+                  {t("admin.tripPricingOnlyDeparturesHint")}
+                </p>
+              ) : (
+                <p className="pb-2 text-sm text-amber-800 dark:text-amber-200/90">
+                  {t("admin.tripPricingNeedDeparturesFirst")}
+                </p>
+              )}
               {draft.length === 0 ? (
                 <div className="flex flex-wrap items-center justify-end gap-2 pb-3">
-                  <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={addRow}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0"
+                    disabled={!canAddPricing}
+                    onClick={addRow}
+                  >
                     <Plus className="mr-1 h-4 w-4" />
                     {t("admin.tripPricingSegmentAdd")}
                   </Button>
@@ -161,7 +205,13 @@ export function PricingSegmentsModal({
                 <p className="pb-2 text-sm text-slate-600 dark:text-zinc-400">{t("admin.tripPricingSegmentsEmpty")}</p>
               ) : null}
               <div className="space-y-3">
-                {draft.map((row, index) => (
+                {draft.map((row, index) => {
+                  const unionDaysForMonth = departureDaysUnionForMonth(departureWindows, row.month);
+                  const monthSelectValue = allowedMonths.includes(row.month)
+                    ? row.month
+                    : allowedMonths[0] ?? row.month;
+
+                  return (
                   <Fragment key={index}>
                   <div
                     ref={index === draft.length - 1 ? lastAddedRowCardRef : undefined}
@@ -182,45 +232,93 @@ export function PricingSegmentsModal({
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="space-y-2 sm:col-span-2">
                         <Label htmlFor={`ps-modal-month-${index}`}>{t("admin.tripDepartureMonth")}</Label>
-                        <select
-                          id={`ps-modal-month-${index}`}
-                          className={cn(
-                            tripInputClass,
-                            "flex h-11 w-full rounded-md border border-input bg-background px-3 py-2",
-                          )}
-                          value={row.month}
-                          onChange={(e) => {
-                            const month = Number(e.target.value);
-                            setDraft((prev) => {
-                              const copy = [...prev];
-                              const cur = { ...copy[index], month };
-                              const days = (cur.days ?? []).filter((d) => isValidDayForMonth(month, d));
-                              copy[index] = { ...cur, days };
-                              return copy;
-                            });
-                          }}
-                        >
-                          {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                            <option key={m} value={m}>
+                        {allowedMonths.length === 0 ? (
+                          <select
+                            id={`ps-modal-month-${index}`}
+                            className={cn(
+                              tripInputClass,
+                              "flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 opacity-80",
+                            )}
+                            disabled
+                            value={monthSelectValue}
+                          >
+                            <option value={monthSelectValue}>
                               {new Intl.DateTimeFormat(locale, { month: "long" }).format(
-                                new Date(2000, m - 1, 1),
+                                new Date(2000, monthSelectValue - 1, 1),
                               )}
                             </option>
-                          ))}
-                        </select>
+                          </select>
+                        ) : (
+                          <select
+                            id={`ps-modal-month-${index}`}
+                            className={cn(
+                              tripInputClass,
+                              "flex h-11 w-full rounded-md border border-input bg-background px-3 py-2",
+                            )}
+                            value={monthSelectValue}
+                            disabled={!canAddPricing}
+                            onChange={(e) => {
+                              const month = Number(e.target.value);
+                              setDraft((prev) => {
+                                const copy = [...prev];
+                                copy[index] = {
+                                  ...copy[index],
+                                  month,
+                                  days: [],
+                                };
+                                return copy;
+                              });
+                            }}
+                          >
+                            {allowedMonths.map((m) => (
+                              <option key={m} value={m}>
+                                {new Intl.DateTimeFormat(locale, { month: "long" }).format(
+                                  new Date(2000, m - 1, 1),
+                                )}
+                              </option>
+                            ))}
+                          </select>
+                        )}
                       </div>
-                      <DepartureDayPickerPure
-                        month={row.month}
-                        days={row.days}
-                        onDaysChange={(next) =>
-                          setDraft((prev) => {
-                            const copy = [...prev];
-                            copy[index] = { ...copy[index], days: next };
-                            return copy;
-                          })
-                        }
-                        daysPickLabel={t("admin.tripDepartureDaysPick")}
-                      />
+                      {unionDaysForMonth.length > 0 ? (
+                        <div className="space-y-2 sm:col-span-2">
+                          <Label>{t("admin.tripDepartureDaysPick")}</Label>
+                          <p className="text-xs text-slate-500 dark:text-zinc-500">
+                            {t("admin.tripPricingDaysMultiHint")}
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {unionDaysForMonth.map((day) => {
+                              const selected = row.days.includes(day);
+                              return (
+                                <button
+                                  key={day}
+                                  type="button"
+                                  className={cn(
+                                    "min-h-9 min-w-9 rounded-md border text-xs font-medium transition-colors",
+                                    selected
+                                      ? "border-primary bg-primary text-primary-foreground"
+                                      : "border-border bg-background hover:bg-muted",
+                                  )}
+                                  onClick={() => {
+                                    setDraft((prev) => {
+                                      const copy = [...prev];
+                                      const cur = { ...copy[index] };
+                                      const next = new Set(cur.days);
+                                      if (next.has(day)) next.delete(day);
+                                      else next.add(day);
+                                      cur.days = [...next].sort((a, b) => a - b);
+                                      copy[index] = cur;
+                                      return copy;
+                                    });
+                                  }}
+                                >
+                                  {day}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ) : null}
                       <div className="space-y-2 sm:col-span-2">
                         <Label htmlFor={`ps-modal-dc-el-${index}`}>{t("admin.tripDepartureCityEl")}</Label>
                         <Input
@@ -412,14 +510,22 @@ export function PricingSegmentsModal({
                   </div>
                     {index === draft.length - 1 ? (
                       <div className="flex justify-end">
-                        <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={addRow}>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="shrink-0"
+                          disabled={!canAddPricing}
+                          onClick={addRow}
+                        >
                           <Plus className="mr-1 h-4 w-4" />
                           {t("admin.tripPricingSegmentAdd")}
                         </Button>
                       </div>
                     ) : null}
                   </Fragment>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

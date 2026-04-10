@@ -339,7 +339,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripPricingDepartureRowMissing":
       "Each pricing row needs a matching departure row (same order). Add departures first or remove extra pricing rows.",
     "admin.tripPricingDepartureNoMatchingWindow":
-      "This month and days must match exactly one departure row (same dates). Reorder rows if needed, or fix the departure dates editor.",
+      "Pick at least one day for this month, and only days you selected in Departure dates for that month.",
     "admin.tripDepartureModalTitle": "Departure dates",
     "admin.tripDepartureModalOpenButton": "Edit departure dates",
     "admin.tripDepartureModalSummary": "{count} departure window(s)",
@@ -443,6 +443,14 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripPricingSegmentsHint":
       "Each row is a separate offer. Overlapping days across rows are allowed for display but avoid if they conflict.",
     "admin.tripPricingSegmentsEmpty": "No segments yet. Use Add segment or leave empty and use departure dates above.",
+    "admin.tripPricingOnlyDeparturesHint":
+      "Only months and days from Departure dates appear here; each pricing row can use a different subset.",
+    "admin.tripPricingNeedDeparturesFirst":
+      "Add at least one departure window with days selected (Departure dates above) before adding pricing segments.",
+    "admin.tripPricingDeparturePatternLabel": "Departure dates",
+    "admin.tripPricingSelectDepartureDays": "Select days…",
+    "admin.tripPricingDaysMultiHint":
+      "Tap to select days for this offer. Add another segment for the same month with a different combination (e.g. different hotel).",
     "admin.tripPricingSegmentAdd": "Add segment",
     "admin.tripPricingSegmentRemove": "Remove segment",
     "admin.tripPricingHotelEl": "Hotel (Greek)",
@@ -900,7 +908,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripPricingDepartureRowMissing":
       "Κάθε γραμμή τιμολόγησης χρειάζεται αντίστοιχη γραμμή αναχώρησης (ίδια σειρά). Προσθέστε αναχωρήσεις πρώτα ή αφαιρέστε επιπλέον γραμμές τιμολόγησης.",
     "admin.tripPricingDepartureNoMatchingWindow":
-      "Ο μήνας και οι ημέρες πρέπει να ταιριάζουν ακριβώς με μία γραμμή αναχώρησης (ίδιες ημερομηνίες). Αλλάξτε τη σειρά γραμμών αν χρειάζεται ή διορθώστε τις ημερομηνίες αναχώρησης.",
+      "Επιλέξτε τουλάχιστον μία ημέρα για τον μήνα και μόνο ημέρες που έχετε ορίσει στις ημερομηνίες αναχώρησης για αυτόν τον μήνα.",
     "admin.tripDepartureModalTitle": "Ημερομηνίες αναχώρησης",
     "admin.tripDepartureModalOpenButton": "Επεξεργασία ημερομηνιών αναχώρησης",
     "admin.tripDepartureModalSummary": "{count} παράθυρο(α) αναχώρησης",
@@ -1004,6 +1012,14 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripPricingSegmentsHint":
       "Κάθε γραμμή είναι ξεχωριστή προσφορά. Επικαλυπτόμενες ημέρες επιτρέπονται για εμφάνιση, αλλά αποφύγετε αν συγκρούονται.",
     "admin.tripPricingSegmentsEmpty": "Δεν υπάρχουν τμήματα ακόμα. Προσθέστε τμήμα ή αφήστε κενό και χρησιμοποιήστε τις ημερομηνίες αναχώρησης πάνω.",
+    "admin.tripPricingOnlyDeparturesHint":
+      "Εμφανίζονται μόνο μήνες και ημέρες από τις ημερομηνίες αναχώρησης· κάθε γραμμή τιμών μπορεί να χρησιμοποιεί διαφορετικό υποσύνολο.",
+    "admin.tripPricingNeedDeparturesFirst":
+      "Προσθέστε τουλάχιστον ένα παράθυρο αναχώρησης με επιλεγμένες ημέρες (Ημερομηνίες αναχώρησης παραπάνω) πριν προσθέσετε γραμμές τιμολόγησης.",
+    "admin.tripPricingDeparturePatternLabel": "Ημερομηνίες αναχώρησης",
+    "admin.tripPricingSelectDepartureDays": "Επιλέξτε ημέρες…",
+    "admin.tripPricingDaysMultiHint":
+      "Πατήστε για να επιλέξετε ημέρες για αυτή την προσφορά. Προσθέστε νέα γραμμή για τον ίδιο μήνα με άλλο συνδυασμό (π.χ. άλλο ξενοδοχείο).",
     "admin.tripPricingSegmentAdd": "Προσθήκη τμήματος",
     "admin.tripPricingSegmentRemove": "Αφαίρεση τμήματος",
     "admin.tripPricingHotelEl": "Ξενοδοχείο (ελληνικά)",

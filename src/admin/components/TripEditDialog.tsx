@@ -44,7 +44,7 @@ import { PricingSegmentsModal } from "@/admin/components/trip-edit/PricingSegmen
 import { TransportMultiSelect } from "@/admin/components/trip-edit/TransportMultiSelect";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { isValidDayForMonth } from "@/lib/departureWindows";
+import { isValidDayForMonth, pricingDaysAllowedByDepartures } from "@/lib/departureWindows";
 import {
   pricingSegmentsDbToForm,
   pricingSegmentsFormToPayload,
@@ -66,13 +66,6 @@ function coercePayloadInt(n: number | null | undefined): number | null {
   if (n === null || n === undefined) return null;
   const x = Math.trunc(Number(n));
   return Number.isFinite(x) ? x : null;
-}
-
-function daysSortedEqual(a: number[], b: number[]) {
-  if (a.length !== b.length) return false;
-  const sa = [...a].sort((x, y) => x - y);
-  const sb = [...b].sort((x, y) => x - y);
-  return sa.every((v, i) => v === sb[i]);
 }
 
 /** Full-trip schema errors that belong to pricing / departures / flight cross-checks (modal saves). */
@@ -281,28 +274,16 @@ function buildTripFormSchema(t: (key: string) => string) {
       }
 
       const dep = data.departure_windows;
-      const usedDepartureIdx = new Set<number>();
       for (let i = 0; i < data.pricing_segments.length; i++) {
         const row = data.pricing_segments[i];
         if (!pricingSegmentRowHasContent(row)) continue;
-        let matchIdx = -1;
-        for (let j = 0; j < dep.length; j++) {
-          if (usedDepartureIdx.has(j)) continue;
-          const w = dep[j];
-          if (w.month === row.month && daysSortedEqual(w.days, row.days)) {
-            matchIdx = j;
-            break;
-          }
-        }
-        if (matchIdx < 0) {
+        if (!pricingDaysAllowedByDepartures(row.month, row.days, dep)) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: t("admin.tripPricingDepartureNoMatchingWindow"),
             path: ["pricing_segments", i, "days"],
           });
-          continue;
         }
-        usedDepartureIdx.add(matchIdx);
       }
 
       for (let i = 0; i < data.pricing_segments.length; i++) {
@@ -1246,6 +1227,10 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                   open={pricingModalOpen}
                   onOpenChange={setPricingModalOpen}
                   rows={(watchedPricingSegments ?? []) as PricingSegmentFormRow[]}
+                  departureWindows={
+                    watchedDepartureWindows ??
+                    ([{ month: 1, days: [], label_en: "", label_el: "" }] satisfies DepartureWindowFormRow[])
+                  }
                   onSave={handlePricingSave}
                   t={t}
                   lang={lang}

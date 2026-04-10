@@ -239,3 +239,57 @@ export function tripDepartureMonths(trip: Trip): Set<number> {
   }
   return out;
 }
+
+/** Same multiset of days (order-insensitive). Used for pricing ↔ departure matching. */
+export function daysSortedEqual(a: number[], b: number[]): boolean {
+  if (a.length !== b.length) return false;
+  const sa = [...a].sort((x, y) => x - y);
+  const sb = [...b].sort((x, y) => x - y);
+  return sa.every((v, i) => v === sb[i]);
+}
+
+/** Minimal row shape for month + selected days (departure windows, pricing segments). */
+export type DepartureMonthDaysRow = { month: number; days: number[] };
+
+/** Distinct months 1–12 that have at least one selected day. */
+export function departureMonthsWithSelectedDays(rows: DepartureMonthDaysRow[]): number[] {
+  const months = new Set<number>();
+  for (const w of rows) {
+    if (Array.isArray(w.days) && w.days.length > 0) months.add(w.month);
+  }
+  return [...months].sort((a, b) => a - b);
+}
+
+/** Departure rows for a month that already have days chosen (for pricing UI). */
+export function departureRowsWithDaysForMonth(
+  rows: DepartureMonthDaysRow[],
+  month: number,
+): DepartureMonthDaysRow[] {
+  return rows.filter((w) => w.month === month && Array.isArray(w.days) && w.days.length > 0);
+}
+
+/** Union of all departure days for a calendar month (unique, sorted). */
+export function departureDaysUnionForMonth(rows: DepartureMonthDaysRow[], month: number): number[] {
+  const set = new Set<number>();
+  for (const w of rows) {
+    if (w.month !== month || !Array.isArray(w.days)) continue;
+    for (const d of w.days) {
+      if (Number.isInteger(d) && d >= 1 && d <= 31) set.add(d);
+    }
+  }
+  return [...set].sort((a, b) => a - b);
+}
+
+/**
+ * True if pricing `days` is non-empty and each day appears in at least one departure row
+ * for the same month (subset of the union of departure days for that month).
+ */
+export function pricingDaysAllowedByDepartures(
+  month: number,
+  days: number[],
+  rows: DepartureMonthDaysRow[],
+): boolean {
+  if (days.length === 0) return false;
+  const union = new Set(departureDaysUnionForMonth(rows, month));
+  return days.every((d) => union.has(d));
+}

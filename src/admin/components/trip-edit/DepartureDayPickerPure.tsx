@@ -8,19 +8,29 @@ export function DepartureDayPickerPure({
   days,
   onDaysChange,
   daysPickLabel,
+  allowedDays,
+  readOnly,
 }: {
   month: number;
   days: number[];
   onDaysChange: (next: number[]) => void;
   daysPickLabel: string;
+  /** If set, only these day numbers are selectable (others show disabled). */
+  allowedDays?: number[];
+  /** When true, selection cannot be changed (e.g. pricing tied to a fixed departure pattern). */
+  readOnly?: boolean;
 }) {
   const value = Array.isArray(days) ? days : [];
   return (
     <div className="space-y-2 sm:col-span-2">
       <Label>{daysPickLabel}</Label>
-      <div className="flex flex-wrap gap-1.5">
+      <div className={cn("flex flex-wrap gap-1.5", readOnly && "pointer-events-none")}>
         {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => {
-          const disabled = !isValidDayForMonth(month, day);
+          const allowed =
+            allowedDays == null || allowedDays.length === 0 ? null : new Set(allowedDays);
+          const outOfAllowlist = allowed != null && !allowed.has(day);
+          const disabled =
+            !readOnly && (!isValidDayForMonth(month, day) || outOfAllowlist);
           const selected = value.includes(day);
           return (
             <button
@@ -35,7 +45,7 @@ export function DepartureDayPickerPure({
                   : "border-border bg-background hover:bg-muted",
               )}
               onClick={() => {
-                if (disabled) return;
+                if (readOnly || disabled) return;
                 const next = new Set(value);
                 if (next.has(day)) next.delete(day);
                 else next.add(day);
