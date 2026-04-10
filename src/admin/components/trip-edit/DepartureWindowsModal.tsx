@@ -1,6 +1,6 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { Plus, Trash2, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import type { DepartureWindowFormRow } from "@/lib/tripAdminForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +42,8 @@ export function DepartureWindowsModal({
 }) {
   const [draft, setDraft] = useState<DepartureWindowFormRow[]>([]);
   const snapshotRef = useRef<string>("");
+  const departureScrollBodyRef = useRef<HTMLDivElement>(null);
+  const scrollToEndAfterAddRef = useRef(false);
   const [unsavedOpen, setUnsavedOpen] = useState(false);
 
   useEffect(() => {
@@ -50,6 +52,23 @@ export function DepartureWindowsModal({
     setDraft(init);
     snapshotRef.current = JSON.stringify(init);
   }, [open, rows]);
+
+  useEffect(() => {
+    if (!scrollToEndAfterAddRef.current) return;
+    scrollToEndAfterAddRef.current = false;
+    const el = departureScrollBodyRef.current;
+    if (!el) return;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+      });
+    });
+  }, [draft]);
+
+  const addRow = useCallback(() => {
+    scrollToEndAfterAddRef.current = true;
+    setDraft((prev) => [...prev, emptyRow()]);
+  }, []);
 
   const tryClose = useCallback(() => {
     if (JSON.stringify(draft) === snapshotRef.current) {
@@ -109,24 +128,27 @@ export function DepartureWindowsModal({
             </div>
             <Dialog.Description className="sr-only">{t("admin.tripDepartureModalTitle")}</Dialog.Description>
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-5">
-              <div className="flex flex-wrap items-center justify-between gap-2 pb-3">
-                <Label className="text-sm font-medium">{t("admin.tripDepartureDates")}</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="shrink-0"
-                  onClick={() => setDraft((prev) => [...prev, emptyRow()])}
-                >
-                  <Plus className="mr-1 h-4 w-4" />
-                  {t("admin.tripDepartureAddRow")}
-                </Button>
+            <div
+              ref={departureScrollBodyRef}
+              className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-5"
+            >
+              <div className="pb-3">
+                {draft.length === 0 ? (
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <Label className="text-sm font-medium">{t("admin.tripDepartureDates")}</Label>
+                    <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={addRow}>
+                      <Plus className="mr-1 h-4 w-4" />
+                      {t("admin.tripDepartureAddRow")}
+                    </Button>
+                  </div>
+                ) : (
+                  <Label className="text-sm font-medium">{t("admin.tripDepartureDates")}</Label>
+                )}
               </div>
               <div className="space-y-3">
                 {draft.map((row, index) => (
+                  <Fragment key={index}>
                   <div
-                    key={index}
                     className="space-y-3 rounded-xl border border-border bg-muted/20 p-3"
                   >
                     <div className="flex justify-end">
@@ -229,6 +251,15 @@ export function DepartureWindowsModal({
                       </div>
                     </div>
                   </div>
+                    {index === draft.length - 1 ? (
+                      <div className="flex justify-end">
+                        <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={addRow}>
+                          <Plus className="mr-1 h-4 w-4" />
+                          {t("admin.tripDepartureAddRow")}
+                        </Button>
+                      </div>
+                    ) : null}
+                  </Fragment>
                 ))}
               </div>
             </div>
