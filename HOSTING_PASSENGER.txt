@@ -40,3 +40,16 @@ Passenger production checklist (Valitsa Travel)
 
 8) Optional strict build (Path B only): CHECK_PRODUCTION_API=1 npm run build
    - Fails the build if VITE_API_BASE_URL is unset — use in CI when you always deploy with a separate API origin.
+
+9) cPanel — create an API subdomain (Path B when the main domain never serves JSON on /api)
+   - Subdomains → add e.g. api → document root MUST be the same folder as your Node app (where package.json and passenger_entry.cjs live), e.g. ~/valitsa_app — not a copy of dist/ only.
+   - Enable SSL (AutoSSL) for api.yourdomain.gr, wait for DNS if needed.
+   - Test: curl -s https://api.yourdomain.gr/api/health  → must print JSON with "ok":true.
+   - In project root .env: VITE_API_BASE_URL=https://api.yourdomain.gr (no trailing slash). npm run build. Upload the new dist/ to the main domain (valitsatravel.gr can stay on static nginx).
+   - server/.env on the API machine: CORS_ORIGIN must include https://valitsatravel.gr (and https://www.… if you use it). Restart Node after editing.
+
+10) "Last time I only uploaded dist and it worked" — what that can (and cannot) fix
+   - CAN: A fresh dist/ brings an updated dist/.htaccess (no /index.html → / 301, SPA rewrites). That fixes redirect loops and routing issues on Apache or when Apache still sees .htaccess behind nginx.
+   - CAN: Git deploy (.cpanel.yml + rsync) + tmp/restart.txt restarts Passenger. If Node had crashed or was stale, /api can work again on the same hostname without a new subdomain.
+   - CANNOT: If the edge server (nginx) serves static files only for the main domain and never forwards /api to Node, another dist upload alone will not make /api/health return JSON — use section 6 Path A or B.
+   - If you are unsure: curl -s https://your-domain/api/health — JSON means Path A is OK; HTML means you still need 6 or 9.
