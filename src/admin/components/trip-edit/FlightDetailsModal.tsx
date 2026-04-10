@@ -1,6 +1,6 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { Plus, Trash2, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import type { TripFlightLeg } from "@/types/Trip";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -46,6 +46,8 @@ export function FlightDetailsModal({
   const [draftEnabled, setDraftEnabled] = useState(false);
   const [draftLegs, setDraftLegs] = useState<TripFlightLeg[]>([]);
   const snapshotRef = useRef<string>("");
+  const flightScrollBodyRef = useRef<HTMLDivElement>(null);
+  const scrollToEndAfterAddRef = useRef(false);
   const [unsavedOpen, setUnsavedOpen] = useState(false);
 
   useEffect(() => {
@@ -56,6 +58,18 @@ export function FlightDetailsModal({
     setDraftLegs(next);
     snapshotRef.current = JSON.stringify({ enabled, legs: next });
   }, [open, flightDetailsEnabled, legs]);
+
+  useEffect(() => {
+    if (!scrollToEndAfterAddRef.current) return;
+    scrollToEndAfterAddRef.current = false;
+    const el = flightScrollBodyRef.current;
+    if (!el) return;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+      });
+    });
+  }, [draftLegs]);
 
   const snapshotPayload = JSON.stringify({ enabled: draftEnabled, legs: draftLegs });
 
@@ -110,6 +124,7 @@ export function FlightDetailsModal({
   };
 
   const addLeg = () => {
+    scrollToEndAfterAddRef.current = true;
     setDraftLegs((prev) => [...prev, { ...EMPTY_LEG }]);
   };
 
@@ -146,7 +161,10 @@ export function FlightDetailsModal({
             </div>
             <Dialog.Description className="sr-only">{t("admin.tripFlightModalTitle")}</Dialog.Description>
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-5">
+            <div
+              ref={flightScrollBodyRef}
+              className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-5"
+            >
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 dark:border-white/10 dark:bg-zinc-950/50">
                 <div>
                   <p className="text-sm font-medium text-slate-900 dark:text-zinc-100">
@@ -166,19 +184,23 @@ export function FlightDetailsModal({
 
               {draftEnabled ? (
                 <div className="mt-4 space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
+                  {draftLegs.length === 0 ? (
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs text-slate-600 dark:text-zinc-400">{t("admin.tripFlightModalLegsHint")}</p>
+                      <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={addLeg}>
+                        <Plus className="mr-1 h-4 w-4" aria-hidden />
+                        {t("admin.tripFlightLegAdd")}
+                      </Button>
+                    </div>
+                  ) : (
                     <p className="text-xs text-slate-600 dark:text-zinc-400">{t("admin.tripFlightModalLegsHint")}</p>
-                    <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={addLeg}>
-                      <Plus className="mr-1 h-4 w-4" aria-hidden />
-                      {t("admin.tripFlightLegAdd")}
-                    </Button>
-                  </div>
+                  )}
                   {draftLegs.length === 0 ? (
                     <p className="text-sm text-slate-600 dark:text-zinc-400">{t("admin.tripFlightLegsEmpty")}</p>
                   ) : null}
                   {draftLegs.map((leg, index) => (
+                    <Fragment key={index}>
                     <div
-                      key={index}
                       className="space-y-3 rounded-xl border border-border bg-muted/20 p-3"
                     >
                       <div className="flex items-center justify-between gap-2">
@@ -266,6 +288,15 @@ export function FlightDetailsModal({
                         </TabsContent>
                       </Tabs>
                     </div>
+                    {index === draftLegs.length - 1 ? (
+                      <div className="flex justify-end">
+                        <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={addLeg}>
+                          <Plus className="mr-1 h-4 w-4" aria-hidden />
+                          {t("admin.tripFlightLegAdd")}
+                        </Button>
+                      </div>
+                    ) : null}
+                    </Fragment>
                   ))}
                 </div>
               ) : null}
