@@ -16,7 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { cn } from "@/lib/utils";
+import { cn, scrollContainerToAlignChildTop } from "@/lib/utils";
 import { normalizeFlightDetails } from "@/lib/tripFlightDetails";
 
 const EMPTY_LEG: TripFlightLeg = {
@@ -47,6 +47,7 @@ export function FlightDetailsModal({
   const [draftLegs, setDraftLegs] = useState<TripFlightLeg[]>([]);
   const snapshotRef = useRef<string>("");
   const flightScrollBodyRef = useRef<HTMLDivElement>(null);
+  const lastAddedLegCardRef = useRef<HTMLDivElement | null>(null);
   const scrollToEndAfterAddRef = useRef(false);
   const [unsavedOpen, setUnsavedOpen] = useState(false);
 
@@ -62,11 +63,12 @@ export function FlightDetailsModal({
   useEffect(() => {
     if (!scrollToEndAfterAddRef.current) return;
     scrollToEndAfterAddRef.current = false;
-    const el = flightScrollBodyRef.current;
-    if (!el) return;
+    const container = flightScrollBodyRef.current;
+    const segment = lastAddedLegCardRef.current;
+    if (!container || !segment) return;
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+        scrollContainerToAlignChildTop(container, segment);
       });
     });
   }, [draftLegs]);
@@ -201,6 +203,7 @@ export function FlightDetailsModal({
                   {draftLegs.map((leg, index) => (
                     <Fragment key={index}>
                     <div
+                      ref={index === draftLegs.length - 1 ? lastAddedLegCardRef : undefined}
                       className="space-y-3 rounded-xl border border-border bg-muted/20 p-3"
                     >
                       <div className="flex items-center justify-between gap-2">

@@ -1,6 +1,6 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { Plus, Trash2, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import type { PricingSegmentFormRow } from "@/lib/tripPricing";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { cn } from "@/lib/utils";
+import { cn, scrollContainerToAlignChildTop } from "@/lib/utils";
 import { isValidDayForMonth } from "@/lib/departureWindows";
 import { DepartureDayPickerPure } from "./DepartureDayPickerPure";
 
@@ -56,6 +56,9 @@ export function PricingSegmentsModal({
 }) {
   const [draft, setDraft] = useState<PricingSegmentFormRow[]>([]);
   const snapshotRef = useRef<string>("");
+  const pricingScrollBodyRef = useRef<HTMLDivElement>(null);
+  const lastAddedRowCardRef = useRef<HTMLDivElement | null>(null);
+  const scrollToEndAfterAddRef = useRef(false);
   const [unsavedOpen, setUnsavedOpen] = useState(false);
 
   useEffect(() => {
@@ -64,6 +67,24 @@ export function PricingSegmentsModal({
     setDraft(init);
     snapshotRef.current = JSON.stringify(init);
   }, [open, rows]);
+
+  useEffect(() => {
+    if (!scrollToEndAfterAddRef.current) return;
+    scrollToEndAfterAddRef.current = false;
+    const container = pricingScrollBodyRef.current;
+    const segment = lastAddedRowCardRef.current;
+    if (!container || !segment) return;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollContainerToAlignChildTop(container, segment);
+      });
+    });
+  }, [draft]);
+
+  const addRow = useCallback(() => {
+    scrollToEndAfterAddRef.current = true;
+    setDraft((prev) => [...prev, emptyRow()]);
+  }, []);
 
   const tryClose = useCallback(() => {
     if (JSON.stringify(draft) === snapshotRef.current) {
@@ -123,27 +144,27 @@ export function PricingSegmentsModal({
             </div>
             <Dialog.Description className="sr-only">{t("admin.tripPricingModalTitle")}</Dialog.Description>
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-5">
+            <div
+              ref={pricingScrollBodyRef}
+              className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-5"
+            >
               <p className="pb-3 text-xs text-slate-600 dark:text-zinc-400">{t("admin.tripPricingSegmentsHint")}</p>
-              <div className="flex flex-wrap items-center justify-end gap-2 pb-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="shrink-0"
-                  onClick={() => setDraft((prev) => [...prev, emptyRow()])}
-                >
-                  <Plus className="mr-1 h-4 w-4" />
-                  {t("admin.tripPricingSegmentAdd")}
-                </Button>
-              </div>
+              {draft.length === 0 ? (
+                <div className="flex flex-wrap items-center justify-end gap-2 pb-3">
+                  <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={addRow}>
+                    <Plus className="mr-1 h-4 w-4" />
+                    {t("admin.tripPricingSegmentAdd")}
+                  </Button>
+                </div>
+              ) : null}
               {draft.length === 0 ? (
                 <p className="pb-2 text-sm text-slate-600 dark:text-zinc-400">{t("admin.tripPricingSegmentsEmpty")}</p>
               ) : null}
               <div className="space-y-3">
                 {draft.map((row, index) => (
+                  <Fragment key={index}>
                   <div
-                    key={index}
+                    ref={index === draft.length - 1 ? lastAddedRowCardRef : undefined}
                     className="space-y-3 rounded-xl border border-border bg-muted/20 p-3"
                   >
                     <div className="flex justify-end">
@@ -389,6 +410,15 @@ export function PricingSegmentsModal({
                       </div>
                     </div>
                   </div>
+                    {index === draft.length - 1 ? (
+                      <div className="flex justify-end">
+                        <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={addRow}>
+                          <Plus className="mr-1 h-4 w-4" />
+                          {t("admin.tripPricingSegmentAdd")}
+                        </Button>
+                      </div>
+                    ) : null}
+                  </Fragment>
                 ))}
               </div>
             </div>

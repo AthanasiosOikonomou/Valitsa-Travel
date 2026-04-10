@@ -123,3 +123,19 @@ export function buildResponsiveImageSet(
     lqipSrc: buildCdnImageUrl(src, lqipWidth, 30, "jpg"),
   };
 }
+
+/** Scroll `container` the minimum amount so `segmentEl`'s top aligns with the container viewport top. */
+export function scrollContainerToAlignChildTop(
+  container: HTMLElement,
+  segmentEl: HTMLElement,
+  behavior: ScrollBehavior = "smooth",
+) {
+  const cRect = container.getBoundingClientRect();
+  const sRect = segmentEl.getBoundingClientRect();
+  const delta = sRect.top - cRect.top;
+  if (Math.abs(delta) < 1) return;
+  container.scrollTo({
+    top: container.scrollTop + delta,
+    behavior,
+  });
+}

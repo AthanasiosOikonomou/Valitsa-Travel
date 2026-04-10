@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { cn } from "@/lib/utils";
+import { cn, scrollContainerToAlignChildTop } from "@/lib/utils";
 import { isValidDayForMonth } from "@/lib/departureWindows";
 import { DepartureDayPickerPure } from "./DepartureDayPickerPure";
 
@@ -43,6 +43,7 @@ export function DepartureWindowsModal({
   const [draft, setDraft] = useState<DepartureWindowFormRow[]>([]);
   const snapshotRef = useRef<string>("");
   const departureScrollBodyRef = useRef<HTMLDivElement>(null);
+  const lastAddedRowCardRef = useRef<HTMLDivElement | null>(null);
   const scrollToEndAfterAddRef = useRef(false);
   const [unsavedOpen, setUnsavedOpen] = useState(false);
 
@@ -56,11 +57,12 @@ export function DepartureWindowsModal({
   useEffect(() => {
     if (!scrollToEndAfterAddRef.current) return;
     scrollToEndAfterAddRef.current = false;
-    const el = departureScrollBodyRef.current;
-    if (!el) return;
+    const container = departureScrollBodyRef.current;
+    const segment = lastAddedRowCardRef.current;
+    if (!container || !segment) return;
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+        scrollContainerToAlignChildTop(container, segment);
       });
     });
   }, [draft]);
@@ -149,6 +151,7 @@ export function DepartureWindowsModal({
                 {draft.map((row, index) => (
                   <Fragment key={index}>
                   <div
+                    ref={index === draft.length - 1 ? lastAddedRowCardRef : undefined}
                     className="space-y-3 rounded-xl border border-border bg-muted/20 p-3"
                   >
                     <div className="flex justify-end">
