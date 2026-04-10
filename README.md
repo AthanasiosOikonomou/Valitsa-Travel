@@ -82,6 +82,8 @@ Helmet (HSTS in prod, referrer policy, CORP) · CORS allow-list (production requ
 | [`.cpanel.yml`](.cpanel.yml)                                                 | Rsync deploy to managed hosting, `tmp/restart.txt` for Passenger bounce.                                      |
 | [`passenger_entry.cjs`](passenger_entry.cjs)                                 | CommonJS bridge — dynamic `import()` of ESM [`server/index.js`](server/index.js) for Phusion Passenger.       |
 | [`scripts/verify-passenger-deploy.mjs`](scripts/verify-passenger-deploy.mjs) | Invoked via `npm run verify:deploy` — post-deploy sanity checks.                                              |
+| [`scripts/check-api-health.mjs`](scripts/check-api-health.mjs)               | `npm run verify:api-health` — GET `/api/health` must return JSON (fails if edge serves HTML only).            |
+| [`HOSTING_PASSENGER.txt`](HOSTING_PASSENGER.txt)                             | Path A vs Path B when `/api` does not reach Node; post-deploy checklist.                                     |
 | [`vite.config.ts`](vite.config.ts)                                           | Dev `/api` proxy to `API_PORT` (default `8787`); production build drops `console` / `debugger` via `esbuild`. |
 
 ---
@@ -135,6 +137,7 @@ Helmet (HSTS in prod, referrer policy, CORP) · CORS allow-list (production requ
 | `npm run build`         | Optimized client bundle                                                       |
 | `npm run start:api`     | Production API process                                                        |
 | `npm run verify:deploy` | Passenger deploy verification                                                 |
+| `npm run verify:api-health` | Smoke-test `GET /api/health` on production (see `API_HEALTH_URL`)      |
 | `npm test`              | Vitest                                                                        |
 
 ---

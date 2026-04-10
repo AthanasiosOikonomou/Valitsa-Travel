@@ -22,5 +22,21 @@ Passenger production checklist (Valitsa Travel)
    - Run `npm run build` on the server or in CI so `dist/index.html` exists next to `package.json`.
    - Without `dist/`, Express cannot serve the SPA; deep links will 404.
 
-6) If the main domain only serves static files and /api never hits Node (uploads, trips API, seasonal admin fail):
-   - Point Express at another URL where /api/health returns JSON, set VITE_API_BASE_URL to that origin (no trailing slash), rebuild the frontend, and add the main site origin to CORS_ORIGIN on the API server. See .env.example.
+6) Nginx in front: .htaccess does not apply. If GET https://your-domain/api/health returns HTML or 404 (not JSON), /api is not reaching Express on that hostname.
+
+   Path A — single origin (no extra frontend env):
+   - Passenger application root must be the same tree as the live site (package.json + passenger_entry.cjs + dist/), OR nginx must proxy location /api/ to Node. See deploy/nginx-spa-snippet.conf (Option B: proxy Pass to Express).
+
+   Path B — main site static, API on another host (subdomain or internal URL):
+   - Find a base URL where GET /api/health returns {"ok":true,...} (e.g. https://api.yourdomain.gr).
+   - In root .env before npm run build: VITE_API_BASE_URL=https://api.yourdomain.gr (no trailing slash). Rebuild and deploy dist to the main site.
+   - On the API server, server/.env CORS_ORIGIN must include https://yourdomain.gr
+
+7) After every deploy (recurring check):
+   - Restart Passenger (e.g. touch tmp/restart.txt — see .cpanel.yml) or use the panel restart.
+   - From your machine: npm run verify:api-health
+     (or: API_HEALTH_URL=https://yourdomain.gr npm run verify:api-health)
+   - Pass = GET /api/health returns JSON with "ok": true. Fail = HTML or 404 → Path A or B above is still required.
+
+8) Optional strict build (Path B only): CHECK_PRODUCTION_API=1 npm run build
+   - Fails the build if VITE_API_BASE_URL is unset — use in CI when you always deploy with a separate API origin.
