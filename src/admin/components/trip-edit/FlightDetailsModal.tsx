@@ -198,9 +198,19 @@ export function FlightDetailsModal({
                         </Button>
                       </div>
                       <Tabs defaultValue="el" className="w-full" key={`fd-leg-${index}`}>
-                        <TabsList className="grid h-9 w-full max-w-[16rem] grid-cols-2">
-                          <TabsTrigger value="el">{t("admin.tabGreek")}</TabsTrigger>
-                          <TabsTrigger value="en">{t("admin.tabEnglish")}</TabsTrigger>
+                        <TabsList className="grid h-11 w-full max-w-[16rem] grid-cols-2">
+                          <TabsTrigger
+                            value="el"
+                            className="flex h-full min-h-0 w-full min-w-0 items-center justify-center"
+                          >
+                            {t("admin.tabGreek")}
+                          </TabsTrigger>
+                          <TabsTrigger
+                            value="en"
+                            className="flex h-full min-h-0 w-full min-w-0 items-center justify-center"
+                          >
+                            {t("admin.tabEnglish")}
+                          </TabsTrigger>
                         </TabsList>
                         <TabsContent value="el" className="mt-3 space-y-3">
                           <div className="grid gap-3 md:grid-cols-2">
