@@ -794,7 +794,7 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
                   : "/branding/navbar/logo-light.svg"
               }
               alt={t("nav.brand")}
-              width={200}
+              width={378}
               height={60}
               className="h-9 w-auto sm:h-11"
             />

@@ -9,4 +9,4 @@ Put your final branding images in these folders:
 
 You can replace these SVG placeholder files with PNG, SVG, ICO, or WebP files later, but if you change the filenames or extensions, update the references in src/components/Navbar.tsx and index.html.
 
-Confirmation emails (server) always embed `https://valitsatravel.gr/branding/navbar/logo-light.png`. Staff notification mail may use `MAIL_LOGO_URL` or a CID-attached `logo-dark.png`.
+Confirmation emails (server) always embed `https://valitsatravel.gr/branding/navbar/logo-light.svg`. Staff notification mail may use `MAIL_LOGO_URL` or a CID-attached `logo-dark.svg`.

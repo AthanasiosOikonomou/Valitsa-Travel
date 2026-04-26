@@ -268,7 +268,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.navigationLoadErrorApiUnreachableBody":
       "The server returned the public website HTML instead of the API. Requests to /api are not reaching Node—this is a hosting/routing issue, not a missing database table.",
     "admin.navigationLoadErrorHintApiUnreachable":
-      "Fix: (1) Configure the host so /api is handled by your Node app (Passenger or nginx proxy to Express). (2) Or set VITE_API_BASE_URL in .env to the base URL where Express runs (open /api/health there—it must return JSON {\"ok\":true}), run npm run build, and upload the new dist.",
+      'Fix: (1) Configure the host so /api is handled by your Node app (Passenger or nginx proxy to Express). (2) Or set VITE_API_BASE_URL in .env to the base URL where Express runs (open /api/health there—it must return JSON {"ok":true}), run npm run build, and upload the new dist.',
     "admin.navigationLoadErrorInvalidJsonBody":
       "The response was not valid JSON. Confirm the URL hits the Node API, not static hosting only.",
     "admin.tripIsSeasonal": "Seasonal trip",
@@ -442,7 +442,8 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripPricingSegmentsTitle": "Per-departure pricing (hotel and rooms)",
     "admin.tripPricingSegmentsHint":
       "Each row is a separate offer. Overlapping days across rows are allowed for display but avoid if they conflict.",
-    "admin.tripPricingSegmentsEmpty": "No segments yet. Use Add segment or leave empty and use departure dates above.",
+    "admin.tripPricingSegmentsEmpty":
+      "No segments yet. Use Add segment or leave empty and use departure dates above.",
     "admin.tripPricingOnlyDeparturesHint":
       "Only months and days from Departure dates appear here; each pricing row can use a different subset.",
     "admin.tripPricingNeedDeparturesFirst":
@@ -634,7 +635,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "validation.phoneInvalid": "Εισάγετε έγκυρο αριθμό τηλεφώνου",
 
     // Hero
-    "hero.label": "Λιγότερο ρουτίνα, περισσότερη ζωή",
+    "hero.label": "Λιγότερη ρουτίνα, περισσότερη ζωή",
     "hero.title": "Ετοιμάστε Βαλίτσες",
     "hero.subtitle":
       "Κάθε ταξίδι έχει μυστικούς προορισμούς που ο ταξιδιώτης δε γνωρίζει. -Martin Buber",
@@ -836,7 +837,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.navigationLoadErrorApiUnreachableBody":
       "Ο διακομιστής επέστρεψε HTML της δημόσιας ιστοσελίδας αντί για το API. Τα αιτήματα στο /api δεν φτάνουν στο Node—πρόκειται για ρύθμιση hosting/δρομολόγησης, όχι για ελλιπή πίνακα στη βάση.",
     "admin.navigationLoadErrorHintApiUnreachable":
-      "Λύση: (1) Ρυθμίστε τον host ώστε το /api να εξυπηρετείται από την εφαρμογή Node (Passenger ή nginx proxy προς Express). (2) Ή ορίστε VITE_API_BASE_URL στο .env στη βάση URL όπου τρέχει το Express (ανοίξτε εκεί /api/health—πρέπει να επιστρέφει JSON {\"ok\":true}), τρέξτε npm run build και ανεβάστε το νέο dist.",
+      'Λύση: (1) Ρυθμίστε τον host ώστε το /api να εξυπηρετείται από την εφαρμογή Node (Passenger ή nginx proxy προς Express). (2) Ή ορίστε VITE_API_BASE_URL στο .env στη βάση URL όπου τρέχει το Express (ανοίξτε εκεί /api/health—πρέπει να επιστρέφει JSON {"ok":true}), τρέξτε npm run build και ανεβάστε το νέο dist.',
     "admin.navigationLoadErrorInvalidJsonBody":
       "Η απάντηση δεν ήταν έγκυρο JSON. Βεβαιωθείτε ότι το URL οδηγεί στο Node API, όχι μόνο σε στατικά αρχεία.",
     "admin.tripIsSeasonal": "Εποχιακό ταξίδι",
@@ -920,7 +921,8 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripDepartureUnsavedSaveAndClose": "Αποθήκευση και κλείσιμο",
     "admin.tripDepartureUnsavedDiscard": "Έξοδος χωρίς αποθήκευση",
     "admin.tripDepartureUnsavedKeepEditing": "Συνέχεια επεξεργασίας",
-    "admin.tripPricingModalTitle": "Τιμές ανά αναχώρηση (ξενοδοχείο και δωμάτια)",
+    "admin.tripPricingModalTitle":
+      "Τιμές ανά αναχώρηση (ξενοδοχείο και δωμάτια)",
     "admin.tripPricingModalOpenButton": "Επεξεργασία τιμών ανά αναχώρηση",
     "admin.tripPricingModalSummary": "{count} γραμμή/ές τιμολόγησης",
     "admin.tripPricingModalSave": "Αποθήκευση",
@@ -978,12 +980,14 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripDepartureRemoveRow": "Αφαίρεση αναχώρησης",
     "admin.tripDepartureMonth": "Μήνας",
     "admin.tripDepartureDaysPick": "Ημέρες αναχώρησης",
-    "admin.tripDepartureDayInvalid": "Επιλέξτε έγκυρες ημέρες για αυτόν τον μήνα.",
+    "admin.tripDepartureDayInvalid":
+      "Επιλέξτε έγκυρες ημέρες για αυτόν τον μήνα.",
     "admin.tripDepartureStart": "Ημερομηνία έναρξης",
     "admin.tripDepartureEnd": "Ημερομηνία λήξης",
     "admin.tripDepartureLabelEl": "Ετικέτα (ελληνικά, προαιρετικό)",
     "admin.tripDepartureLabelEn": "Ετικέτα (αγγλικά, προαιρετικό)",
-    "admin.tripDepartureLabelsElSection": "Ετικέτες παραθύρων αναχώρησης (ελληνικά)",
+    "admin.tripDepartureLabelsElSection":
+      "Ετικέτες παραθύρων αναχώρησης (ελληνικά)",
     "admin.tripLogisticsOnEnglishTabHint":
       "Ημερομηνίες, τιμές και αγγλικές ετικέτες επεξεργάζονται στην καρτέλα «Αγγλικά».",
     "admin.tripDepartureLabelsElEmpty":
@@ -998,8 +1002,10 @@ const translations: Record<Lang, Record<string, string>> = {
       "Ενεργοποιήστε τις λεπτομέρειες πτήσης στην καρτέλα «Αγγλικά» για να εισάγετε ελληνικό κείμενο εδώ.",
     "admin.tripFlightDetailsElEmpty":
       "Δεν υπάρχουν ακόμα σκέλη πτήσης. Προσθέστε σκέλη στην καρτέλα «Αγγλικά» για να εισάγετε ελληνικό κείμενο εδώ.",
-    "admin.tripDepartureLabelOptional": "Αντικαθιστά το αυτόματο κείμενο ημερομηνιών αν συμπληρωθεί",
-    "admin.tripDepartureRangeOrder": "Η ημερομηνία λήξης πρέπει να είναι ίδια ή μετά την έναρξη.",
+    "admin.tripDepartureLabelOptional":
+      "Αντικαθιστά το αυτόματο κείμενο ημερομηνιών αν συμπληρωθεί",
+    "admin.tripDepartureRangeOrder":
+      "Η ημερομηνία λήξης πρέπει να είναι ίδια ή μετά την έναρξη.",
     "admin.tripDepartureCityEn": "Πόλη αναχώρησης (αγγλικά)",
     "admin.tripProgramDays": "Ημέρες",
     "admin.tripDaysPlaceholder": "π.χ. 1, 1-2, 4-7",
@@ -1008,10 +1014,12 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.transportPlaceholder": "Επιλέξτε μέσα μεταφοράς",
     "admin.tripPriceNum": "Τιμή",
     "admin.tripDurationDays": "Διάρκεια (ημέρες)",
-    "admin.tripPricingSegmentsTitle": "Τιμές ανά αναχώρηση (ξενοδοχείο και δωμάτια)",
+    "admin.tripPricingSegmentsTitle":
+      "Τιμές ανά αναχώρηση (ξενοδοχείο και δωμάτια)",
     "admin.tripPricingSegmentsHint":
       "Κάθε γραμμή είναι ξεχωριστή προσφορά. Επικαλυπτόμενες ημέρες επιτρέπονται για εμφάνιση, αλλά αποφύγετε αν συγκρούονται.",
-    "admin.tripPricingSegmentsEmpty": "Δεν υπάρχουν τμήματα ακόμα. Προσθέστε τμήμα ή αφήστε κενό και χρησιμοποιήστε τις ημερομηνίες αναχώρησης πάνω.",
+    "admin.tripPricingSegmentsEmpty":
+      "Δεν υπάρχουν τμήματα ακόμα. Προσθέστε τμήμα ή αφήστε κενό και χρησιμοποιήστε τις ημερομηνίες αναχώρησης πάνω.",
     "admin.tripPricingOnlyDeparturesHint":
       "Εμφανίζονται μόνο μήνες και ημέρες από τις ημερομηνίες αναχώρησης· κάθε γραμμή τιμών μπορεί να χρησιμοποιεί διαφορετικό υποσύνολο.",
     "admin.tripPricingNeedDeparturesFirst":
@@ -1031,7 +1039,8 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripFlightDetailsSection": "Πληροφορίες πτήσεων",
     "admin.tripFlightDetailsHint":
       "Προαιρετικό: προσθέστε ένα ή περισσότερα ζεύγη αναχώρησης/επιστροφής (ελληνικά και αγγλικά). Εμφανίζονται στη σελίδα ταξιδιού όταν είναι ενεργό.",
-    "admin.tripFlightDetailsEnable": "Εμφάνιση πληροφοριών πτήσεων στη σελίδα ταξιδιού",
+    "admin.tripFlightDetailsEnable":
+      "Εμφάνιση πληροφοριών πτήσεων στη σελίδα ταξιδιού",
     "admin.tripFlightDetailsOn": "Ενεργό",
     "admin.tripFlightDetailsOff": "Ανενεργό",
     "admin.tripFlightLegAdd": "Προσθήκη πτήσης",
@@ -1039,7 +1048,8 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripFlightLangEl": "Ελληνικά",
     "admin.tripFlightLangEn": "Αγγλικά",
     "admin.tripFlightLegRemove": "Αφαίρεση πτήσης",
-    "admin.tripFlightLegsEmpty": "Δεν υπάρχουν ακόμα. Χρησιμοποιήστε Προσθήκη πτήσης.",
+    "admin.tripFlightLegsEmpty":
+      "Δεν υπάρχουν ακόμα. Χρησιμοποιήστε Προσθήκη πτήσης.",
     "admin.tripFlightDepartureEl": "Αναχώρηση (ελληνικά)",
     "admin.tripFlightReturnEl": "Επιστροφή (ελληνικά)",
     "admin.tripFlightDepartureEn": "Αναχώρηση (αγγλικά)",

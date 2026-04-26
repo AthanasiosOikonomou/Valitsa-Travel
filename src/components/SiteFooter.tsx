@@ -22,7 +22,7 @@ export function SiteFooter({ darkMode, onTermsClick }: SiteFooterProps) {
             }
             alt={t("nav.brand")}
             className="h-8 w-auto"
-            width={200}
+            width={378}
             height={60}
             loading="lazy"
             decoding="async"

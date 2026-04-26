@@ -398,7 +398,7 @@ const incrementTripAnalytics = async ({
 const mailLogoUrl = process.env.MAIL_LOGO_URL || "";
 const localLogoPath = path.resolve(
   __dirname,
-  "../public/branding/navbar/logo-dark.png",
+  "../public/branding/navbar/logo-dark.svg",
 );
 const hasLocalLogo = fs.existsSync(localLogoPath);
 
@@ -678,9 +678,10 @@ app.post(inquiryRoutes, async (req, res) => {
       ? {
           attachments: [
             {
-              filename: "logo-dark.png",
+              filename: "logo-dark.svg",
               path: localLogoPath,
               cid: "valitsa-logo",
+              contentType: "image/svg+xml",
             },
           ],
         }

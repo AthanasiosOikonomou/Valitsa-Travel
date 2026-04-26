@@ -9,7 +9,7 @@ const escapeHtml = (value) =>
 
 /** Fixed production URL for the confirmation email logo (no env vars). */
 const CONFIRMATION_LOGO_URL =
-  "https://valitsatravel.gr/branding/navbar/logo-light.png";
+  "https://valitsatravel.gr/branding/navbar/logo-light.svg";
 
 export function buildConfirmationLogoUrl() {
   return CONFIRMATION_LOGO_URL;
