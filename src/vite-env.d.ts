@@ -9,6 +9,8 @@ interface ImportMetaEnv {
   readonly VITE_TURNSTILE_SITE_KEY?: string;
   readonly VITE_RECAPTCHA_SITE_KEY?: string;
   readonly VITE_SHOW_TRIPS?: string;
+  /** Per-build token for `?v=` on `/branding/*` URLs (`"dev"` in development). */
+  readonly VITE_BRAND_ASSET_VERSION?: string;
 }
 
 interface ImportMeta {

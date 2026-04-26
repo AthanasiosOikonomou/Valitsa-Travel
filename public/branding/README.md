@@ -9,4 +9,6 @@ Put your final branding images in these folders:
 
 You can replace these SVG placeholder files with PNG, SVG, ICO, or WebP files later, but if you change the filenames or extensions, update the references in src/components/Navbar.tsx and index.html.
 
-Confirmation emails (server) always embed `https://valitsatravel.gr/branding/navbar/logo-light.svg`. Staff notification mail may use `MAIL_LOGO_URL` or a CID-attached `logo-dark.svg`.
+After each production `npm run build`, the client adds `?v=<build-token>` to `/branding/*` URLs (and writes `dist/branding/asset-version.txt` for the server). Override the token with `VITE_BRAND_ASSET_VERSION` in `.env` if you need a fixed value in CI.
+
+Confirmation emails (server) embed the same logo URL with that `?v=` when `dist/branding/asset-version.txt` is present. Staff notification mail may use `MAIL_LOGO_URL` or a CID-attached `logo-dark.svg`.

@@ -45,6 +45,7 @@ import {
 import ProgressiveImage from "@/components/ProgressiveImage";
 import { SafeRichTextHtml } from "@/components/SafeRichTextHtml";
 import { useAnalytics } from "@/hooks/useAnalytics";
+import { brandAssetUrl } from "@/lib/brandAssetUrl";
 import { showTrips } from "@/lib/showTrips";
 import { fetchSeasonalNavItems } from "@/lib/seasonalNavApi";
 import { formatTripDepartureSummary } from "@/lib/departureWindows";
@@ -1067,7 +1068,7 @@ const TripsContent = () => {
         title={seoTitle}
         description={seoDescription}
         path="/trips"
-        image="/branding/navbar/logo-light.svg"
+        image={brandAssetUrl("/branding/navbar/logo-light.svg")}
         keywords={seoKeywords}
         lang={lang}
         structuredData={[itemListSchema, breadcrumbSchema]}
@@ -1373,7 +1374,7 @@ const TripsDisabledPlaceholder = () => {
         title={t("trips.disabledSeoTitle")}
         description={t("trips.disabledSeoDescription")}
         path="/trips"
-        image="/branding/navbar/logo-light.svg"
+        image={brandAssetUrl("/branding/navbar/logo-light.svg")}
         lang={lang}
         noindex
       />

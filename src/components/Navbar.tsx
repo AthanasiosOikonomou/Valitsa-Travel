@@ -15,6 +15,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ContactModal from "@/components/ContactModal";
 import { prefetchTripsRoute } from "@/lib/routePrefetch";
+import { brandAssetUrl } from "@/lib/brandAssetUrl";
 import { fetchSeasonalNavItems } from "@/lib/seasonalNavApi";
 import { fetchMultidayDurationDays } from "@/lib/multidayNavApi";
 import { showTrips } from "@/lib/showTrips";
@@ -790,8 +791,8 @@ const Navbar = ({ darkMode, onToggleDark }: NavbarProps) => {
             <img
               src={
                 darkMode
-                  ? "/branding/navbar/logo-dark.svg"
-                  : "/branding/navbar/logo-light.svg"
+                  ? brandAssetUrl("/branding/navbar/logo-dark.svg")
+                  : brandAssetUrl("/branding/navbar/logo-light.svg")
               }
               alt={t("nav.brand")}
               width={378}

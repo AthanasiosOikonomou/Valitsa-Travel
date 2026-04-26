@@ -15,6 +15,7 @@ import {
   HERO_IMAGE_SRC,
   HERO_IMAGE_WIDTH,
 } from "@/lib/heroImage";
+import { absoluteBrandAssetUrl } from "@/lib/brandAssetUrl";
 import { showTrips } from "@/lib/showTrips";
 
 const IndexContent = () => {
@@ -54,6 +55,8 @@ const IndexContent = () => {
     inLanguage: lang === "gr" ? "el-GR" : "en-US",
   };
 
+  const siteOrigin = "https://valitsatravel.gr";
+  const logoPath = "/branding/navbar/logo-light.svg";
   const businessSchema = {
     "@context": "https://schema.org",
     "@type": "TravelAgency",
@@ -62,11 +65,11 @@ const IndexContent = () => {
     url: "https://valitsatravel.gr/",
     logo: {
       "@type": "ImageObject",
-      url: "https://valitsatravel.gr/branding/navbar/logo-light.svg",
+      url: absoluteBrandAssetUrl(siteOrigin, logoPath),
       width: 200,
       height: 60,
     },
-    image: "https://valitsatravel.gr/branding/navbar/logo-light.svg",
+    image: absoluteBrandAssetUrl(siteOrigin, logoPath),
     description:
       lang === "gr"
         ? "Premium ταξιδιωτικό γραφείο που δημιουργεί χειροποίητα ταξίδια στις πιο εξαιρετικές τοποθεσίες του κόσμου."

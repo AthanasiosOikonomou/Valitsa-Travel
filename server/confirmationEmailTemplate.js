@@ -1,3 +1,7 @@
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
 const escapeHtml = (value) =>
   String(value)
     .replaceAll("&", "&amp;")
@@ -7,9 +11,25 @@ const escapeHtml = (value) =>
     .replaceAll("'", "&#39;")
     .replaceAll("`", "&#96;");
 
-/** Fixed production URL for the confirmation email logo (no env vars). */
-const CONFIRMATION_LOGO_URL =
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+/** Same token as `dist/branding/asset-version.txt` after `vite build` (cache-bust). */
+function readBrandAssetVersion() {
+  try {
+    const p = path.join(__dirname, "../dist/branding/asset-version.txt");
+    return fs.readFileSync(p, "utf8").trim();
+  } catch {
+    return "";
+  }
+}
+
+const CONFIRMATION_LOGO_BASE =
   "https://valitsatravel.gr/branding/navbar/logo-light.svg";
+const brandV = readBrandAssetVersion();
+const CONFIRMATION_LOGO_URL =
+  brandV !== ""
+    ? `${CONFIRMATION_LOGO_BASE}?v=${encodeURIComponent(brandV)}`
+    : CONFIRMATION_LOGO_BASE;
 
 export function buildConfirmationLogoUrl() {
   return CONFIRMATION_LOGO_URL;

@@ -1,4 +1,5 @@
 import { useLanguage } from "@/contexts/LanguageContext";
+import { brandAssetUrl } from "@/lib/brandAssetUrl";
 
 const DEV_LINK = "https://www.linkedin.com/in/ath-oik";
 
@@ -17,8 +18,8 @@ export function SiteFooter({ darkMode, onTermsClick }: SiteFooterProps) {
           <img
             src={
               darkMode
-                ? "/branding/navbar/logo-dark.svg"
-                : "/branding/navbar/logo-light.svg"
+                ? brandAssetUrl("/branding/navbar/logo-dark.svg")
+                : brandAssetUrl("/branding/navbar/logo-light.svg")
             }
             alt={t("nav.brand")}
             className="h-8 w-auto"

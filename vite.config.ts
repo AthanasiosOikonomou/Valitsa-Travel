@@ -1,7 +1,8 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import dotenv from "dotenv";
+import fs from "node:fs";
 import path from "path";
+import dotenv from "dotenv";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
 
 // Match server/index.js port resolution (PORT || API_PORT || 8787) so /api proxy hits the same process.
 dotenv.config({ path: path.join(__dirname, ".env") });
@@ -10,6 +11,10 @@ dotenv.config({ path: path.join(__dirname, "server/.env") });
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const prod = mode === "production";
+  const rawBrandVersion =
+    process.env.VITE_BRAND_ASSET_VERSION?.trim() || String(Date.now());
+  const brandVersion = prod ? rawBrandVersion : "dev";
+
   const apiListenPort =
     process.env.PORT || process.env.API_PORT || "8787";
   const apiDevTarget =
@@ -25,7 +30,60 @@ export default defineConfig(({ mode }) => {
     },
   };
 
+  const brandAssetVersionPlugin = {
+    name: "valitsa-brand-asset-version",
+    closeBundle() {
+      if (!prod) return;
+      const distDir = path.join(__dirname, "dist");
+      const brandingDir = path.join(distDir, "branding");
+      try {
+        fs.mkdirSync(brandingDir, { recursive: true });
+        fs.writeFileSync(
+          path.join(brandingDir, "asset-version.txt"),
+          `${brandVersion}\n`,
+          "utf8",
+        );
+      } catch {
+        return;
+      }
+
+      const manifestPath = path.join(distDir, "manifest.json");
+      if (!fs.existsSync(manifestPath)) return;
+      try {
+        const raw = fs.readFileSync(manifestPath, "utf8");
+        const j = JSON.parse(raw);
+        const q = `?v=${encodeURIComponent(brandVersion)}`;
+        const patch = (src: string | undefined) => {
+          if (typeof src !== "string" || !src.startsWith("/branding/")) return src;
+          if (src.includes("?v=")) return src;
+          return `${src}${q}`;
+        };
+        const icons = Array.isArray(j?.icons) ? j.icons : [];
+        for (const icon of icons) {
+          if (icon?.src) icon.src = patch(icon.src) ?? icon.src;
+        }
+        const screenshots = Array.isArray(j?.screenshots) ? j.screenshots : [];
+        for (const sc of screenshots) {
+          if (sc?.src) sc.src = patch(sc.src) ?? sc.src;
+        }
+        const shortcuts = Array.isArray(j?.shortcuts) ? j.shortcuts : [];
+        for (const sh of shortcuts) {
+          const shIcons = Array.isArray(sh?.icons) ? sh.icons : [];
+          for (const ic of shIcons) {
+            if (ic?.src) ic.src = patch(ic.src) ?? ic.src;
+          }
+        }
+        fs.writeFileSync(manifestPath, `${JSON.stringify(j, null, 2)}\n`, "utf8");
+      } catch {
+        /* ignore */
+      }
+    },
+  };
+
   return {
+  define: {
+    "import.meta.env.VITE_BRAND_ASSET_VERSION": JSON.stringify(brandVersion),
+  },
   // Production: esbuild minify + drop (Vite 8 defaults to Oxc minify, which ignores esbuild.drop).
   esbuild: prod ? { drop: ["console", "debugger"] } : {},
   server: {
@@ -84,7 +142,7 @@ export default defineConfig(({ mode }) => {
       },
     },
   },
-  plugins: [react(), logApiProxyPlugin],
+  plugins: [react(), logApiProxyPlugin, brandAssetVersionPlugin],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

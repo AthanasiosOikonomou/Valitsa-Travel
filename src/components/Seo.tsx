@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import { brandAssetUrl } from "@/lib/brandAssetUrl";
 
 const SITE_URL = "https://valitsatravel.gr";
 
@@ -27,6 +28,24 @@ const toAbsoluteUrl = (path: string) => {
   return `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 };
 
+function resolveSeoImageUrl(image: string): string {
+  if (image.startsWith("http://") || image.startsWith("https://")) {
+    try {
+      const u = new URL(image);
+      if (u.pathname.startsWith("/branding/")) {
+        const v = import.meta.env.VITE_BRAND_ASSET_VERSION;
+        if (v && v !== "dev" && !u.searchParams.has("v")) {
+          u.searchParams.set("v", v);
+        }
+      }
+      return u.toString();
+    } catch {
+      return image;
+    }
+  }
+  return toAbsoluteUrl(brandAssetUrl(image));
+}
+
 const Seo = ({
   title,
   description,
@@ -42,7 +61,7 @@ const Seo = ({
   structuredData,
 }: SeoProps) => {
   const canonicalUrl = toAbsoluteUrl(path);
-  const imageUrl = toAbsoluteUrl(image);
+  const imageUrl = resolveSeoImageUrl(image);
   const fullTitle = title.includes("Valitsa Travel")
     ? title
     : `${title} | Valitsa Travel`;
