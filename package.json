@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -k -n web,api -c cyan,magenta \"vite\" \"node server/index.js\"",
+    "dev": "concurrently -n web,api -c cyan,magenta \"vite\" \"sh -c 'lsof -iTCP:8787 -sTCP:LISTEN >/dev/null 2>&1 && echo API already running on port 8787 || node server/index.js'\"",
     "dev:api": "node server/index.js",
     "dev:full": "npm run dev",
     "build": "node scripts/check-api-build-env.mjs && vite build",

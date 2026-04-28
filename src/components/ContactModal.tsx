@@ -209,7 +209,25 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
                 <div className="p-6">
                   {view === "options" && (
                     <div className="space-y-4">
-                      {/* Call Us */}
+                      {/* Call Landline */}
+                      <a
+                        href="tel:+302102606248"
+                        className="surface-elevated-row flex items-center gap-4 p-5 rounded-2xl bg-card hover:bg-muted/50 transform-gpu [backface-visibility:hidden] will-change-transform group"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <Phone size={20} className="text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm">
+                            {t("contact.callUs")}
+                          </p>
+                          <p className="text-foreground-muted text-sm">
+                            +30 210 260 6248
+                          </p>
+                        </div>
+                      </a>
+
+                      {/* Call Mobile */}
                       <a
                         href="tel:+306937454193"
                         className="surface-elevated-row flex items-center gap-4 p-5 rounded-2xl bg-card hover:bg-muted/50 transform-gpu [backface-visibility:hidden] will-change-transform group"
@@ -222,7 +240,7 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
                             {t("contact.callUs")}
                           </p>
                           <p className="text-foreground-muted text-sm">
-                            +30 693 7454 193
+                            +30 693 745 4193
                           </p>
                         </div>
                       </a>

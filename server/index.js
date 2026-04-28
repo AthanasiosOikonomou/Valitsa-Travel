@@ -5,6 +5,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import slowDown from "express-slow-down";
 import fs from "fs";
+import http from "http";
 import nodemailer from "nodemailer";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -839,7 +840,9 @@ if (fs.existsSync(indexHtml)) {
   );
 }
 
-app.listen(port, () => {
+const server = http.createServer(app);
+
+server.listen(port, () => {
   console.log(`Mail API running on http://localhost:${port}`);
   console.log(
     inquiriesDbEnabled
