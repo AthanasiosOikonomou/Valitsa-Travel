@@ -129,6 +129,31 @@ Helmet (HSTS in prod, referrer policy, CORP) · CORS allow-list (production requ
 
 ---
 
+## cPanel Build Fix (Vite)
+
+If cPanel shows `vite: command not found` during `npm run build`, it means dev dependencies were not installed.
+
+Use these commands in cPanel terminal (inside the app directory):
+
+```bash
+npm ci --include=dev
+npm run build
+```
+
+Equivalent helper command in this repo:
+
+```bash
+npm run build:cpanel
+```
+
+Notes:
+- Do not force `NODE_ENV=production` for the install/build step.
+- If your host supports separate build and runtime phases, you can prune after build:
+
+```bash
+npm prune --omit=dev
+```
+
 ## Scripts
 
 | Command                 | Purpose                                                                       |

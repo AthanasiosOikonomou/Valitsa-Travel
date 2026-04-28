@@ -8,6 +8,8 @@
     "dev:api": "node server/index.js",
     "dev:full": "npm run dev",
     "build": "node scripts/check-api-build-env.mjs && vite build",
+    "install:cpanel": "npm ci --include=dev",
+    "build:cpanel": "npm run install:cpanel && npm run build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
