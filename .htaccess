@@ -1,6 +1,8 @@
 # Phusion Passenger: load ESM server via CommonJS shim (see passenger_entry.cjs).
-# Omit if your host sets the startup file only in the control panel.
+# Application root must be this directory (package.json + passenger_entry.cjs + dist/).
+# Omit duplicate directives if your host already sets them in the panel (some panels error on duplicate).
 <IfModule mod_passenger.c>
+  PassengerEnabled on
   PassengerAppType node
   PassengerStartupFile passenger_entry.cjs
 </IfModule>
