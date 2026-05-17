@@ -20,6 +20,9 @@ const translations: Record<Lang, Record<string, string>> = {
     // Navbar
     "nav.brand": "VALITSA",
     "nav.terms": "Terms & Conditions",
+    "nav.about": "About Us",
+    "nav.payments": "Payment Methods",
+    "footer.legalNav": "Legal information",
     "nav.daily": "Daily Trips",
     "nav.twoday": "2-Day Trips",
     "nav.multiday": "Multiday Trips",
@@ -588,7 +591,10 @@ const translations: Record<Lang, Record<string, string>> = {
   gr: {
     // Navbar
     "nav.brand": "VALITSA",
-    "nav.terms": "Όροι & Προϋποθέσεις",
+    "nav.terms": "Όροι και Προϋποθέσεις",
+    "nav.about": "Σχετικά με εμάς",
+    "nav.payments": "Τρόποι Πληρωμής",
+    "footer.legalNav": "Νομικές πληροφορίες",
     "nav.daily": "Ημερήσιες Εκδρομές",
     "nav.twoday": "2ήμερες Εκδρομές",
     "nav.multiday": "Πολυήμερες Εκδρομές",

@@ -26,6 +26,8 @@ import TripDetail from "@/components/TripDetail";
 import { SeasonalTripBadge } from "@/components/SeasonalTripBadge";
 import ContactModal from "@/components/ContactModal";
 import Seo from "@/components/Seo";
+import AboutModal from "@/components/AboutModal";
+import PaymentModal from "@/components/PaymentModal";
 import TermsModal from "@/components/TermsModal";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Slider } from "@/components/ui/slider";
@@ -217,11 +219,13 @@ const TripsContent = () => {
 
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [termsOpen, setTermsOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
 
   // Blur navbar shell when terms or trip detail overlay is open (scroll lock lives in overlays)
   useEffect(() => {
-    if (termsOpen || selectedTrip) {
+    if (termsOpen || aboutOpen || paymentOpen || selectedTrip) {
       document.body.classList.add("modal-blur-active");
     } else {
       document.body.classList.remove("modal-blur-active");
@@ -229,7 +233,7 @@ const TripsContent = () => {
     return () => {
       document.body.classList.remove("modal-blur-active");
     };
-  }, [selectedTrip, termsOpen]);
+  }, [selectedTrip, termsOpen, aboutOpen, paymentOpen]);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const resultsTopRef = useRef<HTMLDivElement | null>(null);
   const hasMountedFilterScrollRef = useRef(false);
@@ -1247,11 +1251,18 @@ const TripsContent = () => {
       </AnimatePresence>
 
       <TermsModal open={termsOpen} onClose={() => setTermsOpen(false)} />
+      <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} />
+      <PaymentModal
+        open={paymentOpen}
+        onClose={() => setPaymentOpen(false)}
+      />
       <ContactModal open={contactOpen} onClose={() => setContactOpen(false)} />
 
       <SiteFooter
         darkMode={darkMode}
         onTermsClick={() => setTermsOpen(true)}
+        onAboutClick={() => setAboutOpen(true)}
+        onPaymentClick={() => setPaymentOpen(true)}
       />
     </div>
   );

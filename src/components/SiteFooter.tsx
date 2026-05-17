@@ -7,9 +7,51 @@ const DEV_LINK = "https://www.linkedin.com/in/ath-oik";
 interface SiteFooterProps {
   darkMode: boolean;
   onTermsClick: () => void;
+  onAboutClick: () => void;
+  onPaymentClick: () => void;
 }
 
-export function SiteFooter({ darkMode, onTermsClick }: SiteFooterProps) {
+const footerLinkClass =
+  "text-sm font-medium text-foreground-muted underline decoration-transparent underline-offset-4 transition-colors duration-200 hover:text-foreground hover:decoration-current";
+
+function FooterLegalLink({
+  label,
+  onClick,
+}: {
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <a
+      href="#"
+      onClick={(event) => {
+        event.preventDefault();
+        onClick();
+      }}
+      className={footerLinkClass}
+    >
+      {label}
+    </a>
+  );
+}
+
+function FooterLegalDivider() {
+  return (
+    <span
+      aria-hidden
+      className="select-none text-sm text-foreground-muted/35"
+    >
+      |
+    </span>
+  );
+}
+
+export function SiteFooter({
+  darkMode,
+  onTermsClick,
+  onAboutClick,
+  onPaymentClick,
+}: SiteFooterProps) {
   const { t } = useLanguage();
   const footerIconClass = darkMode ? "text-primary" : "text-black";
   const footerIconChipClass = darkMode ? "bg-primary/20" : "bg-black/10";
@@ -93,21 +135,29 @@ export function SiteFooter({ darkMode, onTermsClick }: SiteFooterProps) {
               </a>
             </div>
           </div>
-          <div className="mt-4 grid gap-y-2 border-t border-border/50 pt-4 text-center md:grid-cols-[auto_1fr_auto] md:items-center md:text-left">
-            <a
-              href="#"
-              onClick={(event) => {
-                event.preventDefault();
-                onTermsClick();
-              }}
-              className="justify-self-start text-sm font-medium text-foreground-muted underline decoration-transparent underline-offset-4 transition-colors duration-200 hover:text-foreground hover:decoration-current"
+          <div className="mt-4 flex flex-col gap-3 border-t border-border/50 pt-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <nav
+              aria-label={t("footer.legalNav")}
+              className="flex flex-wrap items-center gap-x-2 gap-y-2"
             >
-              {t("nav.terms")}
-            </a>
-            <p className="text-center text-xs leading-snug text-foreground-muted/70 sm:text-sm">
+              <FooterLegalLink
+                label={t("nav.about")}
+                onClick={onAboutClick}
+              />
+              <FooterLegalDivider />
+              <FooterLegalLink
+                label={t("nav.payments")}
+                onClick={onPaymentClick}
+              />
+              <FooterLegalDivider />
+              <FooterLegalLink
+                label={t("nav.terms")}
+                onClick={onTermsClick}
+              />
+            </nav>
+            <p className="text-right text-xs leading-snug text-foreground-muted/70 sm:shrink-0 sm:text-sm">
               {t("footer.rights")}
             </p>
-            <span className="hidden md:block" aria-hidden />
           </div>
         </div>
 

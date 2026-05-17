@@ -8,6 +8,8 @@ import HeroSection from "@/components/HeroSection";
 import FeaturedTrips from "@/components/FeaturedTrips";
 import TripDetail from "@/components/TripDetail";
 import Seo from "@/components/Seo";
+import AboutModal from "@/components/AboutModal";
+import PaymentModal from "@/components/PaymentModal";
 import TermsModal from "@/components/TermsModal";
 import { SiteFooter } from "@/components/SiteFooter";
 import {
@@ -22,6 +24,8 @@ const IndexContent = () => {
   const darkMode = useResolvedDarkMode();
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [termsOpen, setTermsOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
   const { t, lang } = useLanguage();
   const { trackTripView } = useAnalytics();
 
@@ -155,7 +159,7 @@ const IndexContent = () => {
   };
 
   useEffect(() => {
-    if (termsOpen || selectedTrip) {
+    if (termsOpen || aboutOpen || paymentOpen || selectedTrip) {
       document.body.classList.add("modal-blur-active");
     } else {
       document.body.classList.remove("modal-blur-active");
@@ -163,7 +167,7 @@ const IndexContent = () => {
     return () => {
       document.body.classList.remove("modal-blur-active");
     };
-  }, [selectedTrip, termsOpen]);
+  }, [selectedTrip, termsOpen, aboutOpen, paymentOpen]);
 
   return (
     <div className="premium-page trips-page-surface min-h-screen bg-background text-foreground transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]">
@@ -199,10 +203,17 @@ const IndexContent = () => {
       </AnimatePresence>
 
       <TermsModal open={termsOpen} onClose={() => setTermsOpen(false)} />
+      <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} />
+      <PaymentModal
+        open={paymentOpen}
+        onClose={() => setPaymentOpen(false)}
+      />
 
       <SiteFooter
         darkMode={darkMode}
         onTermsClick={() => setTermsOpen(true)}
+        onAboutClick={() => setAboutOpen(true)}
+        onPaymentClick={() => setPaymentOpen(true)}
       />
     </div>
   );
