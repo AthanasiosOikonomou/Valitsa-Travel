@@ -6,16 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { UnsavedCloseAlert } from "@/admin/components/UnsavedCloseAlert";
+import { useUnsavedDialogClose } from "@/admin/hooks/useUnsavedDialogClose";
 import { cn, scrollContainerToAlignChildTop } from "@/lib/utils";
 import { normalizeFlightDetails } from "@/lib/tripFlightDetails";
 
@@ -49,8 +41,6 @@ export function FlightDetailsModal({
   const flightScrollBodyRef = useRef<HTMLDivElement>(null);
   const lastAddedLegCardRef = useRef<HTMLDivElement | null>(null);
   const scrollToEndAfterAddRef = useRef(false);
-  const [unsavedOpen, setUnsavedOpen] = useState(false);
-
   useEffect(() => {
     if (!open) return;
     const enabled = flightDetailsEnabled;
@@ -75,14 +65,6 @@ export function FlightDetailsModal({
 
   const snapshotPayload = JSON.stringify({ enabled: draftEnabled, legs: draftLegs });
 
-  const tryClose = useCallback(() => {
-    if (snapshotPayload === snapshotRef.current) {
-      onOpenChange(false);
-      return;
-    }
-    setUnsavedOpen(true);
-  }, [snapshotPayload, onOpenChange]);
-
   const buildPayload = useCallback((): {
     flight_details_enabled: boolean;
     flight_details: TripFlightLeg[];
@@ -90,27 +72,23 @@ export function FlightDetailsModal({
     return { flight_details_enabled: draftEnabled, flight_details: draftLegs.map((l) => ({ ...l })) };
   }, [draftEnabled, draftLegs]);
 
-  const handleSave = useCallback(() => {
+  const isDirty = snapshotPayload !== snapshotRef.current;
+
+  const closeModal = useCallback(() => onOpenChange(false), [onOpenChange]);
+
+  const onSaveAndClose = useCallback(() => {
     onSave(buildPayload());
   }, [buildPayload, onSave]);
 
-  const handleDialogOpenChange = useCallback(
-    (next: boolean) => {
-      if (next) onOpenChange(true);
-      else tryClose();
-    },
-    [onOpenChange, tryClose],
-  );
+  const { handleOpenChange, tryClose, unsavedAlert } = useUnsavedDialogClose({
+    isDirty,
+    onClose: closeModal,
+    onSaveAndClose,
+  });
 
-  const discardAndClose = () => {
-    setUnsavedOpen(false);
-    onOpenChange(false);
-  };
-
-  const saveFromAlertAndClose = () => {
-    setUnsavedOpen(false);
+  const handleSave = useCallback(() => {
     onSave(buildPayload());
-  };
+  }, [buildPayload, onSave]);
 
   const setLegField = useCallback((index: number, field: keyof TripFlightLeg, value: string) => {
     setDraftLegs((prev) => {
@@ -139,7 +117,7 @@ export function FlightDetailsModal({
 
   return (
     <>
-      <Dialog.Root open={open} onOpenChange={handleDialogOpenChange}>
+      <Dialog.Root open={open} onOpenChange={handleOpenChange}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-[110] bg-black/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
           <Dialog.Content
@@ -317,23 +295,7 @@ export function FlightDetailsModal({
         </Dialog.Portal>
       </Dialog.Root>
 
-      <AlertDialog open={unsavedOpen} onOpenChange={setUnsavedOpen}>
-        <AlertDialogContent overlayClassName="z-[120]" className="z-[121] max-w-2xl min-w-0">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="break-words pr-1">{t("admin.tripFlightUnsavedTitle")}</AlertDialogTitle>
-            <AlertDialogDescription className="break-words text-pretty">
-              {t("admin.tripFlightUnsavedDescription")}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-col gap-2 sm:flex-col sm:space-x-0 [&>*]:h-auto [&>*]:min-h-10 [&>*]:w-full [&>*]:whitespace-normal [&>*]:px-3 [&>*]:py-2 [&>*]:text-left">
-            <AlertDialogCancel>{t("admin.tripFlightUnsavedKeepEditing")}</AlertDialogCancel>
-            <Button type="button" variant="outline" onClick={discardAndClose}>
-              {t("admin.tripFlightUnsavedDiscard")}
-            </Button>
-            <AlertDialogAction onClick={saveFromAlertAndClose}>{t("admin.tripFlightUnsavedSaveAndClose")}</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <UnsavedCloseAlert {...unsavedAlert} overlayClassName="z-[120]" />
     </>
   );
 }

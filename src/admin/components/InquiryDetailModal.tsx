@@ -33,6 +33,8 @@ import {
   removeInquiryAttachmentsFromStorage,
   uploadInquiryAttachment,
 } from "@/lib/inquiryAttachmentUpload";
+import { UnsavedCloseAlert } from "@/admin/components/UnsavedCloseAlert";
+import { useUnsavedDialogClose } from "@/admin/hooks/useUnsavedDialogClose";
 
 const STATUSES = ["new", "contacted", "resolved"] as const;
 
@@ -70,6 +72,7 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
     inquiry?.id != null && String(inquiry.id).trim() !== "" ? String(inquiry.id).trim() : null;
 
   const [status, setStatus] = useState<string>("new");
+  const [savedStatus, setSavedStatus] = useState<string>("new");
   const [draft, setDraft] = useState("");
   const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
   const pendingUploadsRef = useRef<PendingUpload[]>([]);
@@ -83,7 +86,9 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
 
   useEffect(() => {
     if (!inquiry) return;
-    setStatus((inquiry.status as string) || "new");
+    const next = (inquiry.status as string) || "new";
+    setStatus(next);
+    setSavedStatus(next);
   }, [inquiry?.id, inquiry?.status]);
 
   /** Only reset the composer when switching inquiries or opening the modal — not when `inquiry` object identity changes. */
@@ -241,6 +246,7 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
       return patchInquiry(inquiryId, { status: status as "new" | "contacted" | "resolved" });
     },
     onSuccess: () => {
+      setSavedStatus(status);
       toast.success(t("admin.statusSaved"));
       void qc.invalidateQueries({ queryKey: ["admin-inquiries"] });
     },
@@ -253,6 +259,84 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
   const hasCompleteAttachment = pendingUploads.some((u) => u.status === "complete");
   const hasUploadingAttachment = pendingUploads.some((u) => u.status === "uploading");
   const canPostComment = !isHtmlEmpty(draft) || hasCompleteAttachment;
+
+  const statusDirty = status !== savedStatus;
+  const commentDirty = !isHtmlEmpty(draft) || pendingUploads.length > 0;
+  const isDirty = statusDirty || commentDirty;
+
+  const closeInquiryModal = useCallback(() => {
+    onOpenChange(false);
+  }, [onOpenChange]);
+
+  const discardInquiryModal = useCallback(() => {
+    for (const ac of uploadAbortByClientIdRef.current.values()) {
+      ac.abort();
+    }
+    uploadAbortByClientIdRef.current.clear();
+    setDraft("");
+    setPendingUploads([]);
+    setStatus(savedStatus);
+    onOpenChange(false);
+  }, [onOpenChange, savedStatus]);
+
+  const onSaveAndClose = useCallback(async () => {
+    if (!inquiryId) return;
+    if (hasUploadingAttachment) {
+      toast.error(t("admin.inquiryAttachmentUploading"));
+      throw new Error("uploading");
+    }
+    try {
+      if (statusDirty) {
+        await patchInquiry(inquiryId, { status: status as "new" | "contacted" | "resolved" });
+        setSavedStatus(status);
+        toast.success(t("admin.statusSaved"));
+        void qc.invalidateQueries({ queryKey: ["admin-inquiries"] });
+      }
+      if (commentDirty && canPostComment) {
+        await postInquiryComment(inquiryId, {
+          content: draft,
+          attachments: pendingUploads
+            .filter((u): u is Extract<PendingUpload, { status: "complete" }> => u.status === "complete")
+            .map(({ name, path, type }) => ({ name, path, type })),
+        });
+        for (const ac of uploadAbortByClientIdRef.current.values()) {
+          ac.abort();
+        }
+        uploadAbortByClientIdRef.current.clear();
+        setDraft("");
+        setPendingUploads([]);
+        toast.success(t("admin.commentPosted"));
+        void qc.invalidateQueries({ queryKey: ["inquiry-comments", inquiryId] });
+        void qc.invalidateQueries({ queryKey: ["admin-inquiries"] });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      toast.error(statusDirty && !commentDirty ? t("admin.statusSaveFailed") : t("admin.commentFailed"), {
+        description: msg,
+      });
+      throw err;
+    }
+    onOpenChange(false);
+  }, [
+    inquiryId,
+    hasUploadingAttachment,
+    statusDirty,
+    commentDirty,
+    canPostComment,
+    status,
+    draft,
+    pendingUploads,
+    onOpenChange,
+    qc,
+    t,
+  ]);
+
+  const { handleOpenChange, unsavedAlert } = useUnsavedDialogClose({
+    isDirty,
+    onClose: closeInquiryModal,
+    onDiscard: discardInquiryModal,
+    onSaveAndClose,
+  });
 
   const onInquiryAttachmentFilesSelected = useCallback(
     async (picked: File[]) => {
@@ -360,19 +444,7 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
   if (!inquiry) return null;
 
   return (
-    <Dialog.Root
-      open={open}
-      onOpenChange={(next) => {
-        if (import.meta.env.DEV && !next) {
-          console.log(
-            "Modal Closing Triggered by:",
-            "Radix Dialog.Root onOpenChange(false)",
-            new Error().stack,
-          );
-        }
-        onOpenChange(next);
-      }}
-    >
+    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay asChild>
           <motion.div
@@ -783,6 +855,7 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
           </div>
         </Dialog.Content>
       </Dialog.Portal>
+      <UnsavedCloseAlert {...unsavedAlert} />
     </Dialog.Root>
   );
 }

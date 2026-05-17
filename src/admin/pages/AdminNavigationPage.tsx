@@ -29,6 +29,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
+import { UnsavedCloseAlert } from "@/admin/components/UnsavedCloseAlert";
+import { useUnsavedDialogClose } from "@/admin/hooks/useUnsavedDialogClose";
 
 const SEASONAL_KEY_REGEX = /^[a-z0-9_-]+$/;
 
@@ -65,6 +67,7 @@ function CreateNewSeasonDialog({
   const keyInvalid = keyTrimmed.length > 0 && !SEASONAL_KEY_REGEX.test(keyTrimmed);
   const keyValid = keyTrimmed.length > 0 && SEASONAL_KEY_REGEX.test(keyTrimmed);
   const canSubmit = keyValid && Boolean(navEl.trim() && navEn.trim());
+  const isDirty = Boolean(keyTrimmed || navEl.trim() || navEn.trim());
 
   const mut = useMutation({
     mutationFn: () =>
@@ -86,8 +89,30 @@ function CreateNewSeasonDialog({
     },
   });
 
+  const onSaveAndClose = useCallback(async () => {
+    if (!canSubmit) {
+      if (keyInvalid) {
+        toast.error(t("admin.navigationKeyInvalid"));
+      } else {
+        toast.error(t("admin.navigationSaveFailed"));
+      }
+      throw new Error("validation");
+    }
+    await mut.mutateAsync();
+  }, [canSubmit, keyInvalid, mut, t]);
+
+  const closeDialog = useCallback(() => {
+    onOpenChange(false);
+  }, [onOpenChange]);
+
+  const { handleOpenChange, tryClose, unsavedAlert } = useUnsavedDialogClose({
+    isDirty,
+    onClose: closeDialog,
+    onSaveAndClose,
+  });
+
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm" />
         <Dialog.Content
@@ -157,11 +182,14 @@ function CreateNewSeasonDialog({
               />
             </div>
             <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
-              <Dialog.Close asChild>
-                <Button type="button" variant="outline" disabled={mut.isPending}>
-                  {t("admin.cancel")}
-                </Button>
-              </Dialog.Close>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={mut.isPending}
+                onClick={tryClose}
+              >
+                {t("admin.cancel")}
+              </Button>
               <Button type="submit" disabled={!canSubmit || mut.isPending}>
                 {t("admin.navigationCreate")}
               </Button>
@@ -169,6 +197,7 @@ function CreateNewSeasonDialog({
           </form>
         </Dialog.Content>
       </Dialog.Portal>
+      <UnsavedCloseAlert {...unsavedAlert} />
     </Dialog.Root>
   );
 }

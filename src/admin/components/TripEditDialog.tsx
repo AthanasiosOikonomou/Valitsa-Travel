@@ -38,7 +38,9 @@ import { TripImageDropzone } from "@/admin/components/TripImageDropzone";
 import { TripGalleryGrid } from "@/admin/components/TripGalleryGrid";
 import { ProgramTimelineEditor } from "@/admin/components/trip-edit/ProgramTimelineEditor";
 import { StringArrayField } from "@/admin/components/trip-edit/StringArrayField";
+import { UnsavedCloseAlert } from "@/admin/components/UnsavedCloseAlert";
 import { DepartureWindowsModal } from "@/admin/components/trip-edit/DepartureWindowsModal";
+import { useUnsavedDialogClose } from "@/admin/hooks/useUnsavedDialogClose";
 import { FlightDetailsModal } from "@/admin/components/trip-edit/FlightDetailsModal";
 import { PricingSegmentsModal } from "@/admin/components/trip-edit/PricingSegmentsModal";
 import { TransportMultiSelect } from "@/admin/components/trip-edit/TransportMultiSelect";
@@ -589,7 +591,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
     setValue,
     getValues,
     trigger,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<TripFormValues>({
     resolver: zodResolver(schema),
     defaultValues: defaultForm(),
@@ -900,6 +902,29 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
     handleSubmit(onValid, onInvalid)(e);
   };
 
+  const onSaveAndClose = useCallback(() => {
+    return new Promise<void>((resolve, reject) => {
+      handleSubmit(
+        (values) => {
+          save.mutate(values, {
+            onSuccess: () => resolve(),
+            onError: (err) => reject(err),
+          });
+        },
+        (errs) => {
+          onInvalid(errs);
+          reject(new Error("validation"));
+        },
+      )();
+    });
+  }, [handleSubmit, onInvalid, save]);
+
+  const { handleOpenChange, tryClose, unsavedAlert } = useUnsavedDialogClose({
+    isDirty,
+    onClose,
+    onSaveAndClose,
+  });
+
   const fieldClass = (name: keyof TripFormValues) =>
     cn(errors[name] && "rounded-xl ring-2 ring-destructive/50 border-destructive/40");
 
@@ -983,7 +1008,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={(o) => !o && onClose()}>
+    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm" />
         <Dialog.Content
@@ -1686,7 +1711,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
               </div>
 
               <div className="flex shrink-0 justify-end gap-2 border-t border-slate-200 bg-slate-50/90 px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] dark:border-white/10 dark:bg-zinc-950/80 md:pb-4">
-                <Button type="button" variant="outline" className="min-h-11 px-5" onClick={onClose}>
+                <Button type="button" variant="outline" className="min-h-11 px-5" onClick={tryClose}>
                   {t("admin.cancel")}
                 </Button>
                 <Button
@@ -1701,6 +1726,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
           )}
         </Dialog.Content>
       </Dialog.Portal>
+      <UnsavedCloseAlert {...unsavedAlert} />
     </Dialog.Root>
   );
 }

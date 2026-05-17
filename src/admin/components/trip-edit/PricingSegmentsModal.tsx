@@ -6,16 +6,8 @@ import type { PricingSegmentFormRow } from "@/lib/tripPricing";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { UnsavedCloseAlert } from "@/admin/components/UnsavedCloseAlert";
+import { useUnsavedDialogClose } from "@/admin/hooks/useUnsavedDialogClose";
 import { cn, scrollContainerToAlignChildTop } from "@/lib/utils";
 import {
   departureDaysUnionForMonth,
@@ -85,8 +77,6 @@ export function PricingSegmentsModal({
   const pricingScrollBodyRef = useRef<HTMLDivElement>(null);
   const lastAddedRowCardRef = useRef<HTMLDivElement | null>(null);
   const scrollToEndAfterAddRef = useRef(false);
-  const [unsavedOpen, setUnsavedOpen] = useState(false);
-
   useEffect(() => {
     if (!open) return;
     const init = structuredClone(rows).map((r) => clampPricingRowToDepartures(r, departureWindows));
@@ -112,35 +102,23 @@ export function PricingSegmentsModal({
     setDraft((prev) => [...prev, emptyRowFromDepartures(departureWindows)]);
   }, [departureWindows]);
 
-  const tryClose = useCallback(() => {
-    if (JSON.stringify(draft) === snapshotRef.current) {
-      onOpenChange(false);
-      return;
-    }
-    setUnsavedOpen(true);
-  }, [draft, onOpenChange]);
+  const isDirty = JSON.stringify(draft) !== snapshotRef.current;
+
+  const closeModal = useCallback(() => onOpenChange(false), [onOpenChange]);
+
+  const onSaveAndClose = useCallback(() => {
+    onSave(draft);
+  }, [draft, onSave]);
+
+  const { handleOpenChange, tryClose, unsavedAlert } = useUnsavedDialogClose({
+    isDirty,
+    onClose: closeModal,
+    onSaveAndClose,
+  });
 
   const handleSave = useCallback(() => {
     onSave(draft);
   }, [draft, onSave]);
-
-  const handleDialogOpenChange = useCallback(
-    (next: boolean) => {
-      if (next) onOpenChange(true);
-      else tryClose();
-    },
-    [onOpenChange, tryClose],
-  );
-
-  const discardAndClose = () => {
-    setUnsavedOpen(false);
-    onOpenChange(false);
-  };
-
-  const saveFromAlertAndClose = () => {
-    setUnsavedOpen(false);
-    onSave(draft);
-  };
 
   const locale = lang === "gr" ? "el-GR" : "en-GB";
   const allowedMonths = departureMonthsWithSelectedDays(departureWindows);
@@ -148,7 +126,7 @@ export function PricingSegmentsModal({
 
   return (
     <>
-      <Dialog.Root open={open} onOpenChange={handleDialogOpenChange}>
+      <Dialog.Root open={open} onOpenChange={handleOpenChange}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-[112] bg-black/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
           <Dialog.Content
@@ -545,25 +523,7 @@ export function PricingSegmentsModal({
         </Dialog.Portal>
       </Dialog.Root>
 
-      <AlertDialog open={unsavedOpen} onOpenChange={setUnsavedOpen}>
-        <AlertDialogContent overlayClassName="z-[120]" className="z-[121] max-w-2xl min-w-0">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="break-words pr-1">{t("admin.tripPricingUnsavedTitle")}</AlertDialogTitle>
-            <AlertDialogDescription className="break-words text-pretty">
-              {t("admin.tripPricingUnsavedDescription")}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-col gap-2 sm:flex-col sm:space-x-0 [&>*]:h-auto [&>*]:min-h-10 [&>*]:w-full [&>*]:whitespace-normal [&>*]:px-3 [&>*]:py-2 [&>*]:text-left">
-            <AlertDialogCancel>{t("admin.tripPricingUnsavedKeepEditing")}</AlertDialogCancel>
-            <Button type="button" variant="outline" onClick={discardAndClose}>
-              {t("admin.tripPricingUnsavedDiscard")}
-            </Button>
-            <AlertDialogAction onClick={saveFromAlertAndClose}>
-              {t("admin.tripPricingUnsavedSaveAndClose")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <UnsavedCloseAlert {...unsavedAlert} overlayClassName="z-[120]" />
     </>
   );
 }
