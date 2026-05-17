@@ -22,6 +22,7 @@ export function SafeRichTextHtml({ html, className, as: Tag = "div" }: Props) {
       className={cn(
         "prose prose-sm max-w-none dark:prose-invert",
         "prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-headings:scroll-mt-20",
+        "prose-p:text-justify prose-li:text-justify prose-td:text-justify",
         "text-inherit [&_a]:break-words",
         className,
       )}

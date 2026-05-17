@@ -476,6 +476,7 @@ body.modal-blur-active .navbar-shell {
 
   .text-body-prose {
     text-wrap: pretty;
+    text-align: justify;
     line-height: 1.8;
     font-size: 1.04rem;
     letter-spacing: -0.012em;

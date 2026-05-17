@@ -198,7 +198,13 @@ interface TripDetailProps {
   onClose: () => void;
 }
 
-const tabKeys = ["description", "program", "included"] as const;
+const allTabKeys = [
+  "description",
+  "program",
+  "included",
+  "participation",
+] as const;
+type TabKey = (typeof allTabKeys)[number];
 
 const gallerySpring = { type: "spring" as const, stiffness: 300, damping: 30 };
 
@@ -217,6 +223,22 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
     }
     return trip[field as keyof Trip] as string;
   };
+
+  const participationHtml = String(getDetailField("participation") ?? "");
+  const visibleTabs = useMemo(
+    () =>
+      allTabKeys.filter(
+        (tab) => tab !== "participation" || !isHtmlEmpty(participationHtml),
+      ),
+    [participationHtml],
+  );
+
+  useEffect(() => {
+    if (!visibleTabs.includes(activeTab as TabKey)) {
+      setActiveTab("description");
+    }
+  }, [visibleTabs, activeTab]);
+
   useScrollLock(true);
 
   const panelRef = useRef<HTMLDivElement>(null);
@@ -511,7 +533,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
     return () => window.clearTimeout(id);
   }, [activeTab, scrollPanelSoTabsInView]);
 
-  const handleTabClick = (tab: (typeof tabKeys)[number]) => {
+  const handleTabClick = (tab: TabKey) => {
     setActiveTab(tab);
   };
 
@@ -764,9 +786,9 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                       {/* Tabs */}
                       <div
                         ref={tabsRowRef}
-                        className="mb-8 flex w-full min-w-0 flex-nowrap items-end justify-between border-b border-border px-2 sm:px-4"
+                        className="mb-8 flex w-full min-w-0 flex-nowrap items-end justify-between gap-1 overflow-x-auto overscroll-x-contain border-b border-border px-2 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-0 sm:overflow-visible sm:px-4 [&::-webkit-scrollbar]:hidden"
                       >
-                        {tabKeys.map((tab) => (
+                        {visibleTabs.map((tab) => (
                           <button
                             key={tab}
                             type="button"
@@ -941,7 +963,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                                 {displayIncluded.map((item, i) => (
                                   <li
                                     key={i}
-                                    className="flex gap-3.5 items-start rounded-[1.15rem] border border-fuchsia-100/70 bg-gradient-to-r from-fuchsia-50/65 via-white to-white px-4 py-3.5 text-[0.92rem] leading-7 tracking-[-0.008em] text-foreground-muted dark:border-fuchsia-900/30 dark:from-fuchsia-950/20 dark:via-card dark:to-card"
+                                    className="flex gap-3.5 items-start rounded-[1.15rem] border border-fuchsia-100/70 bg-gradient-to-r from-fuchsia-50/65 via-white to-white px-4 py-3.5 text-justify text-[0.92rem] leading-7 tracking-[-0.008em] text-foreground-muted dark:border-fuchsia-900/30 dark:from-fuchsia-950/20 dark:via-card dark:to-card"
                                   >
                                     <Check
                                       size={16}
@@ -960,7 +982,7 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                                     {displayNotIncluded.map((item, i) => (
                                       <li
                                         key={`ni-${i}`}
-                                        className="flex gap-3.5 items-start rounded-[1.15rem] border border-red-200/80 bg-gradient-to-r from-red-50/80 via-white to-white px-4 py-3.5 text-[0.92rem] leading-7 tracking-[-0.008em] text-foreground-muted dark:border-red-900/35 dark:from-red-950/25 dark:via-card dark:to-card"
+                                        className="flex gap-3.5 items-start rounded-[1.15rem] border border-red-200/80 bg-gradient-to-r from-red-50/80 via-white to-white px-4 py-3.5 text-justify text-[0.92rem] leading-7 tracking-[-0.008em] text-foreground-muted dark:border-red-900/35 dark:from-red-950/25 dark:via-card dark:to-card"
                                       >
                                         <XCircle
                                           size={16}
@@ -975,6 +997,12 @@ const TripDetail = ({ trip, onClose }: TripDetailProps) => {
                                 </div>
                               ) : null}
                             </div>
+                          )}
+                          {activeTab === "participation" && (
+                            <SafeRichTextHtml
+                              html={participationHtml}
+                              className="text-body-prose text-lg leading-relaxed text-foreground"
+                            />
                           )}
                         </motion.div>
                       </AnimatePresence>

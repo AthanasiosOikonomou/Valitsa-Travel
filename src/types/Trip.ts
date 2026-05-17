@@ -98,6 +98,8 @@ export type Trip = {
   description_el?: string | null;
   trip_notes?: string | null;
   trip_notes_el?: string | null;
+  participation?: string | null;
+  participation_el?: string | null;
   is_seasonal?: boolean | null;
   /** Slug matching `seasonal_configs.seasonal_key` when `is_seasonal` is true. */
   seasonal_name?: string | null;
@@ -125,6 +127,8 @@ export type TripUpdate = Partial<{
   description_el: string | null;
   trip_notes: string | null;
   trip_notes_el: string | null;
+  participation: string | null;
+  participation_el: string | null;
   program: ProgramItem[] | null;
   program_el: ProgramItem[] | null;
   included: string[] | null;

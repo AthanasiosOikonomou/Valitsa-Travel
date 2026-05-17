@@ -214,8 +214,8 @@ export function ItineraryTimeline({ items }: ItineraryTimelineProps) {
                 html={item.description}
                 className={
                   item.title
-                    ? "mt-1.5 text-[0.9rem] leading-relaxed tracking-[-0.008em] text-slate-500 prose-p:text-slate-500 dark:text-zinc-400 dark:prose-p:text-zinc-400"
-                    : "mt-1.5 text-[0.9rem] font-medium leading-relaxed tracking-[-0.008em] text-slate-900 prose-p:text-slate-900 dark:text-white dark:prose-p:text-zinc-100"
+                    ? "mt-1.5 text-justify text-[0.9rem] leading-relaxed tracking-[-0.008em] text-slate-500 prose-p:text-slate-500 dark:text-zinc-400 dark:prose-p:text-zinc-400"
+                    : "mt-1.5 text-justify text-[0.9rem] font-medium leading-relaxed tracking-[-0.008em] text-slate-900 prose-p:text-slate-900 dark:text-white dark:prose-p:text-zinc-100"
                 }
               />
             </div>

@@ -230,6 +230,7 @@ function buildTripFormSchema(t: (key: string) => string) {
       flight_details: z.array(flightLegRowSchema),
       description_el: z.string().refine((h) => !isHtmlEmpty(h), { message: richReq }),
       trip_notes_el: z.string(),
+      participation_el: z.string(),
       program_el: z
         .array(programStepSchema)
         .min(1, t("admin.tripProgramMinDay"))
@@ -250,6 +251,7 @@ function buildTripFormSchema(t: (key: string) => string) {
       title: z.string(),
       description: z.string(),
       trip_notes: z.string(),
+      participation: z.string(),
       location: z.string(),
       country: z.string(),
       program: z.array(programStepSchema),
@@ -381,6 +383,7 @@ const GREEK_FIELD_ORDER = [
   "flight_details",
   "description_el",
   "trip_notes_el",
+  "participation_el",
   "program_el",
   "included_el",
   "not_included_el",
@@ -392,6 +395,7 @@ const ENGLISH_FIELD_ORDER = [
   "country",
   "description",
   "trip_notes",
+  "participation",
   "program",
   "included",
   "not_included",
@@ -438,6 +442,9 @@ function buildTripPayload(values: TripFormValues) {
     departure_city_el: departureCityEl,
     description_el: values.description_el || null,
     trip_notes_el: !isHtmlEmpty(values.trip_notes_el) ? values.trip_notes_el : null,
+    participation_el: !isHtmlEmpty(values.participation_el)
+      ? values.participation_el
+      : null,
     program_el: formStepsToDbPayload(values.program_el),
     included_el: values.included_el.map((s) => s.trim()).filter(Boolean),
     not_included_el: notIncEl.length > 0 ? notIncEl : null,
@@ -471,6 +478,7 @@ function buildTripPayload(values: TripFormValues) {
       not_included: null,
       tags: null,
       trip_notes: null,
+      participation: null,
     };
   }
 
@@ -489,6 +497,7 @@ function buildTripPayload(values: TripFormValues) {
     departure_city: departureCityEn,
     description: !isHtmlEmpty(values.description) ? values.description : null,
     trip_notes: !isHtmlEmpty(values.trip_notes) ? values.trip_notes : null,
+    participation: !isHtmlEmpty(values.participation) ? values.participation : null,
     program: progEn.length > 0 ? formStepsToDbPayload(progEn) : null,
     included: incEn.length > 0 ? incEn : null,
     not_included: notIncEn.length > 0 ? notIncEn : null,
@@ -507,6 +516,7 @@ const defaultForm = (): TripFormValues => ({
   flight_details: [],
   description_el: "",
   trip_notes_el: "",
+  participation_el: "",
   program_el: [{ days: "1", title: "", description: "" }],
   included_el: [],
   not_included_el: [],
@@ -516,6 +526,7 @@ const defaultForm = (): TripFormValues => ({
   title: "",
   description: "",
   trip_notes: "",
+  participation: "",
   location: "",
   country: "",
   program: [{ days: "1", title: "", description: "" }],
@@ -651,6 +662,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
       flight_details: normalizeFlightDetails(row.flight_details),
       description_el: asHtml(row.description_el),
       trip_notes_el: asHtml(row.trip_notes_el),
+      participation_el: asHtml(row.participation_el),
       program_el: programEl,
       included_el: stringListDbToForm(row.included_el),
       not_included_el: stringListDbToForm(row.not_included_el),
@@ -660,6 +672,7 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
       title: String(row.title ?? ""),
       description: asHtml(row.description),
       trip_notes: asHtml(row.trip_notes),
+      participation: asHtml(row.participation),
       location: String(row.location ?? ""),
       country: String(row.country ?? ""),
       program: programEn,
@@ -1432,6 +1445,23 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                           </p>
                         ) : null}
                       </div>
+                      <div className={fieldClass("participation_el")} id="trip-field-participation_el">
+                        <Label>{t("admin.tripParticipationEl")}</Label>
+                        <Controller
+                          name="participation_el"
+                          control={control}
+                          render={({ field }) => (
+                            <div className="mt-1.5">
+                              <RichTextEditor value={field.value} onChange={field.onChange} t={t} />
+                            </div>
+                          )}
+                        />
+                        {errors.participation_el ? (
+                          <p className="mt-1 text-xs text-destructive">
+                            {errors.participation_el.message}
+                          </p>
+                        ) : null}
+                      </div>
                       <div className="space-y-2">
                         <Label>{t("admin.tripTagsEl")}</Label>
                         <Controller
@@ -1612,6 +1642,23 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
                             {errors.not_included ? (
                               <p className="mt-1 text-xs text-destructive">
                                 {(errors.not_included as { message?: string }).message}
+                              </p>
+                            ) : null}
+                          </div>
+                          <div className={fieldClass("participation")} id="trip-field-participation">
+                            <Label>{t("admin.tripParticipationEn")}</Label>
+                            <Controller
+                              name="participation"
+                              control={control}
+                              render={({ field }) => (
+                                <div className="mt-1.5">
+                                  <RichTextEditor value={field.value} onChange={field.onChange} t={t} />
+                                </div>
+                              )}
+                            />
+                            {errors.participation ? (
+                              <p className="mt-1 text-xs text-destructive">
+                                {errors.participation.message}
                               </p>
                             ) : null}
                           </div>
