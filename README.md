@@ -1,187 +1,262 @@
 <div align="center">
 
-# VALITSA TRAVEL
+# Valitsa Travel
 
-### A flagship product experience — part of my **PORTOFOLIO** lineage
+**A bilingual luxury travel marketing site and admin operations platform** — cinematic trip discovery, faceted search, inquiry conversion with CAPTCHA + SMTP, and a Supabase-backed staff console for trips, leads, and seasonal navigation.
 
-**Live:** [valitsatravel.gr](https://valitsatravel.gr/)
-
+[![Live Demo](https://img.shields.io/badge/demo-valitsatravel.gr-7C3AED?style=for-the-badge)](https://valitsatravel.gr)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=111)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Express](https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white)](https://expressjs.com/)
+[![Supabase](https://img.shields.io/badge/Supabase-Postgres-3FCF8E?logo=supabase&logoColor=white)](https://supabase.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![Vitest](https://img.shields.io/badge/tests-Vitest-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev/)
+
+**Live:** [valitsatravel.gr](https://valitsatravel.gr)
+
+<!-- Banner: add a hero screenshot at docs/banner.png and uncomment the line below -->
+<!-- ![Valitsa Travel — trip discovery and admin console](docs/banner.png) -->
+
+*Portfolio-grade production build — opinionated UX, disciplined security, deployable on managed hosting.*
 
 </div>
 
 ---
 
-> [!NOTE]
-> **Architecture at a glance:** This repository is a **Vite 8 + React 18** single-page application with a **Node / Express 5** API — not Next.js. Routing is **React Router v6**; deployment targets **cPanel / Phusion Passenger** with rsync-based release automation.
+## Key Features
+
+### Public experience
+
+- **Bilingual GR/EN surface** — Language context with persisted preference; trip copy, legal modals (Terms, About, Payment Methods), and admin labels share one i18n layer so marketing and operations stay aligned.
+- **Cinematic trip discovery** — Hero landing, featured trips, and a data-rich **trips archive** with faceted filters, URL-driven presets, and instant scroll restoration between routes (`useLayoutEffect` + location key) so navigation never feels “stuck.”
+- **Immersive trip detail** — Full-screen modal with gallery, justified rich-text description, itinerary timeline, included/not-included lists, optional pricing-by-departure cards, flight legs, and a conditional **participation** tab when staff fill bilingual HTML in admin.
+- **Conversion pipeline** — Contact modal and per-trip inquiry forms with **Cloudflare Turnstile** (or reCAPTCHA), Zod-validated payloads, SMTP confirmation via Nodemailer, and optional persistence to Supabase `inquiries`.
+- **Trust & SEO** — `react-helmet-async` for canonical/OG/JSON-LD; DOMPurify allowlists for CMS HTML; dark mode via `next-themes` with OS-aware motion reduction (`MotionConfig reducedMotion="user"`).
+
+### Admin & operations
+
+- **Role-gated console** (`/admin/*`) — Supabase Auth JWT verified server-side; `profiles.role === "admin"` on every `/api/admin/*` route.
+- **Trip editor** — React Hook Form + Zod, TipTap rich text, nested modals for departure windows, pricing segments, and flight details; **unsaved-changes guard** on dismiss (overlay, Escape, X) via shared `useUnsavedDialogClose` + bilingual 3-choice alert.
+- **Leads workspace** — Inquiry timeline, status workflow, rich-text staff comments, and attachment uploads to Supabase Storage with path validation.
+- **Seasonal navigation** — CRUD for `seasonal_configs` drives navbar season links; orphan detection when trips reference keys without config rows.
+- **Analytics** — `POST /api/track-click` records trip engagement through a Supabase RPC (rate-limited).
+
+### Engineering highlights (why it feels fast)
+
+| Technique | Location | Impact |
+| --------- | -------- | ------ |
+| Route-level code splitting | [`src/App.tsx`](src/App.tsx) — `React.lazy` for Index, Trips, admin pages | Smaller initial bundle; heavy routes load on demand inside `Suspense`. |
+| Vendor chunk strategy | [`vite.config.ts`](vite.config.ts) — `manualChunks` | Splits `react-vendor`, `motion-vendor`, `router-vendor`, `radix-vendor`, `vendor` for cache-friendly parallel downloads. |
+| Progressive imagery | [`src/components/ProgressiveImage.tsx`](src/components/ProgressiveImage.tsx) | `IntersectionObserver` with `rootMargin: "400px"`; LQIP blur; tuned `fetchPriority` for hero vs below-fold. |
+| CDN-aware URLs | [`src/lib/utils.ts`](src/lib/utils.ts) — `optimizeImageUrl`, `buildResponsiveImageSet` | Width/format/quality params for responsive `srcset`. |
+| Modal scroll lock | [`src/hooks/useScrollLock.ts`](src/hooks/useScrollLock.ts) | Prevents background scroll while trip detail, contact, or legal overlays are open. |
 
 ---
 
-## Executive summary
+## Architecture & Tech Stack
 
-**Valitsa Travel** is a production luxury-travel discovery and inquiry platform: cinematic storytelling on the marketing surface, a data-rich **trips archive** with faceted filters and URL-driven presets, and a **conversion-oriented inquiry pipeline** (contact modal + trip-detail flows) backed by SMTP confirmation and abuse-resistant APIs.
-
-The product is engineered to feel **smooth, fast, and high-touch** — motion that respects preference, imagery that loads intelligently, and a visual language built on **violet–cyan gradients** and precision elevation shadows — while remaining **auditable and operable** for a real business (SEO, structured data, admin tools, Supabase-backed staff workflows).
-
----
-
-## Under the Hood — the engineering secret sauce
-
-### Perceived performance (what users feel)
-
-| Technique                  | Where it lives                                                                                                                        | What it does                                                                                                                                                                     |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Route-level code splitting | [`src/App.tsx`](src/App.tsx) — `React.lazy` for `Index`, `Trips`, admin pages                                                         | Keeps initial JS lean; heavy routes load on demand inside `Suspense`.                                                                                                            |
-| Vendor chunk strategy      | [`vite.config.ts`](vite.config.ts) — `manualChunks` splits `react-vendor`, `motion-vendor`, `router-vendor`, `radix-vendor`, `vendor` | Improves cacheability and parallel download behavior.                                                                                                                            |
-| Progressive imagery        | [`src/components/ProgressiveImage.tsx`](src/components/ProgressiveImage.tsx)                                                          | `IntersectionObserver` with `rootMargin: "400px"` kicks off loads before the user hits the fold; LQIP-style blur path; `fetchPriority` / `loading` tuned for hero vs below-fold. |
-| CDN-aware URLs             | [`src/lib/utils.ts`](src/lib/utils.ts) — `optimizeImageUrl`, `buildResponsiveImageSet`                                                | Unsplash (and similar) URLs get width, format, and quality parameters for responsive `srcset`.                                                                                   |
-| Scroll & route UX          | [`src/lib/instantScrollToTop.ts`](src/lib/instantScrollToTop.ts), [`src/App.tsx`](src/App.tsx) `ScrollToTop`                          | Instant scroll reset on navigation (`useLayoutEffect` + location key) — no “stuck scroll” between views.                                                                         |
-| Motion system              | [`src/App.tsx`](src/App.tsx) — `MotionConfig` with `reducedMotion="user"`                                                             | Honors OS “reduce motion”; animations degrade gracefully.                                                                                                                        |
-
-### Visual identity — neon-adjacent purple & electric cyan
-
-Design tokens are centralized in CSS variables, not scattered magic numbers:
-
-- **Primary (brand violet):** `--primary: 270 91% 65%` — aligned with Tailwind semantic `primary` in [`src/index.css`](src/index.css).
-- **Accent (cool cyan):** `--accent: 199 89% 48%` — used for highlights and secondary emphasis.
-- **Layered elevation:** `--shadow-elev-*` stacks combine edge rings + ambient + direct shadows for “floating glass” panels and CTAs.
-
-Typography pairs **Plus Jakarta Sans** (UI) with **Playfair Display** (trip titles) — see [`src/index.css`](src/index.css) imports and `--font-trip-title`.
-
-### Trust, content safety, and forms
-
-| Concern                      | Implementation                                                                                                                                                                                                                                                                   |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Rich HTML from CMS/editor    | [`src/lib/sanitizeTripRichTextHtml.ts`](src/lib/sanitizeTripRichTextHtml.ts) — **DOMPurify** with an explicit tag/attribute allowlist; rendered via [`src/components/SafeRichTextHtml.tsx`](src/components/SafeRichTextHtml.tsx).                                                |
-| Bot resistance               | [`src/components/CaptchaField.tsx`](src/components/CaptchaField.tsx) — Cloudflare **Turnstile** (or reCAPTCHA) with responsive `size` (`compact` / `flexible`) for mobile layouts.                                                                                               |
-| Theme & language persistence | [`src/lib/themeStorage.ts`](src/lib/themeStorage.ts), [`src/lib/languageStorage.ts`](src/lib/languageStorage.ts) — `valitsa-theme` / `valitsa-lang` in `localStorage`, aligned with [`next-themes`](https://github.com/pacocoursey/next-themes) in [`src/App.tsx`](src/App.tsx). |
-| Modal ergonomics             | [`src/hooks/useScrollLock.ts`](src/hooks/useScrollLock.ts) — locks `html`/`body` overflow while overlays are open (`TripDetail`, `ContactModal`, `TermsModal`).                                                                                                                  |
-
-### Backend hardening (Express)
-
-From [`server/index.js`](server/index.js) and [`server/adminRoutes.js`](server/adminRoutes.js):
-
-```text
-Helmet (HSTS in prod, referrer policy, CORP) · CORS allow-list (production requires CORS_ORIGIN)
-· express-rate-limit + express-slow-down on hot paths · Zod schemas for inquiry payloads
-· CAPTCHA verification in production · multer + sharp for bounded admin uploads
-· Supabase JWT + profiles.role === "admin" for protected /api/admin/* routes
+```mermaid
+flowchart LR
+  Browser --> ViteSPA[Vite React SPA]
+  ViteSPA --> SupabaseRead[Supabase anon reads]
+  ViteSPA --> ExpressAPI[Express API]
+  ExpressAPI --> SupabaseAdmin[Supabase service role]
+  ExpressAPI --> SMTP[Nodemailer SMTP]
 ```
 
-`app.disable("x-powered-by")` and `trust proxy` are set explicitly for sane rate limiting behind reverse proxies.
+This is a **Vite 8 + React 18** SPA with a **Node / Express 5** API — not Next.js. Routing uses **React Router v6**. Production targets **cPanel / Phusion Passenger** with rsync-based release automation ([`.cpanel.yml`](.cpanel.yml), [`passenger_entry.cjs`](passenger_entry.cjs)).
 
-### Infrastructure & delivery
+| Layer | Technologies |
+| ----- | ------------ |
+| **Frontend** | React 18, TypeScript 5.8, Vite 8, Tailwind CSS 3, Radix UI, Framer Motion, React Router 6, TanStack Query, React Hook Form + Zod, TipTap, DOMPurify, Lucide |
+| **Backend** | Express 5, Zod 4, Helmet, CORS, express-rate-limit + express-slow-down, Multer, Sharp (WebP pipeline), Nodemailer |
+| **Data & auth** | Supabase (PostgreSQL, Storage, Auth); browser uses anon key; API uses service role for admin writes, inquiries, seasonal nav, analytics |
+| **DevOps** | cPanel Passenger, `npm run verify:deploy`, `npm run verify:api-health`; dev proxy from Vite to `API_PORT` (default `8787`) |
 
-| Artifact                                                                     | Role                                                                                                          |
-| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| [`.cpanel.yml`](.cpanel.yml)                                                 | Rsync deploy to managed hosting, `tmp/restart.txt` for Passenger bounce.                                      |
-| [`passenger_entry.cjs`](passenger_entry.cjs)                                 | CommonJS bridge — dynamic `import()` of ESM [`server/index.js`](server/index.js) for Phusion Passenger.       |
-| [`scripts/verify-passenger-deploy.mjs`](scripts/verify-passenger-deploy.mjs) | Invoked via `npm run verify:deploy` — post-deploy sanity checks.                                              |
-| [`scripts/check-api-health.mjs`](scripts/check-api-health.mjs)               | `npm run verify:api-health` — GET `/api/health` must return JSON (fails if edge serves HTML only).            |
-| [`HOSTING_PASSENGER.txt`](HOSTING_PASSENGER.txt)                             | Path A vs Path B when `/api` does not reach Node; post-deploy checklist.                                     |
-| [`vite.config.ts`](vite.config.ts)                                           | Dev `/api` proxy to `API_PORT` (default `8787`); production build drops `console` / `debugger` via `esbuild`. |
+### Why this stack
 
----
-
-## Scalability
-
-- **Front / API split:** Static Vite build + stateless Express API — scale horizontally behind a load balancer without sticky sessions for public traffic.
-- **Data layer:** Supabase client for trip content; TanStack Query in the app for cache-friendly async patterns.
-- **Admin domain:** Isolated under `/admin/*` with role-checked server middleware — clear boundary for future SSO or stricter RBAC.
+- **SPA + thin API** fits shared hosting: static Vite assets plus a stateless Express process behind Passenger, without SSR complexity.
+- **Supabase** delivers Postgres, auth, and storage without a custom ORM — ideal for a CMS-like trip catalog and staff workflows.
+- **Zod at boundaries** (inquiry payloads, admin trip PUT, track-click) keeps runtime validation aligned with TypeScript types on the client.
 
 ---
 
-## Maintainability
+## Getting Started
 
-- **TypeScript** end-to-end on the client; **Zod** at API boundaries for runtime truth.
-- **Component architecture:** `src/components/` (UI + domain), `src/pages/` (routes), `src/lib/` (pure utilities), `src/admin/` (operations console).
-- **Styling:** Tailwind + `cn()` ([`src/lib/utils.ts`](src/lib/utils.ts)) merges class names without conflicting utilities.
-- **Content editing:** TipTap ([`@tiptap/*`](package.json)) in admin for structured trip copy — normalized server-side in admin routes.
+### Prerequisites
 
----
+- **Node.js** 18+ (20 LTS recommended)
+- **npm** 9+
+- A **Supabase** project (URL + anon key + service role key)
+- **SMTP** credentials and a **Turnstile** (or reCAPTCHA) secret for production inquiry flows
 
-## Accessibility & inclusive motion
-
-- **Radix UI** primitives for dialogs, scroll areas, tooltips — focus management and keyboard semantics by default.
-- **Framer Motion** gated by **`reducedMotion="user"`** globally ([`src/App.tsx`](src/App.tsx)).
-- **Semantic HTML & SEO:** [`src/components/Seo.tsx`](src/components/Seo.tsx) (react-helmet-async) sets canonical, Open Graph, and JSON-LD; root document language is Greek-first ([`index.html`](index.html) `lang="el"`).
-
----
-
-## Security checklist (evidence-based)
-
-| Layer               | Mechanism                                                                        |
-| ------------------- | -------------------------------------------------------------------------------- |
-| Transport & headers | Helmet, HSTS when `NODE_ENV=production`, no `X-Powered-By`                       |
-| Origin control      | Strict CORS in production — **throws** if `CORS_ORIGIN` is empty when production |
-| Input validation    | Zod `inquirySchema` / `trackClickSchema` in [`server/index.js`](server/index.js) |
-| Abuse control       | Dedicated limiters + slowdown middleware                                         |
-| HTML injection      | DOMPurify allowlist for public rich text                                         |
-| Admin surface       | Bearer JWT → Supabase `getUser` + `profiles.role` gate                           |
-
-> [!IMPORTANT]
-> **Secrets** live in environment variables only (see root `.env.example` and `server/.env.example`). Never commit credentials.
-
----
-
-## cPanel Build Fix (Vite)
-
-If cPanel shows `vite: command not found` during `npm run build`, it means dev dependencies were not installed.
-
-Use these commands in cPanel terminal (inside the app directory):
+### 1. Clone and install
 
 ```bash
-npm ci --include=dev
-npm run build
+git clone https://github.com/YOUR_ORG/Valitsa-Travel.git
+cd Valitsa-Travel
+npm ci
 ```
 
-Equivalent helper command in this repo:
+### 2. Environment variables
+
+Copy the examples and fill in your values. **Never commit** real secrets or the Supabase service role key.
+
+**Root [`.env.example`](.env.example) → `.env`**
+
+| Variable | Purpose |
+| -------- | ------- |
+| `VITE_SUPABASE_URL` | Supabase project URL (browser + server) |
+| `VITE_SUPABASE_ANON_KEY` | Public anon key for client reads |
+| `VITE_MAIL_API_URL` | Inquiry API URL (dev: `http://localhost:8787/api/send-inquiry`) |
+| `VITE_TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key (or `VITE_RECAPTCHA_SITE_KEY`) |
+| `VITE_SHOW_TRIPS` | `true` / `false` — hide trip listings when `false` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-only; can live here or in `server/.env` |
+
+**[`server/.env.example`](server/.env.example) → `server/.env`**
+
+| Variable | Purpose |
+| -------- | ------- |
+| `API_PORT` | API listen port (default `8787`) |
+| `CORS_ORIGIN` | Comma-separated allowed origins (required in production) |
+| `MAIL_HOST`, `MAIL_PORT`, `MAIL_USER`, `MAIL_PASS`, `MAIL_TO` | SMTP for inquiry emails |
+| `TURNSTILE_SECRET_KEY` | CAPTCHA verification (production inquiries) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Admin routes, inquiries DB, seasonal nav, analytics |
+
+Apply SQL migrations under [`supabase/migrations/`](supabase/migrations/) in the Supabase SQL editor (e.g. seasonal navigation, trip participation columns).
+
+### 3. Run locally
+
+```bash
+npm run dev
+```
+
+- **Web:** [http://localhost:5180](http://localhost:5180) (Vite)
+- **API:** [http://localhost:8787](http://localhost:8787) (Express; proxied from Vite for `/api`)
+
+Other useful commands:
+
+| Command | Purpose |
+| ------- | ------- |
+| `npm run dev:api` | API only |
+| `npm run build` | Production client bundle (runs env check first) |
+| `npm run start:api` | Production API process |
+| `npm test` | Vitest unit tests |
+| `npm run verify:api-health` | Smoke-test `GET /api/health` on deployed API |
+
+### Production / cPanel
+
+See [`HOSTING_PASSENGER.txt`](HOSTING_PASSENGER.txt) when `/api` does not reach Node. If the host reports `vite: command not found` during build:
 
 ```bash
 npm run build:cpanel
 ```
 
-Notes:
-- Do not force `NODE_ENV=production` for the install/build step.
-- If your host supports separate build and runtime phases, you can prune after build:
+Equivalent to `npm ci --include=dev` then `npm run build`. Do not set `NODE_ENV=production` before installing devDependencies for the build step.
 
-```bash
-npm prune --omit=dev
-```
+<details>
+<summary><strong>cPanel build notes</strong></summary>
 
-## Scripts
+- Use `npm ci --include=dev` before `npm run build` so Vite and TypeScript are available.
+- After build, you may run `npm prune --omit=dev` if your host separates build and runtime phases.
+- Post-deploy: `npm run verify:deploy` and `npm run verify:api-health` (must return JSON `{"ok":true}`).
 
-| Command                 | Purpose                                                                       |
-| ----------------------- | ----------------------------------------------------------------------------- |
-| `npm run dev`           | Concurrent Vite (`localhost:5180`) + Express API (`API_PORT`, default `8787`) |
-| `npm run build`         | Optimized client bundle                                                       |
-| `npm run start:api`     | Production API process                                                        |
-| `npm run verify:deploy` | Passenger deploy verification                                                 |
-| `npm run verify:api-health` | Smoke-test `GET /api/health` on production (see `API_HEALTH_URL`)      |
-| `npm test`              | Vitest                                                                        |
+</details>
 
 ---
 
-## Let’s connect
+## Database Schema & API Overview
 
-This build is a deliberate **portfolio-grade** artifact: opinionated UX, disciplined security, and infrastructure you can explain in a boardroom.
+### Core data models (Supabase)
 
-| Channel      | Link                                                        |
-| ------------ | ----------------------------------------------------------- |
+| Table | Role |
+| ----- | ---- |
+| `trips` | Catalog: bilingual text/HTML, `text[]` tags/gallery/transport, JSONB `departure_windows`, `pricing_segments`, `flight_details`, featured/status/seasonal flags |
+| `inquiries` | Lead records from public forms (status: `new` \| `contacted` \| `resolved`) |
+| `inquiry_comments` | Staff notes on inquiries; optional `attachments` JSON |
+| `profiles` | Auth users; `role` gate for admin (`admin`) |
+| `seasonal_configs` | Navbar season labels (EL/EN), display order, active flag |
+| `analytics_events` | Trip click/impression aggregates (via RPC from API) |
+
+**Storage buckets:** `trip-images` (admin uploads, Sharp → WebP), `inquiry-attachments` (lead comment files).
+
+Trip types and JSONB shapes are documented in [`src/types/Trip.ts`](src/types/Trip.ts).
+
+### Public API (Express)
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| `GET` | `/api/health`, `/health` | Liveness + `inquiries_db` flag |
+| `GET` | `/api/seasonal-nav` | Active season links for navbar |
+| `POST` | `/api/send-inquiry`, `/send-inquiry` | Validated inquiry + CAPTCHA + email (rate-limited) |
+| `POST` | `/api/track-click` | Record trip card click analytics |
+
+### Admin API (Bearer JWT + `profiles.role === admin`)
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| `POST` | `/api/admin/upload-image` | Multipart image → WebP → Supabase Storage |
+| `POST` | `/api/admin/trips` | Create trip (Zod `adminTripPutSchema`) |
+| `PUT` | `/api/admin/trips/:id` | Full trip update |
+| `PATCH` | `/api/admin/trips/:id` | Toggle `is_featured` |
+| `GET` | `/api/admin/seasonal-configs` | List configs + trip counts / orphans |
+| `POST` | `/api/admin/seasonal-configs` | Create season |
+| `PUT` | `/api/admin/seasonal-configs/:key` | Update season labels/order/active |
+| `DELETE` | `/api/admin/seasonal-configs/:key` | Delete season (unlinks trips) |
+| `GET` | `/api/admin/inquiries/:id/comments` | Comment thread |
+| `POST` | `/api/admin/inquiries/:id/comments` | Add staff comment + attachments |
+| `PATCH` | `/api/admin/inquiries/:id` | Update inquiry status |
+| `PATCH` | `/api/admin/inquiries/:inquiryId/comments/:commentId` | Remove attachment from comment |
+
+---
+
+## Key Technical Challenges & Lessons Learned
+
+### 1. Nested admin editors without losing work
+
+Trip editing uses a full-screen dialog plus nested modals (departure dates, pricing, flights). Dismissing via overlay click or Escape previously dropped in-memory drafts. The fix is a shared **[`useUnsavedDialogClose`](src/admin/hooks/useUnsavedDialogClose.ts)** hook and **[`UnsavedCloseAlert`](src/admin/components/UnsavedCloseAlert.tsx)** — a bilingual three-choice dialog (keep editing / leave without saving / save and close) wired across `TripEditDialog`, inquiry detail, seasonal create, and sub-modals. **Lesson:** intercept `Dialog.Root` `onOpenChange(false)` once at the root; keep dirty detection explicit per surface (RHF `isDirty`, JSON snapshot, or draft vs saved status).
+
+### 2. Modeling real-world trip inventory in JSONB
+
+Travel products need per-month departure days, priced room tiers per departure, optional flight legs, and bilingual HTML — not flat columns. The app stores structured JSONB on `trips`, normalizes legacy shapes on read ([`src/lib/tripAdminForm.ts`](src/lib/tripAdminForm.ts)), and validates writes with a strict Zod schema on the server ([`server/adminRoutes.js`](server/adminRoutes.js)). **Lesson:** invest in shared client types ([`src/types/Trip.ts`](src/types/Trip.ts)) and one server schema so the admin UI and API cannot drift.
+
+### 3. Shipping Node ESM on Passenger + static SPA
+
+Hosting constraints required a CommonJS bridge ([`passenger_entry.cjs`](passenger_entry.cjs)) that dynamic-imports ESM [`server/index.js`](server/index.js), strict production CORS (empty `CORS_ORIGIN` throws), and health checks that prove `/api` returns JSON not HTML. **Lesson:** treat “API reachable” as a deploy artifact (`verify:api-health`), not an assumption.
+
+### Security (evidence-based)
+
+| Layer | Mechanism |
+| ----- | --------- |
+| Transport & headers | Helmet, HSTS in production, `app.disable("x-powered-by")` |
+| Origin control | CORS allow-list; production requires `CORS_ORIGIN` |
+| Input validation | Zod on inquiries, track-click, admin trip bodies |
+| Abuse control | Rate limiters + slowdown on hot paths |
+| HTML injection | DOMPurify allowlist for public rich text |
+| Admin surface | Bearer JWT → `getUser` + `profiles.role` gate |
+
+Rich HTML from the editor is sanitized in [`src/lib/sanitizeTripRichTextHtml.ts`](src/lib/sanitizeTripRichTextHtml.ts) and rendered via [`src/components/SafeRichTextHtml.tsx`](src/components/SafeRichTextHtml.tsx).
+
+---
+
+## Future Roadmap
+
+- **End-to-end tests** — Playwright coverage for inquiry submission, trip detail tabs, and admin save/discard flows.
+- **Inquiry SLA dashboard** — Admin metrics for time-to-first-response and status funnel by season/trip.
+- **Deeper booking integration** — Optional deposit/hold flow or external booking provider webhook (without replacing the current inquiry-first conversion model).
+
+---
+
+## License & Contact
+
+This project is licensed under the **[Educational Use Only License](LICENSE)** (© 2026 Athanasios Oikonomou). Commercial use requires explicit written permission from the copyright holder.
+
+| Channel | Link |
+| ------- | ---- |
 | **LinkedIn** | [Athanasios Oikonomou](https://www.linkedin.com/in/ath-oik) |
-| **Email**    | `ath.oikonomou@hotmail.com`                                 |
+| **Email** | ath.oikonomou@hotmail.com |
 
 ---
 
-## License
-
-See [LICENSE](LICENSE) in this repository.
-
----
-
-<p align="center"><sub>Built with intent. Shipped with care. <strong>VALITSA TRAVEL</strong> — premium travel, engineered.</sub></p>
+<p align="center"><sub>Built with intent. Shipped with care. <strong>Valitsa Travel</strong> — premium travel, engineered.</sub></p>
