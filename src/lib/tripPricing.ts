@@ -8,9 +8,9 @@ function dedupeSortDays(days: number[]): number[] {
   return [...new Set(days.filter((d) => Number.isInteger(d)))].sort((a, b) => a - b);
 }
 
-/** All numeric room prices on a segment (for min–max list pricing). */
+/** Adult room prices on a segment (double/single/triple; child excluded from list/filter pricing). */
 function segmentPrices(s: TripPricingSegment): number[] {
-  return [s.price_double, s.price_single, s.price_triple, s.price_child].filter(
+  return [s.price_double, s.price_single, s.price_triple].filter(
     (n): n is number => n != null && Number.isFinite(n),
   );
 }
@@ -66,8 +66,8 @@ export function normalizePricingSegments(raw: unknown): TripPricingSegment[] {
 }
 
 /**
- * Min/max price across all pricing rows and room types.
- * Falls back to legacy `price_num` when segments have no numeric prices.
+ * Min/max adult price across all pricing rows (double/single/triple; child fares excluded).
+ * Falls back to legacy `price_num` when segments have no numeric adult prices.
  */
 export function tripListPriceRange(
   trip: Pick<Trip, "price_num" | "pricing_segments">,

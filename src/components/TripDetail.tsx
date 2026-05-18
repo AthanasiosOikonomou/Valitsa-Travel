@@ -48,7 +48,7 @@ import {
 import { buildResponsiveImageSet, cn } from "@/lib/utils";
 
 function segmentHeroPrice(s: TripPricingSegment): number | null {
-  const candidates = [s.price_double, s.price_single, s.price_triple, s.price_child];
+  const candidates = [s.price_double, s.price_single, s.price_triple];
   for (const n of candidates) {
     if (n != null && Number.isFinite(n)) return n;
   }
