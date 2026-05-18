@@ -57,6 +57,10 @@ import {
 } from "@/lib/tripDisplay";
 import { pickLocalizedStringList } from "@/lib/tripLocaleArrays";
 import { transportLabelForSlug } from "@/lib/tripTransportModes";
+import { useTrip } from "@/hooks/useTrips";
+import { isValidTripId } from "@/lib/tripShare";
+import { stripHtmlToText } from "@/lib/tripAdminForm";
+import { toast } from "sonner";
 
 interface FilterSectionProps {
   id: string;
@@ -198,6 +202,25 @@ const TripsContent = () => {
     const title = lang === "gr" && trip.title_el ? trip.title_el : trip.title;
     trackTripView(trip.id, title, trip.image);
     setSelectedTrip(trip);
+    const params = new URLSearchParams(searchParams);
+    if (params.get("trip") !== String(trip.id)) {
+      params.set("trip", String(trip.id));
+      navigate({ pathname: "/trips", search: `?${params.toString()}` });
+    }
+  };
+
+  const handleCloseTrip = () => {
+    setSelectedTrip(null);
+    const params = new URLSearchParams(searchParams);
+    if (!params.has("trip")) return;
+    params.delete("trip");
+    navigate(
+      {
+        pathname: "/trips",
+        search: params.toString() ? `?${params.toString()}` : "",
+      },
+      { replace: true },
+    );
   };
 
   const activeFilter = searchParams.get("filter");
@@ -218,6 +241,15 @@ const TripsContent = () => {
   });
 
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
+  const tripParam = searchParams.get("trip")?.trim() ?? "";
+  const deepLinkTripId =
+    tripParam && isValidTripId(tripParam) ? tripParam : "";
+  const {
+    trip: deepLinkTrip,
+    loading: deepLinkLoading,
+    error: deepLinkError,
+  } = useTrip(deepLinkTripId);
+  const deepLinkHandledRef = useRef<string | null>(null);
   const [termsOpen, setTermsOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
@@ -398,6 +430,21 @@ const TripsContent = () => {
       };
     }),
   };
+
+  const activeTripSeo = useMemo(() => {
+    if (!selectedTrip) return null;
+    const title = String(getField(selectedTrip, "title") ?? selectedTrip.title ?? "");
+    const descHtml = String(getField(selectedTrip, "description") ?? "");
+    const plain = stripHtmlToText(descHtml);
+    return {
+      title,
+      description:
+        plain.length > 0 ? plain.slice(0, 160) : seoDescription,
+      path: `/trips?trip=${selectedTrip.id}`,
+      image: selectedTrip.image?.trim() || "/branding/navbar/logo-light.svg",
+      imageAlt: title,
+    };
+  }, [selectedTrip, lang, seoDescription]);
 
   const breadcrumbSchema = {
     "@context": "https://schema.org",
@@ -614,11 +661,44 @@ const TripsContent = () => {
   }, [mobileFiltersOpen]);
 
   useEffect(() => {
-    const tripParam = searchParams.get("trip");
-    if (!tripParam) return;
+    const rawTrip = searchParams.get("trip")?.trim();
+    if (rawTrip && !isValidTripId(rawTrip)) {
+      toast.error(t("detail.tripNotFound"));
+      const params = new URLSearchParams(searchParams);
+      params.delete("trip");
+      navigate(
+        {
+          pathname: "/trips",
+          search: params.toString() ? `?${params.toString()}` : "",
+        },
+        { replace: true },
+      );
+    }
+  }, [navigate, searchParams, t]);
+
+  useEffect(() => {
+    const param = searchParams.get("trip");
+    if (!param && selectedTrip) {
+      setSelectedTrip(null);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!deepLinkTripId) {
+      deepLinkHandledRef.current = null;
+      return;
+    }
+
+    if (
+      selectedTrip &&
+      String(selectedTrip.id) === deepLinkTripId &&
+      deepLinkHandledRef.current === deepLinkTripId
+    ) {
+      return;
+    }
 
     const matchedTrip = scopedTrips.find(
-      (trip) => String(trip.id) === String(tripParam),
+      (trip) => String(trip.id) === deepLinkTripId,
     );
     if (matchedTrip) {
       const title =
@@ -627,8 +707,52 @@ const TripsContent = () => {
           : matchedTrip.title;
       trackTripView(matchedTrip.id, title, matchedTrip.image);
       setSelectedTrip(matchedTrip);
+      deepLinkHandledRef.current = deepLinkTripId;
+      return;
     }
-  }, [scopedTrips, searchParams, lang, trackTripView]);
+
+    if (deepLinkLoading) return;
+
+    if (deepLinkTrip && String(deepLinkTrip.id) === deepLinkTripId) {
+      const title =
+        lang === "gr" && deepLinkTrip.title_el
+          ? deepLinkTrip.title_el
+          : deepLinkTrip.title;
+      trackTripView(deepLinkTrip.id, title, deepLinkTrip.image);
+      setSelectedTrip(deepLinkTrip);
+      deepLinkHandledRef.current = deepLinkTripId;
+      return;
+    }
+
+    if (deepLinkHandledRef.current === deepLinkTripId) return;
+
+    if (deepLinkError || !deepLinkTrip) {
+      deepLinkHandledRef.current = deepLinkTripId;
+      toast.error(t("detail.tripNotFound"));
+      const params = new URLSearchParams(searchParams);
+      params.delete("trip");
+      navigate(
+        {
+          pathname: "/trips",
+          search: params.toString() ? `?${params.toString()}` : "",
+        },
+        { replace: true },
+      );
+      setSelectedTrip(null);
+    }
+  }, [
+    deepLinkTrip,
+    deepLinkError,
+    deepLinkLoading,
+    deepLinkTripId,
+    lang,
+    navigate,
+    scopedTrips,
+    searchParams,
+    selectedTrip,
+    t,
+    trackTripView,
+  ]);
 
   // Only scroll on explicit user actions: pagination (-280) or filter section (-120)
   const prevPageRef = useRef(normalizedFilterState.page);
@@ -1069,10 +1193,17 @@ const TripsContent = () => {
   return (
     <div className="premium-page trips-page-surface min-h-screen bg-background text-foreground transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] relative z-0">
       <Seo
-        title={seoTitle}
-        description={seoDescription}
-        path="/trips"
-        image={brandAssetUrl("/branding/navbar/logo-light.svg")}
+        title={activeTripSeo?.title ?? seoTitle}
+        description={activeTripSeo?.description ?? seoDescription}
+        path={activeTripSeo?.path ?? "/trips"}
+        image={
+          activeTripSeo?.image
+            ? activeTripSeo.image.startsWith("http")
+              ? activeTripSeo.image
+              : brandAssetUrl(activeTripSeo.image)
+            : brandAssetUrl("/branding/navbar/logo-light.svg")
+        }
+        imageAlt={activeTripSeo?.imageAlt}
         keywords={seoKeywords}
         lang={lang}
         structuredData={[itemListSchema, breadcrumbSchema]}
@@ -1243,10 +1374,7 @@ const TripsContent = () => {
 
       <AnimatePresence>
         {selectedTrip && (
-          <TripDetail
-            trip={selectedTrip}
-            onClose={() => setSelectedTrip(null)}
-          />
+          <TripDetail trip={selectedTrip} onClose={handleCloseTrip} />
         )}
       </AnimatePresence>
 

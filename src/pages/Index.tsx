@@ -1,12 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import { AnimatePresence } from "framer-motion";
-import type { Trip } from "@/types/Trip";
+import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { useResolvedDarkMode } from "@/hooks/useResolvedDarkMode";
 import HeroSection from "@/components/HeroSection";
 import FeaturedTrips from "@/components/FeaturedTrips";
-import TripDetail from "@/components/TripDetail";
 import Seo from "@/components/Seo";
 import AboutModal from "@/components/AboutModal";
 import PaymentModal from "@/components/PaymentModal";
@@ -19,10 +17,11 @@ import {
 } from "@/lib/heroImage";
 import { absoluteBrandAssetUrl } from "@/lib/brandAssetUrl";
 import { showTrips } from "@/lib/showTrips";
+import type { Trip } from "@/types/Trip";
 
 const IndexContent = () => {
   const darkMode = useResolvedDarkMode();
-  const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
+  const navigate = useNavigate();
   const [termsOpen, setTermsOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
@@ -33,9 +32,9 @@ const IndexContent = () => {
     (trip: Trip) => {
       const title = lang === "gr" && trip.title_el ? trip.title_el : trip.title;
       trackTripView(trip.id, title, trip.image);
-      setSelectedTrip(trip);
+      navigate(`/trips?trip=${encodeURIComponent(String(trip.id))}`);
     },
-    [lang, trackTripView],
+    [lang, navigate, trackTripView],
   );
 
   const seoTitle =
@@ -159,7 +158,7 @@ const IndexContent = () => {
   };
 
   useEffect(() => {
-    if (termsOpen || aboutOpen || paymentOpen || selectedTrip) {
+    if (termsOpen || aboutOpen || paymentOpen) {
       document.body.classList.add("modal-blur-active");
     } else {
       document.body.classList.remove("modal-blur-active");
@@ -167,7 +166,7 @@ const IndexContent = () => {
     return () => {
       document.body.classList.remove("modal-blur-active");
     };
-  }, [selectedTrip, termsOpen, aboutOpen, paymentOpen]);
+  }, [termsOpen, aboutOpen, paymentOpen]);
 
   return (
     <div className="premium-page trips-page-surface min-h-screen bg-background text-foreground transition-colors [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]">
@@ -192,15 +191,6 @@ const IndexContent = () => {
       {showTrips ? (
         <FeaturedTrips onSelectTrip={handleSelectTrip} />
       ) : null}
-
-      <AnimatePresence>
-        {showTrips && selectedTrip ? (
-          <TripDetail
-            trip={selectedTrip}
-            onClose={() => setSelectedTrip(null)}
-          />
-        ) : null}
-      </AnimatePresence>
 
       <TermsModal open={termsOpen} onClose={() => setTermsOpen(false)} />
       <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} />

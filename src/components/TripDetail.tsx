@@ -47,6 +47,8 @@ import {
   shouldShowFlightDetails,
 } from "@/lib/tripFlightDetails";
 import { buildResponsiveImageSet, cn } from "@/lib/utils";
+import { buildTripShareUrl } from "@/lib/tripShare";
+import { TripShareSection } from "@/components/TripShareMenu";
 
 function segmentHeroPrice(s: TripPricingSegment): number | null {
   const candidates = [s.price_double, s.price_single, s.price_triple];
@@ -447,10 +449,7 @@ const TripDetail = ({ trip: initialTrip, onClose }: TripDetailProps) => {
         tripTitle: getDetailField("title"),
         tripLocation: getDetailField("location"),
         tripPrice: formatTripListPriceLabel(trip, lang),
-        tripUrl:
-          typeof window !== "undefined"
-            ? `${window.location.origin}/trips?trip=${trip.id}`
-            : "",
+        tripUrl: buildTripShareUrl(trip.id),
         tripImage: trip.image ?? "",
       });
 
@@ -567,23 +566,27 @@ const TripDetail = ({ trip: initialTrip, onClose }: TripDetailProps) => {
             className="surface-elevated relative flex max-h-full min-h-0 w-full max-w-7xl flex-col overflow-hidden rounded-[2rem] bg-background shadow-lg transform-gpu [backface-visibility:hidden]"
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onClose();
-              }}
-              className="pointer-events-auto absolute right-[max(1rem,env(safe-area-inset-right))] top-[max(1rem,env(safe-area-inset-top))] z-50 inline-flex min-h-[44px] min-w-[44px] cursor-pointer touch-manipulation items-center justify-center rounded-full border-0 bg-white/80 p-3 shadow-sm backdrop-blur-sm transition-transform duration-elev ease-material hover:scale-105 hover:bg-gray-100 active:scale-95 dark:bg-zinc-900/80 dark:hover:bg-zinc-800"
-              style={{ WebkitTapHighlightColor: "transparent" }}
-              aria-label={t("common.close")}
+            <motion.div
+              className="pointer-events-auto absolute right-[max(1rem,env(safe-area-inset-right))] top-[max(1rem,env(safe-area-inset-top))] z-50"
             >
-              <X
-                size={20}
-                className="shrink-0 text-gray-800 dark:text-zinc-100"
-                strokeWidth={2.25}
-                aria-hidden
-              />
-            </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClose();
+                }}
+                className="inline-flex min-h-[44px] min-w-[44px] cursor-pointer touch-manipulation items-center justify-center rounded-full border-0 bg-white/80 p-3 shadow-sm backdrop-blur-sm transition-transform duration-elev ease-material hover:scale-105 hover:bg-gray-100 active:scale-95 dark:bg-zinc-900/80 dark:hover:bg-zinc-800"
+                style={{ WebkitTapHighlightColor: "transparent" }}
+                aria-label={t("common.close")}
+              >
+                <X
+                  size={20}
+                  className="shrink-0 text-gray-800 dark:text-zinc-100"
+                  strokeWidth={2.25}
+                  aria-hidden
+                />
+              </button>
+            </motion.div>
             <div className="relative flex min-h-0 flex-1 flex-col">
               <div
                 ref={panelRef}
@@ -776,7 +779,7 @@ const TripDetail = ({ trip: initialTrip, onClose }: TripDetailProps) => {
                         {getDetailField("title")}
                       </h2>
 
-                      <div className="flex gap-2 flex-wrap mb-10">
+                      <div className="mb-6 flex flex-wrap gap-2">
                         {displayTags.map((tag) => (
                           <span
                             key={tag}
@@ -786,6 +789,13 @@ const TripDetail = ({ trip: initialTrip, onClose }: TripDetailProps) => {
                           </span>
                         ))}
                       </div>
+
+                      <TripShareSection
+                        tripId={String(trip.id)}
+                        tripTitle={String(getDetailField("title") ?? "")}
+                        tripImage={heroDisplayUrl ?? trip.image}
+                        scrollContainerRef={panelRef}
+                      />
 
                       {/* Tabs */}
                       <div

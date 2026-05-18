@@ -131,6 +131,27 @@ const translations: Record<Lang, Record<string, string>> = {
     "detail.galleryNext": "Next photo",
     "detail.galleryThumbPin": "Preview or select gallery photo",
     "detail.galleryCarouselRegion": "Trip photos",
+    "detail.share": "Share trip",
+    "detail.shareVia": "Share via",
+    "detail.copyLink": "Copy link",
+    "detail.linkCopied": "Link copied to clipboard",
+    "detail.copyLinkFailed": "Could not copy link",
+    "detail.shareNative": "Share…",
+    "detail.shareFailed": "Could not open share menu",
+    "detail.shareWhatsApp": "WhatsApp",
+    "detail.shareViber": "Viber",
+    "detail.shareMessenger": "Messenger",
+    "detail.tripNotFound": "This trip is no longer available.",
+    "detail.shareWithFriend": "Share with a friend on social media",
+    "detail.sharePanelTitle": "Share this trip",
+    "detail.shareLinkPreview": "Link",
+    "detail.shareFacebookPost": "Post on Facebook",
+    "detail.shareMessengerDesktopHint":
+      "On computer: copy the link above and paste it into Messenger.",
+    "detail.shareProductionOnlyPreview":
+      "Rich previews with image work on the live site (valitsatravel.gr), not on localhost.",
+    "detail.shareFacebookUsesLive":
+      "Facebook uses the live trip link (valitsatravel.gr) so the post can show the trip photo and title.",
 
     // Archive / Search Page
     "archive.title": "All Trips",
@@ -695,6 +716,27 @@ const translations: Record<Lang, Record<string, string>> = {
     "detail.galleryNext": "Επόμενη φωτογραφία",
     "detail.galleryThumbPin": "Προεπισκόπηση ή επιλογή φωτογραφίας συλλογής",
     "detail.galleryCarouselRegion": "Φωτογραφίες ταξιδιού",
+    "detail.share": "Κοινοποίηση ταξιδιού",
+    "detail.shareVia": "Κοινοποίηση μέσω",
+    "detail.copyLink": "Αντιγραφή συνδέσμου",
+    "detail.linkCopied": "Ο σύνδεσμος αντιγράφηκε",
+    "detail.copyLinkFailed": "Αποτυχία αντιγραφής συνδέσμου",
+    "detail.shareNative": "Κοινοποίηση…",
+    "detail.shareFailed": "Αποτυχία κοινοποίησης",
+    "detail.shareWhatsApp": "WhatsApp",
+    "detail.shareViber": "Viber",
+    "detail.shareMessenger": "Messenger",
+    "detail.tripNotFound": "Αυτό το ταξίδι δεν είναι πλέον διαθέσιμο.",
+    "detail.shareWithFriend": "Κοινοποίηση σε φίλο/ή στα social media",
+    "detail.sharePanelTitle": "Κοινοποίηση ταξιδιού",
+    "detail.shareLinkPreview": "Σύνδεσμος",
+    "detail.shareFacebookPost": "Δημοσίευση στο Facebook",
+    "detail.shareMessengerDesktopHint":
+      "Στον υπολογιστή: αντιγράψτε τον σύνδεσμο παραπάνω και επικολλήστε τον στο Messenger.",
+    "detail.shareProductionOnlyPreview":
+      "Η προεπισκόπηση με εικόνα λειτουργεί στο live site (valitsatravel.gr), όχι στο localhost.",
+    "detail.shareFacebookUsesLive":
+      "Το Facebook χρησιμοποιεί τον ζωντανό σύνδεσμο (valitsatravel.gr) για να εμφανίσει φωτογραφία και τίτλο.",
 
     // Archive / Search Page
     "archive.title": "Όλα τα Ταξίδια",

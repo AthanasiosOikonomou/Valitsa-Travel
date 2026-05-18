@@ -12,6 +12,7 @@ import { fileURLToPath } from "url";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { registerAdminRoutes } from "./adminRoutes.js";
+import { buildTripOgHtml, shouldInjectTripOg } from "./tripOgHtml.js";
 import {
   confirmationSubject,
   confirmationTextBody,
@@ -822,7 +823,7 @@ if (fs.existsSync(indexHtml)) {
       },
     }),
   );
-  app.use((req, res, next) => {
+  app.use(async (req, res, next) => {
     if (req.method !== "GET" && req.method !== "HEAD") {
       next();
       return;
@@ -831,7 +832,34 @@ if (fs.existsSync(indexHtml)) {
       next();
       return;
     }
+
     setIndexHtmlHeaders(res);
+
+    const queryTrip = typeof req.query.trip === "string" ? req.query.trip.trim() : "";
+    const injectOg = shouldInjectTripOg({
+      path: req.path,
+      queryTrip,
+      userAgent: req.get("user-agent") || "",
+    });
+
+    if (injectOg && queryTrip) {
+      try {
+        const ogHtml = await buildTripOgHtml({
+          tripId: queryTrip,
+          indexHtmlPath: indexHtml,
+          readFileSync: fs.readFileSync,
+          supabaseAdmin,
+          lang: "gr",
+        });
+        if (ogHtml) {
+          res.type("html").send(ogHtml);
+          return;
+        }
+      } catch (err) {
+        console.warn("[trip-og] failed to build OG HTML:", err?.message || err);
+      }
+    }
+
     res.sendFile(indexHtml);
   });
 } else {

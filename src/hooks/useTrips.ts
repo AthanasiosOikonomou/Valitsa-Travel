@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { Trip } from "../types/Trip";
+import { isValidTripId } from "@/lib/tripShare";
 
 // Only fetch lightweight fields for trip list
 const TRIP_LIST_FIELDS = [
@@ -122,14 +123,24 @@ export function useTrip(id: string) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!id || !isValidTripId(id)) {
+      setTrip(null);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
+    let ignore = false;
     setLoading(true);
     setError(null);
     supabase
       .from("trips")
       .select("*")
       .eq("id", id)
+      .or("status.eq.active,status.is.null")
       .single()
       .then(({ data, error }) => {
+        if (ignore) return;
         if (error) {
           setError(error.message);
           setTrip(null);
@@ -138,6 +149,9 @@ export function useTrip(id: string) {
         }
         setLoading(false);
       });
+    return () => {
+      ignore = true;
+    };
   }, [id]);
 
   return { trip, loading, error };
