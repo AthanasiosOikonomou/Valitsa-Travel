@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import CaptchaField from "@/components/CaptchaField";
 import ProgressiveImage from "@/components/ProgressiveImage";
 import { useScrollLock } from "@/hooks/useScrollLock";
+import { useTrip } from "@/hooks/useTrips";
 import ModalScrollUpButton from "@/components/ModalScrollUpButton";
 import {
   formatTripDuration,
@@ -208,7 +209,10 @@ type TabKey = (typeof allTabKeys)[number];
 
 const gallerySpring = { type: "spring" as const, stiffness: 300, damping: 30 };
 
-const TripDetail = ({ trip, onClose }: TripDetailProps) => {
+const TripDetail = ({ trip: initialTrip, onClose }: TripDetailProps) => {
+  const { trip: fetchedTrip } = useTrip(initialTrip.id);
+  const trip = fetchedTrip ?? initialTrip;
+
   const [activeTab, setActiveTab] = useState<string>("description");
   const { t, lang } = useLanguage();
 
