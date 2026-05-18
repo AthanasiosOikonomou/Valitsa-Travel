@@ -135,7 +135,7 @@ const translations: Record<Lang, Record<string, string>> = {
     // Archive / Search Page
     "archive.title": "All Trips",
     "archive.resultsFound": "trips found",
-    "archive.searchPlaceholder": "Search by title...",
+    "archive.searchPlaceholder": "Search by title or tags...",
     "archive.priceRange": "Price Range",
     "archive.specialFilters": "Travel Preferences",
     "archive.featuredPicks": "Top Picks",
@@ -699,7 +699,7 @@ const translations: Record<Lang, Record<string, string>> = {
     // Archive / Search Page
     "archive.title": "Όλα τα Ταξίδια",
     "archive.resultsFound": "ταξίδια βρέθηκαν",
-    "archive.searchPlaceholder": "Αναζήτηση με τίτλο...",
+    "archive.searchPlaceholder": "Αναζήτηση με τίτλο ή ετικέτες...",
     "archive.priceRange": "Εύρος Τιμής",
     "archive.specialFilters": "Προτιμήσεις Ταξιδιού",
     "archive.featuredPicks": "Κορυφαίες Επιλογές",

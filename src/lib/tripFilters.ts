@@ -12,6 +12,7 @@ import {
   mergeTransportSlugsFromColumns,
   type TransportModeSlug,
 } from "@/lib/tripTransportModes";
+import { pickLocalizedStringList } from "@/lib/tripLocaleArrays";
 
 export type TripLang = "en" | "gr";
 
@@ -601,11 +602,18 @@ const matchesTripFilters = (
   lang: TripLang,
   excludedFacet?: FacetKey,
 ) => {
-  // Search query: use correct language fields
+  // Search query: title, location, and localized tags
   if (state.searchQuery) {
-    const searchable =
-      `${getTripField(trip, "title", lang) ?? ""} ${getTripField(trip, "location", lang) ?? ""}`.toLowerCase();
-    if (!searchable.includes(state.searchQuery.toLowerCase())) {
+    const tags = pickLocalizedStringList(lang, trip.tags_el, trip.tags).join(" ");
+    const searchable = [
+      getTripField(trip, "title", lang),
+      getTripField(trip, "location", lang),
+      tags,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    if (!searchable.includes(state.searchQuery.trim().toLowerCase())) {
       return false;
     }
   }
