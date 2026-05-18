@@ -18,7 +18,6 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import {
   buildPublicTripShareUrl,
   canUseNativeShare,
-  formatShareLinkDisplay,
   getTripShareTargets,
   isLocalDevOrigin,
   isMobileShareDevice,
@@ -94,10 +93,6 @@ function TripSharePanel({
     tripId,
     lang: shareLang,
   });
-
-  const linkPreview = formatShareLinkDisplay(
-    isLocalDevOrigin() ? buildPublicTripShareUrl(tripId) : targets.url,
-  );
 
   const previewImage = tripImage?.trim() || null;
 
@@ -260,13 +255,9 @@ function TripSharePanel({
                   <Share2 size={24} aria-hidden />
                 </div>
               )}
-              <div className="min-w-0 flex-1">
-                <p className="line-clamp-2 text-base font-semibold leading-snug text-foreground">
+              <div className="min-w-0 flex-1 flex items-center">
+                <p className="line-clamp-3 text-base font-semibold leading-snug text-foreground">
                   {tripTitle}
-                </p>
-                <p className="mt-2 text-xs text-foreground-muted">
-                  {t("detail.shareLinkPreview")}:{" "}
-                  <span className="break-all font-medium text-primary">{linkPreview}</span>
                 </p>
               </div>
             </div>

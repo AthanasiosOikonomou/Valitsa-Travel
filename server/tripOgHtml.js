@@ -5,14 +5,18 @@ const SITE_ORIGIN = "https://valitsatravel.gr";
 const OG_FALLBACK_IMAGE = `${SITE_ORIGIN}/hero/hero.webp`;
 
 const CRAWLER_UA_RE =
-  /facebookexternalhit|WhatsApp|Twitterbot|LinkedInBot|Slackbot|Discordbot|TelegramBot|Pinterest|Googlebot|bingbot/i;
+  /facebookexternalhit|Facebot|meta-externalagent|WhatsApp|Twitterbot|LinkedInBot|Slackbot|Discordbot|TelegramBot|Pinterest|Googlebot|bingbot/i;
+
+export function isSocialCrawlerUserAgent(userAgent) {
+  return CRAWLER_UA_RE.test(String(userAgent || ""));
+}
 
 export function isValidTripId(id) {
   return UUID_RE.test(String(id || "").trim());
 }
 
 export function isSocialCrawler(userAgent) {
-  return CRAWLER_UA_RE.test(String(userAgent || ""));
+  return isSocialCrawlerUserAgent(userAgent);
 }
 
 function stripHtmlToText(html) {
@@ -30,10 +34,6 @@ function escapeHtml(value) {
     .replace(/"/g, "&quot;");
 }
 
-function escapeRegex(value) {
-  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 function pickLocalized(trip, field, lang) {
   if (lang === "gr") {
     const el = trip[`${field}_el`];
@@ -43,7 +43,7 @@ function pickLocalized(trip, field, lang) {
   return base != null && String(base).trim() ? String(base).trim() : "";
 }
 
-function resolveOgImage(image) {
+export function resolveOgImage(image) {
   const raw = String(image || "").trim();
   if (!raw) return OG_FALLBACK_IMAGE;
   if (raw.startsWith("https://")) return raw;
@@ -51,25 +51,85 @@ function resolveOgImage(image) {
   return `${SITE_ORIGIN}${raw.startsWith("/") ? raw : `/${raw}`}`;
 }
 
-/** Replace one meta tag (may span lines); never match across adjacent tags. */
+/** Same-origin OG image URL — Facebook fetches this; server redirects to the trip photo. */
+export function buildOgTripImageUrl(tripId) {
+  return `${SITE_ORIGIN}/og/trip/${encodeURIComponent(String(tripId).trim())}.jpg`;
+}
+
+/** Prefer Supabase render URL (resize) for crawler compatibility. */
+export function toFacebookFriendlyImageUrl(imageUrl) {
+  const url = String(imageUrl || "").trim();
+  if (!url) return OG_FALLBACK_IMAGE;
+
+  const objectMatch = url.match(
+    /^(https:\/\/[^/]+)\/storage\/v1\/object\/public\/(.+)$/i,
+  );
+  if (objectMatch) {
+    const [, origin, objectPath] = objectMatch;
+    return `${origin}/storage/v1/render/image/public/${objectPath}?width=1200&height=630&resize=cover&quality=85`;
+  }
+
+  return url;
+}
+
+/**
+ * Resolve redirect target for GET /og/trip/:tripId(.jpg)
+ * @param {import('@supabase/supabase-js').SupabaseClient | null} supabaseAdmin
+ */
+export async function resolveTripOgImageRedirect(tripId, supabaseAdmin) {
+  if (!isValidTripId(tripId) || !supabaseAdmin) {
+    return OG_FALLBACK_IMAGE;
+  }
+
+  const { data: trip, error } = await supabaseAdmin
+    .from("trips")
+    .select("image, status")
+    .eq("id", tripId)
+    .or("status.eq.active,status.is.null")
+    .maybeSingle();
+
+  if (error || !trip) {
+    return OG_FALLBACK_IMAGE;
+  }
+
+  return toFacebookFriendlyImageUrl(resolveOgImage(trip.image));
+}
+
+/** Replace one meta tag (including multiline tags in index.html). */
 function upsertMeta(html, key, content, { isName = false } = {}) {
   const attr = isName ? "name" : "property";
   const tag = `<meta ${attr}="${key}" content="${escapeHtml(content)}" />`;
-  const re = new RegExp(
-    `<meta[^>]*${attr}=["']${escapeRegex(key)}["'][^>]*>`,
-    "i",
-  );
-  if (re.test(html)) {
-    return html.replace(re, tag);
+  const needles = [`${attr}="${key}"`, `${attr}='${key}'`];
+
+  let idx = 0;
+  while (idx < html.length) {
+    const metaStart = html.indexOf("<meta", idx);
+    if (metaStart === -1) break;
+    const metaEnd = html.indexOf(">", metaStart);
+    if (metaEnd === -1) break;
+    const chunk = html.slice(metaStart, metaEnd + 1);
+    if (needles.some((needle) => chunk.includes(needle))) {
+      return html.slice(0, metaStart) + tag + html.slice(metaEnd + 1);
+    }
+    idx = metaEnd + 1;
   }
+
   return html.replace("</head>", `  ${tag}\n</head>`);
 }
 
 function upsertLinkCanonical(html, href) {
   const tag = `<link rel="canonical" href="${escapeHtml(href)}" />`;
-  const re = /<link[^>]*rel=["']canonical["'][^>]*>/i;
-  if (re.test(html)) {
-    return html.replace(re, tag);
+  let idx = 0;
+  while (idx < html.length) {
+    const start = html.indexOf("<link", idx);
+    if (start === -1) break;
+    const end = html.indexOf(">", start);
+    if (end === -1) break;
+    const chunk = html.slice(start, end + 1);
+    if (/rel=["']canonical["']/i.test(chunk)) {
+      return html.slice(0, start) + tag + html.slice(end + 1);
+    }
+    idx = end + 1;
   }
   return html.replace("</head>", `  ${tag}\n</head>`);
 }
@@ -106,7 +166,7 @@ export async function buildTripOgHtml({
     stripHtmlToText(pickLocalized(trip, "description", "en")).slice(0, 200) ||
     "Valitsa Travel — curated trips and premium travel experiences.";
   const hasTripImage = Boolean(String(trip.image || "").trim());
-  const image = resolveOgImage(trip.image);
+  const image = buildOgTripImageUrl(tripId);
   const imageWidth = hasTripImage ? "1200" : "1920";
   const imageHeight = hasTripImage ? "630" : "1152";
   const pageUrl = `${SITE_ORIGIN}/trips?trip=${encodeURIComponent(tripId)}`;
@@ -129,6 +189,7 @@ export async function buildTripOgHtml({
   html = upsertMeta(html, "og:image:alt", title);
   html = upsertMeta(html, "og:image:width", imageWidth);
   html = upsertMeta(html, "og:image:height", imageHeight);
+  html = upsertMeta(html, "og:image:type", hasTripImage ? "image/jpeg" : "image/webp");
   html = upsertMeta(html, "twitter:card", "summary_large_image", { isName: true });
   html = upsertMeta(html, "twitter:title", fullTitle, { isName: true });
   html = upsertMeta(html, "twitter:description", description, { isName: true });

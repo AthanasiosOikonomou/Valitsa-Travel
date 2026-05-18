@@ -1,3 +1,8 @@
+# Allow Meta/Facebook link-preview crawlers (some hosts block unknown bots → HTTP 403).
+<IfModule mod_setenvif.c>
+  SetEnvIfNoCase User-Agent "facebookexternalhit|Facebot|meta-externalagent" social_crawler=1
+</IfModule>
+
 # Hosting note:
 # - Passenger + Node (root .htaccess with PassengerStartupFile): Express serves dist/ and
 #   already falls back to index.html for paths like /admin/login — no mod_rewrite required.

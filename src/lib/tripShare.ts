@@ -86,7 +86,7 @@ export function getTripShareTargets({
 }): TripShareTargets {
   const url = buildTripShareUrl(tripId);
   const publicUrl = buildPublicTripShareUrl(tripId);
-  const message = buildTripShareMessage(title, url, lang);
+  const message = buildTripShareMessage(title, publicUrl, lang);
   const encodedMessage = encodeURIComponent(message);
   const encodedPublicUrl = encodeURIComponent(publicUrl);
 
@@ -107,14 +107,4 @@ export function getTripShareTargets({
 
 export function canUseNativeShare(): boolean {
   return typeof navigator !== "undefined" && typeof navigator.share === "function";
-}
-
-/** Short display URL without protocol for preview line. */
-export function formatShareLinkDisplay(url: string): string {
-  try {
-    const u = new URL(url);
-    return `${u.host}${u.pathname}${u.search}`;
-  } catch {
-    return url;
-  }
 }

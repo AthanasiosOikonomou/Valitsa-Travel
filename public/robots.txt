@@ -1,38 +1,40 @@
-# Valitsa Travel robots.txt
-# Allow all legitimate bots to crawl the site
-
-User-agent: *
-Allow: /
-Disallow: /api/
-Disallow: /*.json$
-Disallow: /.env*
-
-# Crawl delay - be respectful
-Crawl-delay: 1
-
-# Sitemaps
-Sitemap: https://valitsatravel.gr/sitemap.xml
-
-# Specific rules for search engines
-User-agent: Googlebot
-Allow: /
-Crawl-delay: 0.5
-Priority: high
-
-User-agent: Bingbot
-Allow: /
-Crawl-delay: 1
-
-User-agent: Twitterbot
-Allow: /
-
+# Meta / Facebook link previews (must be allowed — do not block)
 User-agent: facebookexternalhit
 Allow: /
 
-# Block problematic bots
+User-agent: Facebot
+Allow: /
+
+User-agent: meta-externalagent
+Allow: /
+
+# Other social / search preview crawlers
+User-agent: Twitterbot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# Default
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /.env*
+
+Sitemap: https://valitsatravel.gr/sitemap.xml
+
+# Block aggressive scrapers only
 User-agent: MJ12bot
 Disallow: /
 
 User-agent: AhrefsBot
 Disallow: /
-

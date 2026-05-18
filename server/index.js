@@ -12,7 +12,13 @@ import { fileURLToPath } from "url";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { registerAdminRoutes } from "./adminRoutes.js";
-import { buildTripOgHtml, shouldInjectTripOg } from "./tripOgHtml.js";
+import {
+  buildTripOgHtml,
+  isSocialCrawlerUserAgent,
+  resolveTripOgImageRedirect,
+  shouldInjectTripOg,
+  isValidTripId,
+} from "./tripOgHtml.js";
 import {
   confirmationSubject,
   confirmationTextBody,
@@ -37,6 +43,14 @@ const requireCaptcha = isProduction;
 
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
+
+/** Social crawlers must receive 200 + OG HTML/images (never blocked by app middleware). */
+app.use((req, res, next) => {
+  if (isSocialCrawlerUserAgent(req.get("user-agent"))) {
+    res.setHeader("X-Social-Crawler", "1");
+  }
+  next();
+});
 
 const normalizeOrigin = (value) => {
   try {
@@ -802,6 +816,37 @@ const setIndexHtmlHeaders = (res) => {
 };
 const isApiRequestPath = (requestPath) =>
   requestPath === "/api" || requestPath.startsWith("/api/");
+
+const OG_IMAGE_FALLBACK = "https://valitsatravel.gr/hero/hero.webp";
+
+app.get("/og/trip/:tripId", async (req, res) => {
+  const tripId = String(req.params.tripId || "").replace(/\.jpg$/i, "");
+  if (!isValidTripId(tripId)) {
+    res.redirect(302, OG_IMAGE_FALLBACK);
+    return;
+  }
+  try {
+    const target = await resolveTripOgImageRedirect(tripId, supabaseAdmin);
+    const upstream = await fetch(target, {
+      headers: { "User-Agent": "ValitsaTravel-OG-Proxy/1.0" },
+      redirect: "follow",
+    });
+    if (!upstream.ok) {
+      console.warn("[trip-og] upstream image", upstream.status, target);
+      res.redirect(302, OG_IMAGE_FALLBACK);
+      return;
+    }
+    const contentType = upstream.headers.get("content-type") || "image/jpeg";
+    const buffer = Buffer.from(await upstream.arrayBuffer());
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.status(200).send(buffer);
+  } catch (err) {
+    console.warn("[trip-og] image proxy failed:", err?.message || err);
+    res.redirect(302, OG_IMAGE_FALLBACK);
+  }
+});
 
 if (fs.existsSync(indexHtml)) {
   app.use(

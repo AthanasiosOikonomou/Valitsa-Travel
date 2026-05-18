@@ -144,10 +144,9 @@ const translations: Record<Lang, Record<string, string>> = {
     "detail.tripNotFound": "This trip is no longer available.",
     "detail.shareWithFriend": "Share with a friend on social media",
     "detail.sharePanelTitle": "Share this trip",
-    "detail.shareLinkPreview": "Link",
     "detail.shareFacebookPost": "Post on Facebook",
     "detail.shareMessengerDesktopHint":
-      "On computer: copy the link above and paste it into Messenger.",
+      "On computer: use Copy link and paste it into Messenger.",
     "detail.shareProductionOnlyPreview":
       "Rich previews with image work on the live site (valitsatravel.gr), not on localhost.",
     "detail.shareFacebookUsesLive":
@@ -729,10 +728,9 @@ const translations: Record<Lang, Record<string, string>> = {
     "detail.tripNotFound": "Αυτό το ταξίδι δεν είναι πλέον διαθέσιμο.",
     "detail.shareWithFriend": "Κοινοποίηση σε φίλο/ή στα social media",
     "detail.sharePanelTitle": "Κοινοποίηση ταξιδιού",
-    "detail.shareLinkPreview": "Σύνδεσμος",
     "detail.shareFacebookPost": "Δημοσίευση στο Facebook",
     "detail.shareMessengerDesktopHint":
-      "Στον υπολογιστή: αντιγράψτε τον σύνδεσμο παραπάνω και επικολλήστε τον στο Messenger.",
+      "Στον υπολογιστή: χρησιμοποιήστε «Αντιγραφή συνδέσμου» και επικολλήστε στο Messenger.",
     "detail.shareProductionOnlyPreview":
       "Η προεπισκόπηση με εικόνα λειτουργεί στο live site (valitsatravel.gr), όχι στο localhost.",
     "detail.shareFacebookUsesLive":
