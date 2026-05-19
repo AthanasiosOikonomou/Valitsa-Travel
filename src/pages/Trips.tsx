@@ -20,6 +20,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import type { Trip } from "@/types/Trip";
+import { isGreeceTrip } from "@/lib/greeceCountry";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useResolvedDarkMode } from "@/hooks/useResolvedDarkMode";
 import TripDetail from "@/components/TripDetail";
@@ -357,10 +358,10 @@ const TripsContent = () => {
       );
     }
     if (activeFilter === "internal") {
-      return trips.filter((trip) => trip.country === "Greece");
+      return trips.filter((trip) => isGreeceTrip(trip));
     }
     if (activeFilter === "external") {
-      return trips.filter((trip) => trip.country !== "Greece");
+      return trips.filter((trip) => !isGreeceTrip(trip));
     }
     return trips;
   }, [activeFilter, seasonalParam, trips]);
@@ -368,10 +369,10 @@ const TripsContent = () => {
   /** Same scope as the trip list without the seasonal URL filter — used for seasonal facet counts. */
   const baseForSeasonalCounts = useMemo(() => {
     if (activeFilter === "internal") {
-      return trips.filter((trip) => trip.country === "Greece");
+      return trips.filter((trip) => isGreeceTrip(trip));
     }
     if (activeFilter === "external") {
-      return trips.filter((trip) => trip.country !== "Greece");
+      return trips.filter((trip) => !isGreeceTrip(trip));
     }
     return trips;
   }, [trips, activeFilter]);

@@ -13,6 +13,7 @@ import {
   type TransportModeSlug,
 } from "@/lib/tripTransportModes";
 import { pickLocalizedStringList } from "@/lib/tripLocaleArrays";
+import { isGreeceCountry } from "@/lib/greeceCountry";
 
 export type TripLang = "en" | "gr";
 
@@ -134,8 +135,8 @@ const getRangeBounds = (
 
 const sortCountries = (countries: string[]) =>
   countries.sort((left, right) => {
-    if (left === "Greece") return -1;
-    if (right === "Greece") return 1;
+    if (isGreeceCountry(left)) return -1;
+    if (isGreeceCountry(right)) return 1;
     return left.localeCompare(right);
   });
 
