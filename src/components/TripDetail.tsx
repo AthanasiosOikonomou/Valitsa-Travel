@@ -847,21 +847,6 @@ const TripDetail = ({ trip: initialTrip, onClose }: TripDetailProps) => {
                                 )}
                                 className="text-body-prose text-lg leading-relaxed text-foreground"
                               />
-                              {!isHtmlEmpty(
-                                String(getDetailField("trip_notes") ?? ""),
-                              ) ? (
-                                <div className="space-y-4 border-t border-slate-200/90 pt-8 dark:border-white/10">
-                                  <h3 className="label-ui text-xs font-semibold uppercase tracking-[0.2em] text-foreground-muted">
-                                    {t("detail.tripNotes")}
-                                  </h3>
-                                  <SafeRichTextHtml
-                                    html={String(
-                                      getDetailField("trip_notes") ?? "",
-                                    )}
-                                    className="text-body-prose text-lg leading-relaxed text-foreground"
-                                  />
-                                </div>
-                              ) : null}
                               {(() => {
                                 const langKey = lang === "gr" ? "gr" : "en";
                                 const segments = normalizePricingSegments(trip.pricing_segments);
@@ -1008,6 +993,21 @@ const TripDetail = ({ trip: initialTrip, onClose }: TripDetailProps) => {
                                       </li>
                                     ))}
                                   </ul>
+                                </div>
+                              ) : null}
+                              {!isHtmlEmpty(
+                                String(getDetailField("trip_notes") ?? ""),
+                              ) ? (
+                                <div className="space-y-4 border-t border-slate-200/90 pt-8 dark:border-white/10">
+                                  <h3 className="label-ui text-xs font-semibold uppercase tracking-[0.2em] text-foreground-muted">
+                                    {t("detail.tripNotes")}
+                                  </h3>
+                                  <SafeRichTextHtml
+                                    html={String(
+                                      getDetailField("trip_notes") ?? "",
+                                    )}
+                                    className="text-body-prose text-lg leading-relaxed text-foreground"
+                                  />
                                 </div>
                               ) : null}
                             </div>
