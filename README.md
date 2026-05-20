@@ -209,6 +209,20 @@ Trip types and JSONB shapes are documented in [`src/types/Trip.ts`](src/types/Tr
 | `PATCH` | `/api/admin/inquiries/:id` | Update inquiry status |
 | `PATCH` | `/api/admin/inquiries/:inquiryId/comments/:commentId` | Remove attachment from comment |
 
+### Admin session policy
+
+Admin auth uses Supabase **access JWT** + **refresh token**. The browser client (`autoRefreshToken: true`) renews credentials silently; admins should not need to re-enter their password on a normal workday.
+
+**05:00 Greece daily refresh (client-side):** Supabase cannot set “expire at 05:00 Europe/Athens” in the dashboard. The app schedules `refreshSession()` at the next **05:00 `Europe/Athens`** and when the tab becomes visible after that boundary ([`src/admin/components/AdminSessionKeepAlive.tsx`](src/admin/components/AdminSessionKeepAlive.tsx), [`src/admin/lib/athensSessionSchedule.ts`](src/admin/lib/athensSessionSchedule.ts)). Each refresh issues a new access token; combined with a long refresh-token lifetime, this approximates a 24h roll without showing the login form.
+
+**Supabase Dashboard (project ops):**
+
+1. **Authentication → Settings** (or JWT / session settings): set **JWT expiry** for access tokens (e.g. `3600` seconds). Short access tokens are fine when refresh is reliable.
+2. Set **refresh token expiry** as long as your policy allows (e.g. 30–90 days) so daily rotation does not force email/password login.
+3. Do not disable refresh tokens for admin users.
+
+**In-app protections while editing:** [`adminFetch`](src/lib/adminApi.ts) retries once after `refreshSession()` on 401; if still unauthorized and a form is dirty, the user sees a warning toast and stays on the page (no forced redirect). Background React Query refetch is paused while admin forms are dirty. If the session is fully gone during an edit, [`AdminGuard`](src/admin/components/AdminGuard.tsx) keeps the page mounted with a banner until the user signs in again (unsaved work remains in memory only — there is no draft autosave).
+
 ---
 
 ## Key Technical Challenges & Lessons Learned

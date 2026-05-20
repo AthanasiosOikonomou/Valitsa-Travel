@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UnsavedCloseAlert } from "@/admin/components/UnsavedCloseAlert";
 import { useUnsavedDialogClose } from "@/admin/hooks/useUnsavedDialogClose";
+import { useRegisterAdminEditingDirty } from "@/admin/context/AdminEditingContext";
 import { cn, scrollContainerToAlignChildTop } from "@/lib/utils";
 import {
   departureDaysUnionForMonth,
@@ -103,6 +104,7 @@ export function PricingSegmentsModal({
   }, [departureWindows]);
 
   const isDirty = JSON.stringify(draft) !== snapshotRef.current;
+  useRegisterAdminEditingDirty(open && isDirty);
 
   const closeModal = useCallback(() => onOpenChange(false), [onOpenChange]);
 

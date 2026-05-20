@@ -1,11 +1,14 @@
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabaseClient";
-import { setAdminUnauthorizedHandler } from "@/lib/adminApi";
+import {
+  setAdminSoftUnauthorizedHandler,
+  setAdminUnauthorizedHandler,
+} from "@/lib/adminApi";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 /**
- * Registers global handler for 401/403 on /api/admin/* (via adminFetch).
+ * Registers global handlers for 401/403 on /api/admin/* (via adminFetch).
  * Must render inside LanguageProvider.
  */
 export function AdminSessionSync() {
@@ -14,7 +17,7 @@ export function AdminSessionSync() {
   tRef.current = t;
 
   useEffect(() => {
-    const handler = () => {
+    const hardHandler = () => {
       void (async () => {
         await supabase.auth.signOut();
         toast.error(tRef.current("admin.sessionExpiredToast"));
@@ -25,8 +28,16 @@ export function AdminSessionSync() {
       })();
     };
 
-    setAdminUnauthorizedHandler(handler);
-    return () => setAdminUnauthorizedHandler(null);
+    const softHandler = () => {
+      toast.warning(tRef.current("admin.sessionStaleToast"));
+    };
+
+    setAdminUnauthorizedHandler(hardHandler);
+    setAdminSoftUnauthorizedHandler(softHandler);
+    return () => {
+      setAdminUnauthorizedHandler(null);
+      setAdminSoftUnauthorizedHandler(null);
+    };
   }, []);
 
   return null;

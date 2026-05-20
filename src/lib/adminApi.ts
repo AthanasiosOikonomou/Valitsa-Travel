@@ -1,5 +1,6 @@
 import { apiUrl } from "@/lib/apiBase";
 import { supabase } from "@/lib/supabaseClient";
+import { getAdminEditingDirtyCount } from "@/admin/lib/adminEditingRegistry";
 import type { TripUpdate } from "@/types/Trip";
 
 export type SeasonalConfigRow = {
@@ -34,24 +35,45 @@ export async function getAccessToken(): Promise<string | null> {
   return data.session?.access_token ?? null;
 }
 
+export async function tryRefreshSession(): Promise<boolean> {
+  const { data, error } = await supabase.auth.refreshSession();
+  return !error && !!data.session;
+}
+
 type UnauthorizedHandler = () => void;
 
 let adminUnauthorizedHandler: UnauthorizedHandler | null = null;
+let adminSoftUnauthorizedHandler: UnauthorizedHandler | null = null;
 
-/** Registered from AdminSessionSync (inside LanguageProvider) for 401/403 API responses. */
+/** Hard: sign-out + redirect (registered from AdminSessionSync). */
 export function setAdminUnauthorizedHandler(
   handler: UnauthorizedHandler | null,
 ) {
   adminUnauthorizedHandler = handler;
 }
 
+/** Soft: toast only while admin forms are dirty. */
+export function setAdminSoftUnauthorizedHandler(
+  handler: UnauthorizedHandler | null,
+) {
+  adminSoftUnauthorizedHandler = handler;
+}
+
 let unauthorizedFiring = false;
 
-function triggerAdminUnauthorized() {
+function shouldHardUnauthorized(): boolean {
+  return getAdminEditingDirtyCount() === 0;
+}
+
+function triggerUnauthorized(hard: boolean) {
   if (unauthorizedFiring) return;
   unauthorizedFiring = true;
   try {
-    adminUnauthorizedHandler?.();
+    if (hard) {
+      adminUnauthorizedHandler?.();
+    } else {
+      adminSoftUnauthorizedHandler?.();
+    }
   } finally {
     setTimeout(() => {
       unauthorizedFiring = false;
@@ -59,19 +81,17 @@ function triggerAdminUnauthorized() {
   }
 }
 
-/**
- * Authenticated fetch for /api/admin/*. Attaches Bearer token; on 401/403 runs global sign-out + redirect.
- */
-export async function adminFetch(
-  input: RequestInfo | URL,
-  init: RequestInit = {},
-): Promise<Response> {
-  const token = await getAccessToken();
-  if (!token) {
-    triggerAdminUnauthorized();
-    throw new Error("Not signed in");
-  }
+function resolveAdminUrl(input: RequestInfo | URL): RequestInfo | URL {
+  return typeof input === "string" && input.startsWith("/")
+    ? apiUrl(input)
+    : input;
+}
 
+async function performAdminFetch(
+  input: RequestInfo | URL,
+  init: RequestInit,
+  token: string,
+): Promise<Response> {
   const headers = new Headers(init.headers);
   headers.set("Authorization", `Bearer ${token}`);
   if (init.body !== undefined && !(init.body instanceof FormData)) {
@@ -79,15 +99,43 @@ export async function adminFetch(
       headers.set("Content-Type", "application/json");
     }
   }
+  return fetch(resolveAdminUrl(input), { ...init, headers });
+}
 
-  const resolved =
-    typeof input === "string" && input.startsWith("/")
-      ? apiUrl(input)
-      : input;
-  const res = await fetch(resolved, { ...init, headers });
+/**
+ * Authenticated fetch for /api/admin/*. Attaches Bearer token; refreshes and retries on 401.
+ * Defers sign-out when admin editors are dirty (soft handler).
+ */
+export async function adminFetch(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+): Promise<Response> {
+  let token = await getAccessToken();
+  if (!token) {
+    await tryRefreshSession();
+    token = await getAccessToken();
+  }
+  if (!token) {
+    triggerUnauthorized(shouldHardUnauthorized());
+    throw new Error("Not signed in");
+  }
 
-  if (res.status === 401 || res.status === 403) {
-    triggerAdminUnauthorized();
+  let res = await performAdminFetch(input, init, token);
+
+  if (res.status === 401) {
+    const refreshed = await tryRefreshSession();
+    if (refreshed) {
+      const nextToken = await getAccessToken();
+      if (nextToken) {
+        res = await performAdminFetch(input, init, nextToken);
+      }
+    }
+  }
+
+  if (res.status === 401) {
+    triggerUnauthorized(shouldHardUnauthorized());
+  } else if (res.status === 403) {
+    triggerUnauthorized(true);
   }
 
   return res;

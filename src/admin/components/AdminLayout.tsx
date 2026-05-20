@@ -6,11 +6,13 @@ import { AdminSidebar, AdminNavLinks } from "@/admin/components/AdminSidebar";
 import { AdminHeader } from "@/admin/components/AdminHeader";
 import { AdminErrorBoundary } from "@/admin/components/AdminErrorBoundary";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { AdminEditingProvider } from "@/admin/context/AdminEditingContext";
 
 export function AdminLayout() {
   const loc = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   return (
+    <AdminEditingProvider>
     <div className="flex min-h-screen bg-slate-50 text-slate-900 dark:bg-zinc-950 dark:text-zinc-100">
       <AdminSidebar />
       <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
@@ -44,5 +46,6 @@ export function AdminLayout() {
         </main>
       </div>
     </div>
+    </AdminEditingProvider>
   );
 }

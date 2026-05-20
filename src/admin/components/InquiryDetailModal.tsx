@@ -35,6 +35,8 @@ import {
 } from "@/lib/inquiryAttachmentUpload";
 import { UnsavedCloseAlert } from "@/admin/components/UnsavedCloseAlert";
 import { useUnsavedDialogClose } from "@/admin/hooks/useUnsavedDialogClose";
+import { useRegisterAdminEditingDirty } from "@/admin/context/AdminEditingContext";
+import { adminBackgroundRefetchOptions } from "@/admin/lib/adminQueryOptions";
 
 const STATUSES = ["new", "contacted", "resolved"] as const;
 
@@ -110,6 +112,10 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
     prevTimelineLenRef.current = 0;
   }, [inquiryId]);
 
+  const statusDirty = status !== savedStatus;
+  const commentDirty = !isHtmlEmpty(draft) || pendingUploads.length > 0;
+  const isDirty = statusDirty || commentDirty;
+
   const commentsQ = useQuery({
     queryKey: ["inquiry-comments", inquiryId],
     queryFn: () => fetchInquiryComments(inquiryId!),
@@ -118,7 +124,10 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
     staleTime: 0,
     refetchOnMount: "always",
     refetchOnWindowFocus: false,
+    ...adminBackgroundRefetchOptions(isDirty),
   });
+
+  useRegisterAdminEditingDirty(open && isDirty);
 
   const quickInserts = useMemo(
     () => [
@@ -259,10 +268,6 @@ export function InquiryDetailModal({ inquiry, open, onOpenChange }: Props) {
   const hasCompleteAttachment = pendingUploads.some((u) => u.status === "complete");
   const hasUploadingAttachment = pendingUploads.some((u) => u.status === "uploading");
   const canPostComment = !isHtmlEmpty(draft) || hasCompleteAttachment;
-
-  const statusDirty = status !== savedStatus;
-  const commentDirty = !isHtmlEmpty(draft) || pendingUploads.length > 0;
-  const isDirty = statusDirty || commentDirty;
 
   const closeInquiryModal = useCallback(() => {
     onOpenChange(false);

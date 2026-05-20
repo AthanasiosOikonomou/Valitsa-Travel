@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UnsavedCloseAlert } from "@/admin/components/UnsavedCloseAlert";
 import { useUnsavedDialogClose } from "@/admin/hooks/useUnsavedDialogClose";
+import { useRegisterAdminEditingDirty } from "@/admin/context/AdminEditingContext";
 import { cn, scrollContainerToAlignChildTop } from "@/lib/utils";
 import { isValidDayForMonth } from "@/lib/departureWindows";
 import { DepartureDayPickerPure } from "./DepartureDayPickerPure";
@@ -63,6 +64,7 @@ export function DepartureWindowsModal({
   }, []);
 
   const isDirty = JSON.stringify(draft) !== snapshotRef.current;
+  useRegisterAdminEditingDirty(open && isDirty);
 
   const closeModal = useCallback(() => onOpenChange(false), [onOpenChange]);
 

@@ -15,13 +15,14 @@ type Props = {
 export function SeasonalTripBadge({ seasonKey, className }: Props) {
   const { lang, t } = useLanguage();
   const key = seasonKey != null ? String(seasonKey).trim() : "";
-  if (!key) return null;
 
   const { data: items = [] } = useQuery({
     queryKey: ["seasonal-nav"],
     queryFn: fetchSeasonalNavItems,
     staleTime: 5 * 60 * 1000,
   });
+
+  if (!key) return null;
 
   const match = items.find((i) => i.key === key);
   const label =

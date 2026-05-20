@@ -41,6 +41,8 @@ import { StringArrayField } from "@/admin/components/trip-edit/StringArrayField"
 import { UnsavedCloseAlert } from "@/admin/components/UnsavedCloseAlert";
 import { DepartureWindowsModal } from "@/admin/components/trip-edit/DepartureWindowsModal";
 import { useUnsavedDialogClose } from "@/admin/hooks/useUnsavedDialogClose";
+import { useRegisterAdminEditingDirty } from "@/admin/context/AdminEditingContext";
+import { adminBackgroundRefetchOptions } from "@/admin/lib/adminQueryOptions";
 import { FlightDetailsModal } from "@/admin/components/trip-edit/FlightDetailsModal";
 import { PricingSegmentsModal } from "@/admin/components/trip-edit/PricingSegmentsModal";
 import { TransportMultiSelect } from "@/admin/components/trip-edit/TransportMultiSelect";
@@ -577,12 +579,6 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
     enabled: open && !!tripId && !isCreate,
   });
 
-  const seasonalConfigsQ = useQuery({
-    queryKey: ["admin-seasonal-configs"],
-    queryFn: getAdminSeasonalConfigs,
-    enabled: open,
-  });
-
   const {
     control,
     handleSubmit,
@@ -595,6 +591,15 @@ export function TripEditDialog({ tripId, open, onClose }: Props) {
   } = useForm<TripFormValues>({
     resolver: zodResolver(schema),
     defaultValues: defaultForm(),
+  });
+
+  useRegisterAdminEditingDirty(isDirty && open);
+
+  const seasonalConfigsQ = useQuery({
+    queryKey: ["admin-seasonal-configs"],
+    queryFn: getAdminSeasonalConfigs,
+    enabled: open,
+    ...adminBackgroundRefetchOptions(isDirty),
   });
 
   const { fields: departureWindowFields } = useFieldArray({

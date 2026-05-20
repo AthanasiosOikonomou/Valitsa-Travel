@@ -525,6 +525,11 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.unauthorizedToast": "Unauthorized: admin access required",
     "admin.sessionExpiredToast":
       "Your session has expired. Please sign in again.",
+    "admin.sessionStaleToast":
+      "Your session needs to be refreshed. Save your work when you can, then sign in again if saving fails.",
+    "admin.sessionExpiredEditingBanner":
+      "Your session has ended. Unsaved changes are still on this page until you leave. Sign in again to save.",
+    "admin.sessionExpiredSignInAgain": "Sign in again",
     "admin.forbiddenAccessToast":
       "Access denied. Admin privileges are required. You have been signed out.",
     "admin.signInFailed": "Sign in failed",
@@ -1118,6 +1123,11 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.unauthorizedToast":
       "Μη εξουσιοδοτημένος: απαιτείται ρόλος διαχειριστή",
     "admin.sessionExpiredToast": "Η συνεδρία σας έληξε. Συνδεθείτε ξανά.",
+    "admin.sessionStaleToast":
+      "Η συνεδρία χρειάζεται ανανέωση. Αποθηκεύστε τη δουλειά σας όταν μπορείτε· αν η αποθήκευση αποτύχει, συνδεθείτε ξανά.",
+    "admin.sessionExpiredEditingBanner":
+      "Η συνεδρία σας έληξε. Οι μη αποθηκευμένες αλλαγές παραμένουν σε αυτή τη σελίδα μέχρι να φύγετε. Συνδεθείτε ξανά για αποθήκευση.",
+    "admin.sessionExpiredSignInAgain": "Σύνδεση ξανά",
     "admin.forbiddenAccessToast":
       "Μη εξουσιοδοτημένη πρόσβαση. Έχετε αποσυνδεθεί.",
     "admin.signInFailed": "Η σύνδεση απέτυχε",

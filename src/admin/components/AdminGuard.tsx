@@ -1,10 +1,15 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAdminAuth } from "@/admin/hooks/useAdminAuth";
+import {
+  getAdminEditingDirtyCount,
+  subscribeAdminEditingDirty,
+} from "@/admin/lib/adminEditingRegistry";
+import { AdminSessionExpiredBanner } from "@/admin/components/AdminSessionExpiredBanner";
 
 function NonAdminRedirect() {
   const { t } = useLanguage();
@@ -17,6 +22,15 @@ function NonAdminRedirect() {
 
 export function AdminGuard() {
   const { ready, session, isAdmin, roleResolved } = useAdminAuth();
+  const [editingDirty, setEditingDirty] = useState(
+    () => getAdminEditingDirtyCount() > 0,
+  );
+
+  useEffect(() => {
+    return subscribeAdminEditingDirty(() => {
+      setEditingDirty(getAdminEditingDirtyCount() > 0);
+    });
+  }, []);
 
   if (!ready || (session && !roleResolved)) {
     return (
@@ -33,6 +47,14 @@ export function AdminGuard() {
   }
 
   if (!session) {
+    if (editingDirty) {
+      return (
+        <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-zinc-950">
+          <AdminSessionExpiredBanner />
+          <Outlet />
+        </div>
+      );
+    }
     return <Navigate to="/admin/login" replace />;
   }
 

@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UnsavedCloseAlert } from "@/admin/components/UnsavedCloseAlert";
 import { useUnsavedDialogClose } from "@/admin/hooks/useUnsavedDialogClose";
+import { useRegisterAdminEditingDirty } from "@/admin/context/AdminEditingContext";
 import { cn, scrollContainerToAlignChildTop } from "@/lib/utils";
 import { normalizeFlightDetails } from "@/lib/tripFlightDetails";
 
@@ -73,6 +74,7 @@ export function FlightDetailsModal({
   }, [draftEnabled, draftLegs]);
 
   const isDirty = snapshotPayload !== snapshotRef.current;
+  useRegisterAdminEditingDirty(open && isDirty);
 
   const closeModal = useCallback(() => onOpenChange(false), [onOpenChange]);
 
