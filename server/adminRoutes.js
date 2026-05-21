@@ -336,7 +336,7 @@ function normalizePricingSegmentsArray(arr) {
     };
 
     const durationDays = intOrNull(raw.duration_days);
-    const dayTrip = days.length === 1 || durationDays === 1;
+    const dayTrip = durationDays === 1;
     const base = {
       month,
       days,

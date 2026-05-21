@@ -12,11 +12,11 @@ function dedupeSortDays(days: number[]): number[] {
   return [...new Set(days.filter((d) => Number.isInteger(d)))].sort((a, b) => a - b);
 }
 
-/** Day-trip pricing row: one departure day or duration of 1 day. */
+/** Day-trip pricing row: duration of 1 day (not inferred from a single departure date). */
 export function isDayTripPricingSegment(
-  s: Pick<TripPricingSegment, "days" | "duration_days">,
+  s: Pick<TripPricingSegment, "duration_days">,
 ): boolean {
-  return s.days.length === 1 || s.duration_days === 1;
+  return s.duration_days === 1;
 }
 
 /** Total departure day slots across pricing segments, else departure windows. */
