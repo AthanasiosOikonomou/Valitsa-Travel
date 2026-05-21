@@ -2,7 +2,11 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { Plus, Trash2, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import type { DepartureWindowFormRow } from "@/lib/tripAdminForm";
-import type { PricingSegmentFormRow } from "@/lib/tripPricing";
+import {
+  clearPricingSegmentPricesForMode,
+  isDayTripPricingSegment,
+  type PricingSegmentFormRow,
+} from "@/lib/tripPricing";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,7 +32,12 @@ function emptyRow(): PricingSegmentFormRow {
     price_single: null,
     price_triple: null,
     price_child: null,
+    price_day_trip: null,
   };
+}
+
+function applyRowWithModeClear(row: PricingSegmentFormRow): PricingSegmentFormRow {
+  return clearPricingSegmentPricesForMode(row);
 }
 
 function clampPricingRowToDepartures(
@@ -287,7 +296,7 @@ export function PricingSegmentsModal({
                                       if (next.has(day)) next.delete(day);
                                       else next.add(day);
                                       cur.days = [...next].sort((a, b) => a - b);
-                                      copy[index] = cur;
+                                      copy[index] = applyRowWithModeClear(cur);
                                       return copy;
                                     });
                                   }}
@@ -333,38 +342,42 @@ export function PricingSegmentsModal({
                           />
                         </div>
                       ) : null}
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor={`ps-modal-hotel-el-${index}`}>{t("admin.tripPricingHotelEl")}</Label>
-                        <Input
-                          id={`ps-modal-hotel-el-${index}`}
-                          className={tripInputClass}
-                          value={row.hotel_el}
-                          onChange={(e) =>
-                            setDraft((prev) => {
-                              const copy = [...prev];
-                              copy[index] = { ...copy[index], hotel_el: e.target.value };
-                              return copy;
-                            })
-                          }
-                          autoComplete="off"
-                        />
-                      </div>
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor={`ps-modal-hotel-en-${index}`}>{t("admin.tripPricingHotelEn")}</Label>
-                        <Input
-                          id={`ps-modal-hotel-en-${index}`}
-                          className={tripInputClass}
-                          value={row.hotel_en}
-                          onChange={(e) =>
-                            setDraft((prev) => {
-                              const copy = [...prev];
-                              copy[index] = { ...copy[index], hotel_en: e.target.value };
-                              return copy;
-                            })
-                          }
-                          autoComplete="off"
-                        />
-                      </div>
+                      {!isDayTripPricingSegment(row) ? (
+                        <>
+                          <div className="space-y-2 sm:col-span-2">
+                            <Label htmlFor={`ps-modal-hotel-el-${index}`}>{t("admin.tripPricingHotelEl")}</Label>
+                            <Input
+                              id={`ps-modal-hotel-el-${index}`}
+                              className={tripInputClass}
+                              value={row.hotel_el}
+                              onChange={(e) =>
+                                setDraft((prev) => {
+                                  const copy = [...prev];
+                                  copy[index] = { ...copy[index], hotel_el: e.target.value };
+                                  return copy;
+                                })
+                              }
+                              autoComplete="off"
+                            />
+                          </div>
+                          <div className="space-y-2 sm:col-span-2">
+                            <Label htmlFor={`ps-modal-hotel-en-${index}`}>{t("admin.tripPricingHotelEn")}</Label>
+                            <Input
+                              id={`ps-modal-hotel-en-${index}`}
+                              className={tripInputClass}
+                              value={row.hotel_en}
+                              onChange={(e) =>
+                                setDraft((prev) => {
+                                  const copy = [...prev];
+                                  copy[index] = { ...copy[index], hotel_en: e.target.value };
+                                  return copy;
+                                })
+                              }
+                              autoComplete="off"
+                            />
+                          </div>
+                        </>
+                      ) : null}
                       <div className="space-y-2">
                         <Label htmlFor={`ps-modal-dur-${index}`}>{t("admin.tripDurationDays")}</Label>
                         <Input
@@ -381,111 +394,140 @@ export function PricingSegmentsModal({
                               const copy = [...prev];
                               const n =
                                 v === "" ? null : Math.trunc(Number(v));
-                              copy[index] = {
+                              copy[index] = applyRowWithModeClear({
                                 ...copy[index],
                                 duration_days: n != null && Number.isFinite(n) ? n : null,
-                              };
+                              });
                               return copy;
                             });
                           }}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`ps-modal-pd-${index}`}>{t("admin.tripPricingDouble")}</Label>
-                        <Input
-                          id={`ps-modal-pd-${index}`}
-                          type="number"
-                          inputMode="decimal"
-                          step="any"
-                          min={0}
-                          className={tripInputClass}
-                          value={row.price_double ?? ""}
-                          onChange={(e) => {
-                            const v = e.target.value;
-                            setDraft((prev) => {
-                              const copy = [...prev];
-                              const n = v === "" ? null : Number(v);
-                              copy[index] = {
-                                ...copy[index],
-                                price_double: n != null && Number.isFinite(n) ? n : null,
-                              };
-                              return copy;
-                            });
-                          }}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`ps-modal-ps-${index}`}>{t("admin.tripPricingSingle")}</Label>
-                        <Input
-                          id={`ps-modal-ps-${index}`}
-                          type="number"
-                          inputMode="decimal"
-                          step="any"
-                          min={0}
-                          className={tripInputClass}
-                          value={row.price_single ?? ""}
-                          onChange={(e) => {
-                            const v = e.target.value;
-                            setDraft((prev) => {
-                              const copy = [...prev];
-                              const n = v === "" ? null : Number(v);
-                              copy[index] = {
-                                ...copy[index],
-                                price_single: n != null && Number.isFinite(n) ? n : null,
-                              };
-                              return copy;
-                            });
-                          }}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`ps-modal-pt-${index}`}>{t("admin.tripPricingTriple")}</Label>
-                        <Input
-                          id={`ps-modal-pt-${index}`}
-                          type="number"
-                          inputMode="decimal"
-                          step="any"
-                          min={0}
-                          className={tripInputClass}
-                          value={row.price_triple ?? ""}
-                          onChange={(e) => {
-                            const v = e.target.value;
-                            setDraft((prev) => {
-                              const copy = [...prev];
-                              const n = v === "" ? null : Number(v);
-                              copy[index] = {
-                                ...copy[index],
-                                price_triple: n != null && Number.isFinite(n) ? n : null,
-                              };
-                              return copy;
-                            });
-                          }}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`ps-modal-pc-${index}`}>{t("admin.tripPricingChild")}</Label>
-                        <Input
-                          id={`ps-modal-pc-${index}`}
-                          type="number"
-                          inputMode="decimal"
-                          step="any"
-                          min={0}
-                          className={tripInputClass}
-                          value={row.price_child ?? ""}
-                          onChange={(e) => {
-                            const v = e.target.value;
-                            setDraft((prev) => {
-                              const copy = [...prev];
-                              const n = v === "" ? null : Number(v);
-                              copy[index] = {
-                                ...copy[index],
-                                price_child: n != null && Number.isFinite(n) ? n : null,
-                              };
-                              return copy;
-                            });
-                          }}
-                        />
-                      </div>
+                      {isDayTripPricingSegment(row) ? (
+                        <div className="space-y-2 sm:col-span-2">
+                          <Label htmlFor={`ps-modal-pdt-${index}`}>{t("admin.tripPricingDayTrip")}</Label>
+                          <Input
+                            id={`ps-modal-pdt-${index}`}
+                            type="number"
+                            inputMode="decimal"
+                            step="any"
+                            min={0}
+                            className={tripInputClass}
+                            value={row.price_day_trip ?? ""}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setDraft((prev) => {
+                                const copy = [...prev];
+                                const n = v === "" ? null : Number(v);
+                                copy[index] = {
+                                  ...copy[index],
+                                  price_day_trip: n != null && Number.isFinite(n) ? n : null,
+                                };
+                                return copy;
+                              });
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor={`ps-modal-pd-${index}`}>{t("admin.tripPricingDouble")}</Label>
+                            <Input
+                              id={`ps-modal-pd-${index}`}
+                              type="number"
+                              inputMode="decimal"
+                              step="any"
+                              min={0}
+                              className={tripInputClass}
+                              value={row.price_double ?? ""}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setDraft((prev) => {
+                                  const copy = [...prev];
+                                  const n = v === "" ? null : Number(v);
+                                  copy[index] = {
+                                    ...copy[index],
+                                    price_double: n != null && Number.isFinite(n) ? n : null,
+                                  };
+                                  return copy;
+                                });
+                              }}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`ps-modal-ps-${index}`}>{t("admin.tripPricingSingle")}</Label>
+                            <Input
+                              id={`ps-modal-ps-${index}`}
+                              type="number"
+                              inputMode="decimal"
+                              step="any"
+                              min={0}
+                              className={tripInputClass}
+                              value={row.price_single ?? ""}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setDraft((prev) => {
+                                  const copy = [...prev];
+                                  const n = v === "" ? null : Number(v);
+                                  copy[index] = {
+                                    ...copy[index],
+                                    price_single: n != null && Number.isFinite(n) ? n : null,
+                                  };
+                                  return copy;
+                                });
+                              }}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`ps-modal-pt-${index}`}>{t("admin.tripPricingTriple")}</Label>
+                            <Input
+                              id={`ps-modal-pt-${index}`}
+                              type="number"
+                              inputMode="decimal"
+                              step="any"
+                              min={0}
+                              className={tripInputClass}
+                              value={row.price_triple ?? ""}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setDraft((prev) => {
+                                  const copy = [...prev];
+                                  const n = v === "" ? null : Number(v);
+                                  copy[index] = {
+                                    ...copy[index],
+                                    price_triple: n != null && Number.isFinite(n) ? n : null,
+                                  };
+                                  return copy;
+                                });
+                              }}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`ps-modal-pc-${index}`}>{t("admin.tripPricingChild")}</Label>
+                            <Input
+                              id={`ps-modal-pc-${index}`}
+                              type="number"
+                              inputMode="decimal"
+                              step="any"
+                              min={0}
+                              className={tripInputClass}
+                              value={row.price_child ?? ""}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setDraft((prev) => {
+                                  const copy = [...prev];
+                                  const n = v === "" ? null : Number(v);
+                                  copy[index] = {
+                                    ...copy[index],
+                                    price_child: n != null && Number.isFinite(n) ? n : null,
+                                  };
+                                  return copy;
+                                });
+                              }}
+                            />
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                     {index === draft.length - 1 ? (

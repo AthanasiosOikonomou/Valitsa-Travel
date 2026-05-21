@@ -23,6 +23,7 @@ import {
   formatTripListDurationLabel,
   formatTripListPriceLabel,
   formatTripPrice,
+  shouldShowTripListDuration,
 } from "@/lib/tripDisplay";
 import {
   pickLocalizedProgram,
@@ -40,7 +41,11 @@ import {
   normalizeDepartureBlocks,
   formatMonthNameLong,
 } from "@/lib/departureWindows";
-import { normalizePricingSegments } from "@/lib/tripPricing";
+import {
+  isDayTripPricingSegment,
+  normalizePricingSegments,
+  segmentDisplayPrice,
+} from "@/lib/tripPricing";
 import {
   flightLegHasContent,
   normalizeFlightDetails,
@@ -49,14 +54,6 @@ import {
 import { buildResponsiveImageSet, cn } from "@/lib/utils";
 import { buildTripShareUrl } from "@/lib/tripShare";
 import { TripShareSection } from "@/components/TripShareMenu";
-
-function segmentHeroPrice(s: TripPricingSegment): number | null {
-  const candidates = [s.price_double, s.price_single, s.price_triple];
-  for (const n of candidates) {
-    if (n != null && Number.isFinite(n)) return n;
-  }
-  return null;
-}
 
 function PricingSegmentCard({
   segment: s,
@@ -82,11 +79,14 @@ function PricingSegmentCard({
       : String(s.departure_city ?? s.departure_city_el ?? "").trim()) || tripFallbackDepartureCity;
   const daysText = formatDaysForMonth(s.days, langKey);
   const departuresLine = `${formatMonthNameLong(s.month, langKey)} · ${daysText}`;
-  const hero = segmentHeroPrice(s);
+  const hero = segmentDisplayPrice(s);
+  const dayTrip = isDayTripPricingSegment(s);
 
   return (
     <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-      <p className="font-semibold leading-snug text-foreground line-clamp-3">{hotel || "—"}</p>
+      {!dayTrip ? (
+        <p className="font-semibold leading-snug text-foreground line-clamp-3">{hotel || "—"}</p>
+      ) : null}
       <div className="mt-3 space-y-3 text-sm">
         <div className="flex items-end justify-between gap-4">
           <div className="min-w-0 flex-1">
@@ -120,40 +120,51 @@ function PricingSegmentCard({
         </div>
       </div>
       <div className="mt-3 text-sm">
-        <div className="grid grid-cols-1 gap-3 border-t border-border/80 pt-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
+        {dayTrip ? (
+          <div className="border-t border-border/80 pt-3">
             <p className="label-ui text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-foreground-muted">
-              {t("detail.pricingDoubleCol")}
+              {t("detail.pricingDayTripCol")}
             </p>
             <p className="mt-1 font-medium tabular-nums text-foreground">
-              {formatTripPrice(s.price_double, lang)}
+              {formatTripPrice(s.price_day_trip, lang)}
             </p>
           </div>
-          <div>
-            <p className="label-ui text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-foreground-muted">
-              {t("detail.pricingSingleCol")}
-            </p>
-            <p className="mt-1 font-medium tabular-nums text-foreground">
-              {formatTripPrice(s.price_single, lang)}
-            </p>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 border-t border-border/80 pt-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <p className="label-ui text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-foreground-muted">
+                {t("detail.pricingDoubleCol")}
+              </p>
+              <p className="mt-1 font-medium tabular-nums text-foreground">
+                {formatTripPrice(s.price_double, lang)}
+              </p>
+            </div>
+            <div>
+              <p className="label-ui text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-foreground-muted">
+                {t("detail.pricingSingleCol")}
+              </p>
+              <p className="mt-1 font-medium tabular-nums text-foreground">
+                {formatTripPrice(s.price_single, lang)}
+              </p>
+            </div>
+            <div>
+              <p className="label-ui text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-foreground-muted">
+                {t("detail.pricingTripleCol")}
+              </p>
+              <p className="mt-1 font-medium tabular-nums text-foreground">
+                {formatTripPrice(s.price_triple, lang)}
+              </p>
+            </div>
+            <div>
+              <p className="label-ui text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-foreground-muted">
+                {t("detail.pricingChildCol")}
+              </p>
+              <p className="mt-1 font-medium tabular-nums text-foreground">
+                {formatTripPrice(s.price_child, lang)}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="label-ui text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-foreground-muted">
-              {t("detail.pricingTripleCol")}
-            </p>
-            <p className="mt-1 font-medium tabular-nums text-foreground">
-              {formatTripPrice(s.price_triple, lang)}
-            </p>
-          </div>
-          <div>
-            <p className="label-ui text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-foreground-muted">
-              {t("detail.pricingChildCol")}
-            </p>
-            <p className="mt-1 font-medium tabular-nums text-foreground">
-              {formatTripPrice(s.price_child, lang)}
-            </p>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -769,10 +780,12 @@ const TripDetail = ({ trip: initialTrip, onClose }: TripDetailProps) => {
                         <span className="flex items-center gap-1.5">
                           <MapPin size={14} /> {getDetailField("location")}
                         </span>
-                        <span className="flex items-center gap-1.5">
-                          <Clock size={14} />{" "}
-                          {formatTripListDurationLabel(trip, lang)}
-                        </span>
+                        {shouldShowTripListDuration(trip) ? (
+                          <span className="flex items-center gap-1.5">
+                            <Clock size={14} />{" "}
+                            {formatTripListDurationLabel(trip, lang)}
+                          </span>
+                        ) : null}
                       </div>
 
                       <h2 className="text-4xl md:text-5xl text-display mb-6">
@@ -1045,9 +1058,11 @@ const TripDetail = ({ trip: initialTrip, onClose }: TripDetailProps) => {
                               {formatTripListPriceLabel(trip, lang)}
                             </p>
                           </div>
-                          <span className="label-ui text-primary bg-primary/10 px-3 py-1.5 rounded-full">
-                            {formatTripListDurationLabel(trip, lang)}
-                          </span>
+                          {shouldShowTripListDuration(trip) ? (
+                            <span className="label-ui text-primary bg-primary/10 px-3 py-1.5 rounded-full">
+                              {formatTripListDurationLabel(trip, lang)}
+                            </span>
+                          ) : null}
                         </div>
 
                         <h3 className="text-xl font-bold mb-6">

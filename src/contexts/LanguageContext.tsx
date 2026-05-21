@@ -119,6 +119,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "detail.pricingSingleCol": "Single",
     "detail.pricingTripleCol": "Triple",
     "detail.pricingChildCol": "Child (2–12)",
+    "detail.pricingDayTripCol": "Day-trip price",
     "detail.flightDetailsTitle": "Flight details",
     "detail.flightDepartureLabel": "Departure",
     "detail.flightReturnLabel": "Return",
@@ -474,6 +475,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripPricingSingle": "Single room",
     "admin.tripPricingTriple": "Triple room (τρίκλινο)",
     "admin.tripPricingChild": "Child (2–12)",
+    "admin.tripPricingDayTrip": "Day-trip price",
     "admin.tripFlightDetailsSection": "Flight details",
     "admin.tripFlightDetailsHint":
       "Optional: add one or more departure/return pairs (Greek and English). Shown on the trip page when enabled.",
@@ -708,6 +710,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "detail.pricingSingleCol": "Μονόκλινο",
     "detail.pricingTripleCol": "Τρίκλινο",
     "detail.pricingChildCol": "Παιδικό (2–12)",
+    "detail.pricingDayTripCol": "Τιμή Μονοήμερης",
     "detail.flightDetailsTitle": "Πληροφορίες πτήσεων",
     "detail.flightDepartureLabel": "Αναχώρηση",
     "detail.flightReturnLabel": "Επιστροφή",
@@ -1069,6 +1072,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "admin.tripPricingSingle": "Μονόκλινο",
     "admin.tripPricingTriple": "Τρίκλινο",
     "admin.tripPricingChild": "Παιδικό (2–12)",
+    "admin.tripPricingDayTrip": "Τιμή Μονοήμερης",
     "admin.tripFlightDetailsSection": "Πληροφορίες πτήσεων",
     "admin.tripFlightDetailsHint":
       "Προαιρετικό: προσθέστε ένα ή περισσότερα ζεύγη αναχώρησης/επιστροφής (ελληνικά και αγγλικά). Εμφανίζονται στη σελίδα ταξιδιού όταν είναι ενεργό.",

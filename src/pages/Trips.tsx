@@ -21,6 +21,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import type { Trip } from "@/types/Trip";
 import { isGreeceTrip } from "@/lib/greeceCountry";
+import { tripQualifiesForDailyFilter } from "@/lib/tripPricing";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useResolvedDarkMode } from "@/hooks/useResolvedDarkMode";
 import TripDetail from "@/components/TripDetail";
@@ -55,6 +56,7 @@ import { formatTripDepartureSummary } from "@/lib/departureWindows";
 import {
   formatTripListDurationLabel,
   formatTripListPriceLabel,
+  shouldShowTripListDuration,
 } from "@/lib/tripDisplay";
 import { pickLocalizedStringList } from "@/lib/tripLocaleArrays";
 import { transportLabelForSlug } from "@/lib/tripTransportModes";
@@ -363,6 +365,9 @@ const TripsContent = () => {
     if (activeFilter === "external") {
       return trips.filter((trip) => !isGreeceTrip(trip));
     }
+    if (activeFilter === "daily") {
+      return trips.filter((trip) => tripQualifiesForDailyFilter(trip));
+    }
     return trips;
   }, [activeFilter, seasonalParam, trips]);
 
@@ -373,6 +378,9 @@ const TripsContent = () => {
     }
     if (activeFilter === "external") {
       return trips.filter((trip) => !isGreeceTrip(trip));
+    }
+    if (activeFilter === "daily") {
+      return trips.filter((trip) => tripQualifiesForDailyFilter(trip));
     }
     return trips;
   }, [trips, activeFilter]);
@@ -1484,9 +1492,11 @@ const TripResultCard = ({
             <span className="font-bold text-primary text-base">
               {formatTripListPriceLabel(trip, lang)}
             </span>
-            <span className="text-foreground-muted">
-              {formatTripListDurationLabel(trip, lang)}
-            </span>
+            {shouldShowTripListDuration(trip) ? (
+              <span className="text-foreground-muted">
+                {formatTripListDurationLabel(trip, lang)}
+              </span>
+            ) : null}
           </div>
           <span className="premium-outline-button text-sm">
             {t("archive.more")} →

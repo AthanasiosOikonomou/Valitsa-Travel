@@ -1,5 +1,10 @@
 import type { Trip } from "@/types/Trip";
-import { tripListDurationRange, tripListPriceRange } from "@/lib/tripPricing";
+import {
+  countTripDepartureDates,
+  tripHasSingleListPrice,
+  tripListDurationRange,
+  tripListPriceRange,
+} from "@/lib/tripPricing";
 
 export type TripFormatLang = "en" | "gr";
 
@@ -54,4 +59,16 @@ export function formatTripListDurationLabel(
   if (r.min === r.max) return formatTripDuration(r.min, lang);
   if (lang === "gr") return `${r.min}–${r.max} Ημέρες`;
   return `${r.min}–${r.max} Days`;
+}
+
+/** Hide duration chip/span when it would show "—" or redundant for single-price single-date trips. */
+export function shouldShowTripListDuration(
+  trip: Pick<Trip, "duration_days" | "pricing_segments" | "departure_windows">,
+): boolean {
+  const durationRange = tripListDurationRange(trip);
+  if (!durationRange) return false;
+  if (tripHasSingleListPrice(trip) && countTripDepartureDates(trip) === 1) {
+    return false;
+  }
+  return true;
 }

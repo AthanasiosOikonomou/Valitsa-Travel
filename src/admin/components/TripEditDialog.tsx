@@ -50,6 +50,7 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { isValidDayForMonth, pricingDaysAllowedByDepartures } from "@/lib/departureWindows";
 import {
+  isDayTripPricingSegment,
   pricingSegmentsDbToForm,
   pricingSegmentsFormToPayload,
   type PricingSegmentFormRow,
@@ -119,6 +120,7 @@ function pricingSegmentRowHasContent(row: {
   price_single?: number | null;
   price_triple?: number | null;
   price_child?: number | null;
+  price_day_trip?: number | null;
 }): boolean {
   return (
     row.days.length > 0 ||
@@ -128,7 +130,8 @@ function pricingSegmentRowHasContent(row: {
     row.price_double != null ||
     row.price_single != null ||
     row.price_triple != null ||
-    row.price_child != null
+    row.price_child != null ||
+    row.price_day_trip != null
   );
 }
 
@@ -162,6 +165,7 @@ function buildTripFormSchema(t: (key: string) => string) {
       price_single: z.number().nullable(),
       price_triple: z.number().nullable(),
       price_child: z.number().nullable(),
+      price_day_trip: z.number().nullable(),
     })
     .superRefine((row, ctx) => {
       const hasContent =
@@ -172,7 +176,8 @@ function buildTripFormSchema(t: (key: string) => string) {
         row.price_double != null ||
         row.price_single != null ||
         row.price_triple != null ||
-        row.price_child != null;
+        row.price_child != null ||
+        row.price_day_trip != null;
       if (!hasContent) return;
       if (row.days.length === 0) {
         ctx.addIssue({
@@ -189,6 +194,19 @@ function buildTripFormSchema(t: (key: string) => string) {
             path: ["days"],
           });
           break;
+        }
+      }
+      if (isDayTripPricingSegment(row) && row.price_day_trip == null) {
+        const hasRoomPrice =
+          row.price_double != null ||
+          row.price_single != null ||
+          row.price_triple != null;
+        if (!hasRoomPrice) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: fieldReq,
+            path: ["price_day_trip"],
+          });
         }
       }
     });

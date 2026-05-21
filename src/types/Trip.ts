@@ -49,6 +49,8 @@ export type TripPricingSegment = {
   /** Triple room (τρίκλινο). */
   price_triple?: number | null;
   price_child?: number | null;
+  /** Mono-day excursion price (when days.length === 1 or duration_days === 1). */
+  price_day_trip?: number | null;
 };
 
 /** Stored in `trips.flight_details` jsonb — bilingual departure/return free text per row. */

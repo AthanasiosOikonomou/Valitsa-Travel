@@ -5,7 +5,11 @@ import type { Trip } from "@/types/Trip";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ProgressiveImage from "@/components/ProgressiveImage";
 import { SafeRichTextHtml } from "@/components/SafeRichTextHtml";
-import { formatTripListDurationLabel, formatTripListPriceLabel } from "@/lib/tripDisplay";
+import {
+  formatTripListDurationLabel,
+  formatTripListPriceLabel,
+  shouldShowTripListDuration,
+} from "@/lib/tripDisplay";
 import { formatTripDepartureSummary } from "@/lib/departureWindows";
 import { SeasonalTripBadge } from "@/components/SeasonalTripBadge";
 
@@ -86,12 +90,14 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
               >
                 {formatTripListPriceLabel(trip, lang)}
               </span>
-              <span
-                data-nosnippet
-                className="premium-chip border-white/45 bg-black/35 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-sm"
-              >
-                {formatTripListDurationLabel(trip, lang)}
-              </span>
+              {shouldShowTripListDuration(trip) ? (
+                <span
+                  data-nosnippet
+                  className="premium-chip border-white/45 bg-black/35 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-sm"
+                >
+                  {formatTripListDurationLabel(trip, lang)}
+                </span>
+              ) : null}
             </div>
 
             {trip.is_seasonal && trip.seasonal_name?.trim() ? (

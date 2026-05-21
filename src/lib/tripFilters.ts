@@ -6,6 +6,7 @@ import {
   tripDistinctDurations,
   tripListPriceRange,
   tripPriceRangeOverlapsFilter,
+  tripHasDurationOne,
 } from "@/lib/tripPricing";
 import {
   TRANSPORT_MODE_SLUGS,
@@ -466,6 +467,9 @@ const buildDurationFacetCounts = (
       seen.add(d);
       addCount(counts, d);
     }
+    if (tripHasDurationOne(trip) && !seen.has(1)) {
+      addCount(counts, 1);
+    }
   }
 
   return counts;
@@ -638,7 +642,10 @@ const matchesTripFilters = (
     const durs = tripDistinctDurations(trip);
     const selected = state.selectedDurations.filter((x) => x !== -1);
     if (selected.length > 0) {
-      if (!durs.some((d) => selected.includes(d))) {
+      const matchesDuration =
+        durs.some((d) => selected.includes(d)) ||
+        (selected.includes(1) && tripHasDurationOne(trip));
+      if (!matchesDuration) {
         return false;
       }
     } else if (state.selectedDurations.includes(-1)) {

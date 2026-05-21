@@ -335,19 +335,36 @@ function normalizePricingSegmentsArray(arr) {
       return Number.isFinite(n) ? n : null;
     };
 
-    out.push({
+    const durationDays = intOrNull(raw.duration_days);
+    const dayTrip = days.length === 1 || durationDays === 1;
+    const base = {
       month,
       days,
       departure_city: strOrNull(raw.departure_city),
       departure_city_el: strOrNull(raw.departure_city_el),
       hotel_en: strOrNull(raw.hotel_en),
       hotel_el: strOrNull(raw.hotel_el),
-      duration_days: intOrNull(raw.duration_days),
+      duration_days: durationDays,
       price_double: numOrNull(raw.price_double),
       price_single: numOrNull(raw.price_single),
       price_triple: numOrNull(raw.price_triple),
       price_child: numOrNull(raw.price_child),
-    });
+      price_day_trip: numOrNull(raw.price_day_trip),
+    };
+    if (dayTrip) {
+      out.push({
+        ...base,
+        price_double: null,
+        price_single: null,
+        price_triple: null,
+        price_child: null,
+      });
+    } else {
+      out.push({
+        ...base,
+        price_day_trip: null,
+      });
+    }
   }
   return out;
 }
@@ -517,6 +534,7 @@ const adminTripPutSchema = z
           price_single: z.number().nullable().optional(),
           price_triple: z.number().nullable().optional(),
           price_child: z.number().nullable().optional(),
+          price_day_trip: z.number().nullable().optional(),
         }),
       )
       .nullable()

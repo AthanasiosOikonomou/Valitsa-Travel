@@ -1,5 +1,9 @@
 import type { Trip, TripPricingSegment } from "@/types/Trip";
-import { isValidDayForMonth, tripDepartureMonths } from "@/lib/departureWindows";
+import {
+  isValidDayForMonth,
+  normalizeDepartureBlocks,
+  tripDepartureMonths,
+} from "@/lib/departureWindows";
 
 /** Trip filter UI language (matches `TripLang` in tripFilters). */
 export type TripFilterLang = "en" | "gr";
@@ -8,11 +12,99 @@ function dedupeSortDays(days: number[]): number[] {
   return [...new Set(days.filter((d) => Number.isInteger(d)))].sort((a, b) => a - b);
 }
 
-/** Adult room prices on a segment (double/single/triple; child excluded from list/filter pricing). */
-function segmentPrices(s: TripPricingSegment): number[] {
+/** Day-trip pricing row: one departure day or duration of 1 day. */
+export function isDayTripPricingSegment(
+  s: Pick<TripPricingSegment, "days" | "duration_days">,
+): boolean {
+  return s.days.length === 1 || s.duration_days === 1;
+}
+
+/** Total departure day slots across pricing segments, else departure windows. */
+export function countTripDepartureDates(
+  trip: Pick<Trip, "pricing_segments" | "departure_windows">,
+): number {
+  const segs = normalizePricingSegments(trip.pricing_segments);
+  if (segs.length > 0) {
+    return segs.reduce((sum, s) => sum + s.days.length, 0);
+  }
+  let n = 0;
+  for (const b of normalizeDepartureBlocks(trip as Trip)) {
+    n += b.days.length;
+  }
+  return n;
+}
+
+export function tripHasDayTripSegment(
+  trip: Pick<Trip, "pricing_segments">,
+): boolean {
+  return normalizePricingSegments(trip.pricing_segments).some(isDayTripPricingSegment);
+}
+
+/** True when the trip offers a 1-day product (duration or mono-day price). */
+export function tripHasDurationOne(
+  trip: Pick<Trip, "duration_days" | "pricing_segments">,
+): boolean {
+  if (tripDistinctDurations(trip).includes(1)) return true;
+  return normalizePricingSegments(trip.pricing_segments).some(
+    (s) =>
+      s.duration_days === 1 ||
+      (s.price_day_trip != null && Number.isFinite(s.price_day_trip)),
+  );
+}
+
+/** Matches Ημερήσιες Εκδρομές / `?filter=daily`. */
+export function tripQualifiesForDailyFilter(
+  trip: Pick<Trip, "duration_days" | "pricing_segments">,
+): boolean {
+  return tripHasDurationOne(trip);
+}
+
+export function tripHasSingleListPrice(
+  trip: Pick<Trip, "price_num" | "pricing_segments">,
+): boolean {
+  const r = tripListPriceRange(trip);
+  return r != null && r.min === r.max;
+}
+
+function sanitizeSegmentPrices(raw: TripPricingSegment): TripPricingSegment {
+  const dayTrip = isDayTripPricingSegment(raw);
+  if (dayTrip) {
+    return {
+      ...raw,
+      price_double: null,
+      price_single: null,
+      price_triple: null,
+      price_child: null,
+    };
+  }
+  return {
+    ...raw,
+    price_day_trip: null,
+  };
+}
+
+/** Room prices only (multi-day segments). */
+function segmentRoomPrices(s: TripPricingSegment): number[] {
   return [s.price_double, s.price_single, s.price_triple].filter(
     (n): n is number => n != null && Number.isFinite(n),
   );
+}
+
+/** Prices used for list cards, filters, and sort (child excluded). */
+export function segmentListPrices(s: TripPricingSegment): number[] {
+  if (isDayTripPricingSegment(s)) {
+    const p = s.price_day_trip;
+    if (p != null && Number.isFinite(p)) return [p];
+    return segmentRoomPrices(s);
+  }
+  return segmentRoomPrices(s);
+}
+
+/** Hero / primary price on a segment card. */
+export function segmentDisplayPrice(s: TripPricingSegment): number | null {
+  const prices = segmentListPrices(s);
+  if (prices.length === 0) return null;
+  return Math.min(...prices);
 }
 
 /** Coerce unknown JSON into normalized segments (dedupe/sort days per row; drop invalid rows). */
@@ -60,13 +152,14 @@ export function normalizePricingSegments(raw: unknown): TripPricingSegment[] {
       price_single: numOrNull(o.price_single),
       price_triple: numOrNull(o.price_triple),
       price_child: numOrNull(o.price_child),
+      price_day_trip: numOrNull(o.price_day_trip),
     });
   }
   return out;
 }
 
 /**
- * Min/max adult price across all pricing rows (double/single/triple; child fares excluded).
+ * Min/max adult price across all pricing rows (room or day-trip; child fares excluded).
  * Falls back to legacy `price_num` when segments have no numeric adult prices.
  */
 export function tripListPriceRange(
@@ -75,7 +168,7 @@ export function tripListPriceRange(
   const segs = normalizePricingSegments(trip.pricing_segments);
   const all: number[] = [];
   for (const s of segs) {
-    all.push(...segmentPrices(s));
+    all.push(...segmentListPrices(s));
   }
   if (all.length > 0) {
     return { min: Math.min(...all), max: Math.max(...all) };
@@ -191,6 +284,7 @@ export type PricingSegmentFormRow = {
   price_single?: number | null;
   price_triple?: number | null;
   price_child?: number | null;
+  price_day_trip?: number | null;
 };
 
 export function pricingSegmentsDbToForm(row: Record<string, unknown>): PricingSegmentFormRow[] {
@@ -207,6 +301,7 @@ export function pricingSegmentsDbToForm(row: Record<string, unknown>): PricingSe
     price_single: s.price_single ?? null,
     price_triple: s.price_triple ?? null,
     price_child: s.price_child ?? null,
+    price_day_trip: s.price_day_trip ?? null,
   }));
 }
 
@@ -224,21 +319,44 @@ export function pricingSegmentsFormToPayload(
     price_single?: number | null;
     price_triple?: number | null;
     price_child?: number | null;
+    price_day_trip?: number | null;
   }>,
 ): TripPricingSegment[] {
   return normalizePricingSegments(
-    rows.map((r) => ({
-      month: r.month,
-      days: r.days,
-      departure_city: r.departure_city.trim() || null,
-      departure_city_el: r.departure_city_el.trim() || null,
-      hotel_en: r.hotel_en.trim() || null,
-      hotel_el: r.hotel_el.trim() || null,
-      duration_days: r.duration_days ?? null,
-      price_double: r.price_double ?? null,
-      price_single: r.price_single ?? null,
-      price_triple: r.price_triple ?? null,
-      price_child: r.price_child ?? null,
-    })),
+    rows.map((r) => {
+      const base: TripPricingSegment = {
+        month: r.month,
+        days: r.days,
+        departure_city: r.departure_city.trim() || null,
+        departure_city_el: r.departure_city_el.trim() || null,
+        hotel_en: r.hotel_en.trim() || null,
+        hotel_el: r.hotel_el.trim() || null,
+        duration_days: r.duration_days ?? null,
+        price_double: r.price_double ?? null,
+        price_single: r.price_single ?? null,
+        price_triple: r.price_triple ?? null,
+        price_child: r.price_child ?? null,
+        price_day_trip: r.price_day_trip ?? null,
+      };
+      return sanitizeSegmentPrices(base);
+    }),
   );
+}
+
+/** Clear prices that do not apply after toggling day-trip vs multi-day in admin draft. */
+export function clearPricingSegmentPricesForMode(
+  row: PricingSegmentFormRow,
+): PricingSegmentFormRow {
+  if (isDayTripPricingSegment(row)) {
+    return {
+      ...row,
+      price_double: null,
+      price_single: null,
+      price_triple: null,
+      price_child: null,
+      hotel_en: "",
+      hotel_el: "",
+    };
+  }
+  return { ...row, price_day_trip: null };
 }
