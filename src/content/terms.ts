@@ -163,8 +163,26 @@ export const termsGr: TermsContent = {
       ],
     },
     {
+      id: "miscellaneous",
+      title: "8. ΔΙΑΦΟΡΑ",
+      blocks: [
+        p(
+          "Οι ώρες και τα δρομολόγια των πτήσεων που αναφέρονται στα έντυπα προγράμματα και στην ιστοσελίδα της Εταιρείας είναι ενδεικτικά και ενδέχεται να τροποποιηθούν από τις αεροπορικές εταιρείες. Οι τελικές ώρες αναχώρησης και άφιξης γνωστοποιούνται στους ταξιδιώτες μέσω του ενημερωτικού σημειώματος της εκδρομής, το οποίο αποστέλλεται συνήθως δύο (2) έως τρεις (3) ημέρες πριν από την αναχώρηση. Σε περίπτωση αλλαγών στα δρομολόγια, στις ώρες πτήσεων, στους τύπους αεροσκαφών ή καθυστερήσεων που οφείλονται στις αεροπορικές εταιρείες ή σε οποιονδήποτε άλλο μεταφορέα για λειτουργικούς, τεχνικούς ή άλλους λόγους εκτός ελέγχου του διοργανωτή, η Εταιρεία δεν φέρει καμία ευθύνη.",
+        ),
+        p(
+          "Τα τρίκλινα δωμάτια που διατίθενται στα ξενοδοχεία είναι, κατά κανόνα, δίκλινα δωμάτια στα οποία προστίθεται μία επιπλέον κλίνη (extra bed), η οποία μπορεί να είναι πτυσσόμενο κρεβάτι, καναπές-κρεβάτι ή άλλος αντίστοιχος τύπος πρόσθετης κλίνης, σύμφωνα με τις προδιαγραφές του εκάστοτε καταλύματος.",
+        ),
+        p(
+          "Η σειρά πραγματοποίησης των επισκέψεων, εκδρομών, ξεναγήσεων και λοιπών δραστηριοτήτων του προγράμματος ενδέχεται να τροποποιηθεί ή να πραγματοποιηθεί με διαφορετική ή αντίστροφη ροή από την αρχικά ανακοινωθείσα, εφόσον αυτό κριθεί απαραίτητο για λειτουργικούς λόγους ή για την καλύτερη εξυπηρέτηση των συμμετεχόντων. Σε κάθε περίπτωση, δεν παραλείπεται καμία από τις προβλεπόμενες παροχές ή ξεναγήσεις του προγράμματος. Η Εταιρεία διατηρεί το δικαίωμα αντικατάστασης των αναγραφόμενων ξενοδοχείων με άλλα της ίδιας ή ανώτερης κατηγορίας, χωρίς προηγούμενη ειδοποίηση, εφόσον αυτό καταστεί αναγκαίο για λόγους οργάνωσης ή διαθεσιμότητας.",
+        ),
+        p(
+          "Με την ολοκλήρωση του ταξιδιού, η Εταιρεία εκδίδει τα προβλεπόμενα από την ισχύουσα νομοθεσία φορολογικά παραστατικά και τα αποστέλλει στον πελάτη ηλεκτρονικά, είτε στη διεύθυνση ηλεκτρονικού ταχυδρομείου (e-mail) που έχει δηλώσει είτε μέσω εφαρμογών ηλεκτρονικής επικοινωνίας, όπως Viber ή WhatsApp. Για οποιαδήποτε πληροφορία ή διευκρίνιση σχετικά με την έκδοση και αποστολή των παραστατικών, οι πελάτες μπορούν να επικοινωνούν με την Εταιρεία στο τηλέφωνο 210 260 6248.",
+        ),
+      ],
+    },
+    {
       id: "privacy",
-      title: "8. ΠΟΛΙΤΙΚΗ ΠΡΟΣΤΑΣΙΑΣ ΠΡΟΣΩΠΙΚΩΝ ΔΕΔΟΜΕΝΩΝ",
+      title: "9. ΠΟΛΙΤΙΚΗ ΠΡΟΣΤΑΣΙΑΣ ΠΡΟΣΩΠΙΚΩΝ ΔΕΔΟΜΕΝΩΝ",
       blocks: [
         p(
           "Το VALITSA TRAVEL συλλέγει και επεξεργάζεται αποκλειστικά τα απολύτως απαραίτητα προσωπικά δεδομένα που απαιτούνται για την ορθή οργάνωση, κράτηση και υλοποίηση των ταξιδιωτικών υπηρεσιών που παρέχει.",
@@ -185,7 +203,7 @@ export const termsGr: TermsContent = {
     },
     {
       id: "disputes",
-      title: "9. ΡΥΘΜΙΣΗ ΔΙΑΦΟΡΩΝ",
+      title: "10. ΡΥΘΜΙΣΗ ΔΙΑΦΟΡΩΝ",
       blocks: [
         p(
           "Κάθε συμμετοχή σε οργανωμένο ή ατομικό ταξίδι διέπεται από το Ελληνικό Δίκαιο.",
@@ -200,7 +218,7 @@ export const termsGr: TermsContent = {
     },
     {
       id: "acceptance",
-      title: "10. ΑΠΟΔΟΧΗ ΟΡΩΝ ΧΡΗΣΗΣ",
+      title: "11. ΑΠΟΔΟΧΗ ΟΡΩΝ ΧΡΗΣΗΣ",
       blocks: [
         p(
           "Με τη χρήση των υπηρεσιών του γραφείου και της ιστοσελίδας valitsatravel.gr, ο πελάτης δηλώνει ότι έχει διαβάσει, κατανοήσει και αποδεχθεί πλήρως τους παρόντες Γενικούς Όρους Χρήσης, τόσο για τον ίδιο όσο και για όλους τους συμμετέχοντες που περιλαμβάνονται στην κράτησή του, για τους οποίους δηλώνει ότι είναι νόμιμα εξουσιοδοτημένος.",
@@ -360,8 +378,26 @@ export const termsEn: TermsContent = {
       ],
     },
     {
+      id: "miscellaneous",
+      title: "8. MISCELLANEOUS",
+      blocks: [
+        p(
+          "Flight times and schedules stated in the Company's brochures and on its website are indicative and may be modified by the airlines. Final departure and arrival times are communicated to travelers through the excursion information note, usually sent two (2) to three (3) days before departure. In the event of changes to schedules, flight times, aircraft types, or delays attributable to airlines or any other carrier for operational, technical, or other reasons beyond the organizer's control, the Company bears no liability.",
+        ),
+        p(
+          "Triple rooms offered at hotels are, as a rule, double rooms with an additional bed (extra bed), which may be a folding bed, sofa bed, or other equivalent type of supplementary bed, in accordance with the specifications of each accommodation.",
+        ),
+        p(
+          "The order in which visits, excursions, guided tours, and other program activities are carried out may be modified or conducted in a different or reverse sequence from that originally announced, where this is deemed necessary for operational reasons or to better serve participants. In every case, none of the services or guided tours provided for in the program is omitted. The Company reserves the right to substitute the hotels listed with others of the same or higher category, without prior notice, where this becomes necessary for organizational or availability reasons.",
+        ),
+        p(
+          "Upon completion of the trip, the Company issues the tax documents required under applicable law and sends them to the customer electronically, either to the email address provided or via electronic communication applications such as Viber or WhatsApp. For any information or clarification regarding the issuance and delivery of documents, customers may contact the Company at 210 260 6248.",
+        ),
+      ],
+    },
+    {
       id: "privacy",
-      title: "8. PERSONAL DATA PROTECTION POLICY",
+      title: "9. PERSONAL DATA PROTECTION POLICY",
       blocks: [
         p(
           "VALITSA TRAVEL collects and processes only the personal data strictly necessary for the proper organization, booking and delivery of the travel services it provides.",
@@ -382,7 +418,7 @@ export const termsEn: TermsContent = {
     },
     {
       id: "disputes",
-      title: "9. DISPUTE RESOLUTION",
+      title: "10. DISPUTE RESOLUTION",
       blocks: [
         p(
           "Every participation in an organized or individual trip is governed by Greek law.",
@@ -397,7 +433,7 @@ export const termsEn: TermsContent = {
     },
     {
       id: "acceptance",
-      title: "10. ACCEPTANCE OF TERMS OF USE",
+      title: "11. ACCEPTANCE OF TERMS OF USE",
       blocks: [
         p(
           "By using the agency's services and the website valitsatravel.gr, the customer declares that they have read, understood and fully accepted these General Terms of Use, both for themselves and for all participants included in their booking, for whom they declare they are legally authorized.",
