@@ -1206,7 +1206,7 @@ const TripDetail = ({ trip: initialTrip, onClose }: TripDetailProps) => {
                             </div>
                             <textarea
                               ref={messageRef}
-                              maxLength={1000}
+                              maxLength={2000}
                               value={formData.message}
                               onChange={(e) => {
                                 updateField("message", e.target.value);
@@ -1228,6 +1228,9 @@ const TripDetail = ({ trip: initialTrip, onClose }: TripDetailProps) => {
                                 {fieldErrors.message}
                               </p>
                             )}
+                            <p className="text-xs text-muted-foreground mt-1 text-right">
+                              {formData.message.length} / 2000
+                            </p>
                             {requiresCaptcha ? (
                               <CaptchaField
                                 onTokenChange={(token) => {

@@ -197,7 +197,7 @@ const inquirySchema = z.object({
     .regex(/^[+\d\s\-().]*$/, "Invalid phone")
     .optional()
     .default(""),
-  message: z.string().trim().min(10).max(2000),
+  message: z.string().trim().min(10).max(4000),
   source: z.enum(["contact-modal", "trip-detail"]),
   trip_id: z.string().uuid().nullable().optional(),
   trip_title: z.string().trim().max(180).optional().default(""),

@@ -404,6 +404,7 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
                       <div>
                         <textarea
                           ref={messageRef}
+                          maxLength={2000}
                           placeholder={t("detail.message")}
                           value={form.message}
                           onChange={(e) => {
@@ -421,6 +422,9 @@ const ContactModal = ({ open, onClose }: ContactModalProps) => {
                             {fieldErrors.message}
                           </p>
                         )}
+                        <p className="text-xs text-muted-foreground mt-1 text-right">
+                          {form.message.length} / 2000
+                        </p>
                       </div>
                       {requiresCaptcha ? (
                         <CaptchaField
