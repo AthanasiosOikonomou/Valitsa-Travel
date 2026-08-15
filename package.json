@@ -18,6 +18,9 @@
     "verify:deploy": "node scripts/verify-passenger-deploy.mjs",
     "verify:api-health": "node scripts/check-api-health.mjs",
     "check:supabase-env": "node scripts/check-supabase-api-env.mjs",
+    "backfill:trip-images": "node scripts/backfill-trip-image-variants.mjs --dry-run",
+    "backfill:trip-images:execute": "node scripts/backfill-trip-image-variants.mjs --execute",
+    "backfill:trip-images:verify": "node scripts/backfill-trip-image-variants.mjs --verify",
     "test": "vitest run",
     "test:watch": "vitest",
     "dev:client": "vite"

@@ -51,7 +51,8 @@ import {
   normalizeFlightDetails,
   shouldShowFlightDetails,
 } from "@/lib/tripFlightDetails";
-import { buildResponsiveImageSet, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { variantUrl } from "@/lib/tripImageVariants";
 import { buildTripShareUrl } from "@/lib/tripShare";
 import { TripShareSection } from "@/components/TripShareMenu";
 
@@ -367,13 +368,14 @@ const TripDetail = ({ trip: initialTrip, onClose }: TripDetailProps) => {
   }, [withDisplayBase]);
 
   useEffect(() => {
-    if (canonicalSlides.length === 0) return;
-    for (const src of canonicalSlides) {
-      const { fallbackSrc } = buildResponsiveImageSet(src);
+    const current = heroDisplayUrl;
+    const next = displayOrder[1];
+    const toPrefetch = [current, next].filter(Boolean);
+    for (const src of toPrefetch) {
       const img = new Image();
-      img.src = fallbackSrc;
+      img.src = variantUrl(src, 1200);
     }
-  }, [trip.id, canonicalSlides]);
+  }, [trip.id, heroDisplayUrl, displayOrder]);
 
   const firstNameRef = useRef<HTMLInputElement>(null);
   const lastNameRef = useRef<HTMLInputElement>(null);
@@ -751,6 +753,7 @@ const TripDetail = ({ trip: initialTrip, onClose }: TripDetailProps) => {
                                   width={256}
                                   height={256}
                                   sizes="80px"
+                                  responsiveWidths={[400]}
                                   className="h-full"
                                   loading="eager"
                                   fetchPriority="low"

@@ -4,6 +4,12 @@ import multer from "multer";
 import rateLimit from "express-rate-limit";
 import sharp from "sharp";
 import { z } from "zod";
+import {
+  CANONICAL_MAX_WIDTH,
+  VARIANT_CACHE_CONTROL,
+  VARIANT_WIDTHS,
+  variantObjectPath,
+} from "../scripts/lib/tripImageVariants.mjs";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -591,24 +597,52 @@ export function registerAdminRoutes(app, { supabaseAdmin }) {
         return;
       }
       try {
-        const webpBuffer = await sharp(req.file.buffer)
-          .rotate()
-          .resize({ width: 1920, withoutEnlargement: true })
-          .webp({ quality: 82, effort: 4 })
-          .toBuffer();
+        const encodeWebp = (width) =>
+          sharp(req.file.buffer)
+            .rotate()
+            .resize({ width, withoutEnlargement: true })
+            .webp({ quality: 82, effort: 4 })
+            .toBuffer();
 
-        const filename = `${crypto.randomUUID()}.webp`;
+        const canonicalBuffer = await encodeWebp(CANONICAL_MAX_WIDTH);
+        const baseId = crypto.randomUUID();
+        const filename = `${baseId}.webp`;
+        const uploadOptions = {
+          contentType: "image/webp",
+          upsert: false,
+          cacheControl: VARIANT_CACHE_CONTROL,
+        };
+
         const { error: upErr } = await supabaseAdmin.storage
           .from(bucket)
-          .upload(filename, webpBuffer, {
-            contentType: "image/webp",
-            upsert: false,
-          });
+          .upload(filename, canonicalBuffer, uploadOptions);
         if (upErr) {
           console.error("[admin] storage upload:", upErr);
           res.status(500).json({ error: "Storage upload failed" });
           return;
         }
+
+        for (const width of VARIANT_WIDTHS) {
+          try {
+            const variantBuffer = await encodeWebp(width);
+            const variantPath = variantObjectPath(filename, width);
+            const { error: variantErr } = await supabaseAdmin.storage
+              .from(bucket)
+              .upload(variantPath, variantBuffer, uploadOptions);
+            if (variantErr) {
+              console.error(
+                `[admin] storage variant ${width} upload:`,
+                variantErr,
+              );
+            }
+          } catch (variantErr) {
+            console.error(
+              `[admin] storage variant ${width} encode:`,
+              variantErr,
+            );
+          }
+        }
+
         const {
           data: { publicUrl },
         } = supabaseAdmin.storage.from(bucket).getPublicUrl(filename);

@@ -49,7 +49,7 @@
 | Route-level code splitting | [`src/App.tsx`](src/App.tsx) — `React.lazy` for Index, Trips, admin pages | Smaller initial bundle; heavy routes load on demand inside `Suspense`. |
 | Vendor chunk strategy | [`vite.config.ts`](vite.config.ts) — `manualChunks` | Splits `react-vendor`, `motion-vendor`, `router-vendor`, `radix-vendor`, `vendor` for cache-friendly parallel downloads. |
 | Progressive imagery | [`src/components/ProgressiveImage.tsx`](src/components/ProgressiveImage.tsx) | `IntersectionObserver` with `rootMargin: "400px"`; LQIP blur; tuned `fetchPriority` for hero vs below-fold. |
-| CDN-aware URLs | [`src/lib/utils.ts`](src/lib/utils.ts) — `optimizeImageUrl`, `buildResponsiveImageSet` | Width/format/quality params for responsive `srcset`. |
+| CDN-aware URLs | [`src/lib/utils.ts`](src/lib/utils.ts) — `optimizeImageUrl`, `buildResponsiveImageSet` | Width/format/quality params for Unsplash/Prismic; filename variants for Supabase `trip-images`. |
 | Modal scroll lock | [`src/hooks/useScrollLock.ts`](src/hooks/useScrollLock.ts) | Prevents background scroll while trip detail, contact, or legal overlays are open. |
 
 ---
@@ -179,7 +179,31 @@ Equivalent to `npm ci --include=dev` then `npm run build`. Do not set `NODE_ENV=
 | `seasonal_configs` | Navbar season labels (EL/EN), display order, active flag |
 | `analytics_events` | Trip click/impression aggregates (via RPC from API) |
 
-**Storage buckets:** `trip-images` (admin uploads, Sharp → WebP), `inquiry-attachments` (lead comment files).
+**Storage buckets:** `trip-images` (admin uploads, Sharp → WebP plus 400/800/1200 variants), `inquiry-attachments` (lead comment files).
+
+Trip cover/gallery URLs in the database stay as the **canonical** object (`{id}.webp`, max 1920px). The site requests smaller siblings (`{id}-400.webp`, `{id}-800.webp`, `{id}-1200.webp`) via `srcset`. Originals are never deleted.
+
+### Trip image variants (live Storage — additive only)
+
+There is no staging project. Run the backfill against live Storage with a dry-run first. **Do not delete originals.**
+
+1. Deploy the API so new admin uploads write canonical + three variants.
+2. From the repo root (uses existing `.env` / `server/.env` service role; do not paste keys into chat):
+
+```bash
+npm run backfill:trip-images
+npm run backfill:trip-images:execute
+npm run backfill:trip-images:verify
+```
+
+3. Confirm `scripts/backfill-report.json` shows no `missingOriginal` / variant gaps (`verify` exits non-zero if anything is missing).
+4. Deploy the frontend, then hard-refresh `/trips`: Network should show `*-400.webp` / `*-800.webp` on cards, not only full-size files.
+5. Open a trip detail: hero should stay sharp; thumbs should use the 400 variant; gallery should not prefetch every full-size slide.
+6. In admin, upload one new photo and confirm **four** objects in `trip-images` (canonical + 400/800/1200).
+7. Spot-check an older backfilled trip and a share/OG preview (canonical URL is enough for OG).
+8. Watch Supabase **Cached Egress** for 1–2 weeks on Pro. Downgrade to Free only when the trend is clearly under 5 GB/month.
+
+If you deploy the frontend **before** variants exist, `srcset` may 404 on the small files; `<img src>` still points at the canonical original. Run execute + verify before or immediately after the frontend deploy.
 
 Trip types and JSONB shapes are documented in [`src/types/Trip.ts`](src/types/Trip.ts).
 
@@ -196,7 +220,7 @@ Trip types and JSONB shapes are documented in [`src/types/Trip.ts`](src/types/Tr
 
 | Method | Path | Description |
 | ------ | ---- | ----------- |
-| `POST` | `/api/admin/upload-image` | Multipart image → WebP → Supabase Storage |
+| `POST` | `/api/admin/upload-image` | Multipart image → canonical 1920 WebP + 400/800/1200 variants |
 | `POST` | `/api/admin/trips` | Create trip (Zod `adminTripPutSchema`) |
 | `PUT` | `/api/admin/trips/:id` | Full trip update |
 | `PATCH` | `/api/admin/trips/:id` | Toggle `is_featured` |

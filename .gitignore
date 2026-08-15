@@ -18,6 +18,9 @@ dist-ssr
 .env.production
 server/.env
 
+# Local backfill output (may list public image paths; never commit)
+scripts/backfill-report.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -1,5 +1,10 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import {
+  canonicalUrl,
+  isTripImagesPublicUrl,
+  variantUrl,
+} from "@/lib/tripImageVariants";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -28,6 +33,10 @@ export function optimizeImageUrl(src: string, width?: number) {
         url.searchParams.set("w", String(width));
       }
       return url.toString();
+    }
+
+    if (isTripImagesPublicUrl(src)) {
+      return width ? variantUrl(src, width) : canonicalUrl(src);
     }
   } catch {
     return src;
@@ -70,6 +79,10 @@ const buildCdnImageUrl = (
       }
       return url.toString();
     }
+
+    if (isTripImagesPublicUrl(src)) {
+      return variantUrl(src, width);
+    }
   } catch {
     return src;
   }
@@ -78,6 +91,7 @@ const buildCdnImageUrl = (
 };
 
 const isCdnOptimizable = (src: string) => {
+  if (isTripImagesPublicUrl(src)) return true;
   try {
     const host = new URL(src).hostname.toLowerCase();
     return (
@@ -103,6 +117,19 @@ export function buildResponsiveImageSet(
       avifSrcSet: undefined as string | undefined,
       webpSrcSet: undefined as string | undefined,
       lqipSrc: src,
+    };
+  }
+
+  if (isTripImagesPublicUrl(src)) {
+    const webpSrcSet = sortedWidths
+      .map((width) => `${variantUrl(src, width)} ${width}w`)
+      .join(", ");
+    return {
+      fallbackSrc: canonicalUrl(src),
+      fallbackSrcSet: webpSrcSet,
+      avifSrcSet: undefined as string | undefined,
+      webpSrcSet,
+      lqipSrc: variantUrl(src, Math.max(lqipWidth, 400)),
     };
   }
 
