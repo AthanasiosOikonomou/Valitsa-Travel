@@ -74,7 +74,7 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
               width={1200}
               height={1500}
               sizes="(max-width: 768px) 400px, 800px"
-              responsiveWidths={[320, 400, 640, 800, 960]}
+              responsiveWidths={[400, 800]}
               loading={index < 4 ? "eager" : "lazy"}
               fetchPriority={index < 4 ? "high" : "auto"}
               className="absolute inset-0"
@@ -134,7 +134,7 @@ const TripCard = ({ trip, index, onClick }: TripCardProps) => {
               width={1200}
               height={1500}
               sizes="(max-width: 768px) 400px, 800px"
-              responsiveWidths={[320, 400, 640, 800, 960]}
+              responsiveWidths={[400, 800]}
               loading={index < 4 ? "eager" : "lazy"}
               fetchPriority={index < 4 ? "high" : "auto"}
               className="absolute inset-0"

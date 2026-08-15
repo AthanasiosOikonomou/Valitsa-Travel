@@ -1451,7 +1451,7 @@ const TripResultCard = ({
           width={1200}
           height={900}
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 45vw, 30vw"
-          responsiveWidths={[320, 400, 640, 800, 960]}
+          responsiveWidths={[400, 800]}
           className="h-48 sm:h-full"
           imgClassName="group-hover:scale-[1.04] transition-transform [transition-duration:250ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]"
         />
